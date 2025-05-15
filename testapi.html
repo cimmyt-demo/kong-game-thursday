@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Place Bet</title>
+</head>
+<body>
+    
+  <h1>Placing Bet...</h1>
+
+  <script>
+    const betData = {
+      player_id: "284",
+      amount: 3,
+      bet_id: "wrrrfyfuufufu",
+      game_id: "44",
+      client_id: "279"
+    };
+
+    fetch("https://admin-api3.ibibe.africa/api/v1/bet/place_bet", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(betData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log("Success:", data);
+      document.body.innerHTML += `<p>Success: ${JSON.stringify(data)}</p>`;
+    })
+    .catch(error => {
+      console.error("Error:", error);
+      document.body.innerHTML += `<p style="color:red;">Error: ${error.message}</p>`;
+    });
+  </script>
+</body>
+</html>

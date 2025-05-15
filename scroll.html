@@ -1,0 +1,172 @@
+<script>
+    // Replace the current spinAnimation function with this version
+function spinAnimation(callback, apiResult) {
+    if (currentInterval) clearInterval(currentInterval);
+    
+    // Check if this is a big win (greater than 100)
+    const isBigWin = apiResult && apiResult.win_amount > 100;
+    
+    // Normal spin counts for each reel
+    let spinCounts = [25, 30, 35, 40, 50]; 
+    
+    // If it's a big win, make the last reel spin longer for dramatic effect
+    if (isBigWin) {
+        spinCounts[4] = 55; // Increase the spin count for the last reel
+    }
+    
+    const remainingSpins = [...spinCounts];
+    let reelsStoppedCount = 0;
+    let isLastReelSlowedDown = false;
+    let lastReelInterval = null;
+    
+    // Create extra symbols above the visible area for each reel
+    for (let i = 0; i < numReels; i++) {
+        prepareReelForScrolling(i);
+    }
+    
+    // Speed of symbol movement (pixels per frame)
+    const scrollSpeed = isQuickSpinMode ? 30 : 20;
+    
+    currentInterval = setInterval(() => {
+        let allStopped = true;
+        
+        for (let i = 0; i < numReels; i++) {
+            if (remainingSpins[i] > 0) {
+                // Scroll the symbols downward
+                scrollReelSymbols(i, scrollSpeed);
+                
+                // For the last reel, check if we should slow down
+                if (i === 4 && reelsStoppedCount >= 4 && !isLastReelSlowedDown) {
+                    // Check if first 4 reels indicate a potential big win
+                    const potentialBigWin = checkPotentialBigWin(apiResult);
+                    
+                    if (potentialBigWin && !isFreeSpinMode) {
+                        // Slow down the last reel by reducing the speed of updates
+                        isLastReelSlowedDown = true;
+                        clearInterval(currentInterval);
+
+                        addBonusFrameToLastReel();
+
+                        // Create a new slower interval just for the last reel
+                        lastReelInterval = setInterval(() => {
+                            scrollReelSymbols(4, scrollSpeed / 2); // Half speed for dramatic effect
+                            remainingSpins[4]--;
+                            
+                            if (remainingSpins[4] === 0) {
+                                // When the last reel is ready to stop, display final symbols
+                                if (apiResult && apiResult.reels && apiResult.reels[4]) {
+                                    displayFinalSymbolsForReel(4, apiResult.reels[4]);
+                                }
+                                remainingSpins[4] = -1;
+                                
+                                clearInterval(lastReelInterval);
+                                
+                                // Ensure the final display matches exactly what the API returned
+                                if (apiResult && apiResult.reels) {
+                                    displayAPISymbols(apiResult.reels);
+                                    
+                                    // Highlight winning symbols if there's a win
+                                    if (apiResult.win_amount > 0) {
+                                        highlightWinningSymbols(apiResult.reels, apiResult.winning_positions);
+                                    }
+                                }
+                                
+                                spinning = false;
+                                featuresButton.disabled = false;
+                                callback();
+                            }
+                        }, isQuickSpinMode ? 100 : 200); // Slower interval for dramatic effect
+                        
+                        return;
+                    }
+                }
+                
+                remainingSpins[i]--;
+                allStopped = false;
+            } else if (remainingSpins[i] === 0) {
+                // When a reel is ready to stop, immediately display the final symbols
+                if (apiResult && apiResult.reels && apiResult.reels[i]) {
+                    displayFinalSymbolsForReel(i, apiResult.reels[i]);
+                }
+                remainingSpins[i] = -1; // Mark as completely stopped
+                reelsStoppedCount++;
+            }
+        }
+        
+        if (allStopped) {
+            clearInterval(currentInterval);
+            spinning = false;
+            featuresButton.disabled = false;
+            currentInterval = null;
+            
+            // Ensure the final display matches exactly what the API returned
+            if (apiResult && apiResult.reels) {
+                displayAPISymbols(apiResult.reels);
+                
+                // Highlight winning symbols if there's a win
+                if (apiResult.win_amount > 0) {
+                    highlightWinningSymbols(apiResult.reels, apiResult.winning_positions);
+                } else if (apiResult.free_spin_triggered){
+                    highlightWinningSymbols(apiResult.reels, apiResult.winning_positions);
+                }
+            }
+            
+            callback();
+        }
+    }, isQuickSpinMode ? 50 : 100);
+}
+
+// Add this new function to prepare a reel for scrolling animation
+function prepareReelForScrolling(reelIndex) {
+    const symbolContainer = reelSymbols[reelIndex];
+    const { reelWidth, reelHeight } = calculateReelDimensions();
+    const symbolHeight = reelHeight / numRows;
+    
+    // Keep existing symbols
+    const existingSymbols = [];
+    for (let j = 0; j < symbolContainer.children.length; j++) {
+        existingSymbols.push(symbolContainer.children[j]);
+    }
+    
+    // Add extra symbols above the visible area
+    const extraSymbolsCount = 5; // Number of extra symbols to add above
+    for (let j = 0; j < extraSymbolsCount; j++) {
+        const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+        const texture = PIXI.Texture.from(symbol.image);
+        const sprite = new PIXI.Sprite(texture);
+        
+        // Position above the visible area
+        sprite.y = -symbolHeight * (j + 1);
+        sprite.x = reelWidth * 0.03;
+        sprite.width = reelWidth * 0.99;
+        sprite.height = symbolHeight;
+        sprite.symbolName = symbol.name;
+        
+        symbolContainer.addChild(sprite);
+    }
+}
+
+// Add this new function to scroll the symbols in a reel
+function scrollReelSymbols(reelIndex, speed) {
+    const symbolContainer = reelSymbols[reelIndex];
+    const { reelHeight } = calculateReelDimensions();
+    const symbolHeight = reelHeight / numRows;
+    
+    // Move all symbols downward
+    for (let j = 0; j < symbolContainer.children.length; j++) {
+        const sprite = symbolContainer.children[j];
+        sprite.y += speed;
+        
+        // If a symbol has moved completely out of view at the bottom
+        if (sprite.y > reelHeight) {
+            // Reset its position to above the visible area
+            sprite.y = -symbolHeight;
+            
+            // Change to a new random symbol
+            const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+            sprite.texture = PIXI.Texture.from(symbol.image);
+            sprite.symbolName = symbol.name;
+        }
+    }
+}
+</script>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPhone 12 Frame</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      padding: 1rem;
+    }
+    .iphone-frame {
+      width: 320.33px;
+      height: 600.43px;
+      border: 7px solid #000;
+      border-radius: 11px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body class="d-flex justify-content-center align-items-center">
+  <div class="iphone-frame d-flex justify-content-center align-items-center">
+    <iframe src="http://127.0.0.1:5501/r003.html"></iframe>
+  </div>
+</body>
+</html>

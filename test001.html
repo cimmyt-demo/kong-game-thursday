@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Slots - 5x3 Slot Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background-color: #1a1a2e;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    .slot-machine {
+      background-color: #2a2a3a;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      width: 100%;
+    }
+
+    #game-canvas {
+      margin-bottom: 1.5rem;
+      width: 100%;
+      display: block;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .balance-info {
+      color: white;
+    }
+
+    .balance-info p {
+      font-size: 1.125rem;
+    }
+
+    .win-amount {
+      color: #4ade80;
+      font-weight: bold;
+    }
+
+    .bet-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 0.25rem;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #6b7280;
+      color: white;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .bet-amount {
+      color: white;
+      font-weight: bold;
+      padding: 0 0.75rem;
+    }
+
+    .spin-button {
+      width: 100%;
+      background: linear-gradient(to right, #9333ea, #db2777);
+      color: white;
+      font-size: 1.125rem;
+      padding: 1.5rem 0;
+      border-radius: 0.25rem;
+    }
+
+    .spin-button:hover:not(:disabled) {
+      background: linear-gradient(to right, #7e22ce, #be185d);
+    }
+
+    .instructions {
+      background-color: #2a2a3a;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      color: white;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .instructions h2 {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .instructions ul {
+      list-style-type: disc;
+      padding-left: 1.25rem;
+    }
+
+    .instructions li {
+      margin-bottom: 0.25rem;
+    }
+
+    @media (max-width: 640px) {
+      .controls {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Pixel Slots</h1>
+  
+  <div class="game-container">
+    <div class="slot-machine">
+      <canvas id="game-canvas"></canvas>
+      
+      <div class="controls">
+        <div class="balance-info">
+          <p>Balance: <span id="balance" class="font-bold">$1000</span></p>
+          <p id="win-message" class="win-amount" style="display: none;">Win: $<span id="win-amount">0</span></p>
+        </div>
+        
+        <div class="bet-controls">
+          <button id="decrease-bet" class="btn-outline">-</button>
+          <span class="bet-amount">Bet: $<span id="bet-amount">10</span></span>
+          <button id="increase-bet" class="btn-outline">+</button>
+        </div>
+      </div>
+      
+      <button id="spin-button" class="spin-button">SPIN</button>
+    </div>
+    
+    <div class="instructions">
+      <h2>How to Play</h2>
+      <ul>
+        <li>Set your bet amount using the + and - buttons</li>
+        <li>Click SPIN to start the game</li>
+        <li>Match 3 or more symbols in a row to win</li>
+        <li>Different symbols have different values</li>
+        <li>Seven symbols pay the highest</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Load PixiJS from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.x/dist/pixi.min.js"></script>
+  
+  <script>
+    // Game configuration
+    const SYMBOLS = [
+      { name: "cherry", color: 0xff0000 },
+      { name: "lemon", color: 0xffff00 },
+      { name: "orange", color: 0xffa500 },
+      { name: "plum", color: 0x800080 },
+      { name: "seven", color: 0x0000ff },
+      { name: "bar", color: 0x00ff00 },
+    ];
+
+    const REEL_COUNT = 5;
+    const SYMBOLS_PER_REEL = 3;
+    const SYMBOL_SIZE = 100;
+    const SYMBOL_SPACING = 10;
+    const REEL_WIDTH = SYMBOL_SIZE + SYMBOL_SPACING;
+    const SPIN_DURATION = 2000; // ms
+    const SPIN_SPEED = 30;
+
+    // Game state
+    let app;
+    let reels = [];
+    let symbols = [];
+    let isSpinning = false;
+    let balance = 1000;
+    let bet = 10;
+    let winAmount = 0;
+
+    // DOM elements
+    const balanceElement = document.getElementById('balance');
+    const winMessageElement = document.getElementById('win-message');
+    const winAmountElement = document.getElementById('win-amount');
+    const betAmountElement = document.getElementById('bet-amount');
+    const decreaseBetButton = document.getElementById('decrease-bet');
+    const increaseBetButton = document.getElementById('increase-bet');
+    const spinButton = document.getElementById('spin-button');
+    const gameCanvas = document.getElementById('game-canvas');
+
+    // Initialize the game
+    function initGame() {
+      // Create PixiJS application
+      app = new PIXI.Application({
+        width: REEL_WIDTH * REEL_COUNT + SYMBOL_SPACING * (REEL_COUNT - 1),
+        height: SYMBOL_SIZE * SYMBOLS_PER_REEL + SYMBOL_SPACING * (SYMBOLS_PER_REEL - 1),
+        backgroundColor: 0x1a1a1a,
+        antialias: true,
+        view: gameCanvas
+      });
+
+      // Create container for reels
+      const reelsContainer = new PIXI.Container();
+      reelsContainer.position.set(0, 0);
+      app.stage.addChild(reelsContainer);
+
+      // Create reels
+      for (let i = 0; i < REEL_COUNT; i++) {
+        const reel = new PIXI.Container();
+        reel.position.set(i * (REEL_WIDTH + SYMBOL_SPACING), 0);
+        reelsContainer.addChild(reel);
+        reels.push(reel);
+
+        // Create symbols for this reel (more than visible for spinning)
+        const reelSymbols = [];
+        for (let j = 0; j < SYMBOLS_PER_REEL + 3; j++) {
+          const symbolIndex = Math.floor(Math.random() * SYMBOLS.length);
+          const symbol = createSymbol(symbolIndex);
+          symbol.position.set(0, j * (SYMBOL_SIZE + SYMBOL_SPACING));
+          reel.addChild(symbol);
+          reelSymbols.push(symbol);
+        }
+        symbols.push(reelSymbols);
+      }
+
+      // Create mask for reels
+      const mask = new PIXI.Graphics();
+      mask.beginFill(0xffffff);
+      mask.drawRect(
+        0,
+        0,
+        REEL_WIDTH * REEL_COUNT + SYMBOL_SPACING * (REEL_COUNT - 1),
+        SYMBOL_SIZE * SYMBOLS_PER_REEL + SYMBOL_SPACING * (SYMBOLS_PER_REEL - 1)
+      );
+      mask.endFill();
+      reelsContainer.mask = mask;
+      app.stage.addChild(mask);
+
+      // Update UI
+      updateUI();
+    }
+
+    // Create a symbol graphic
+    function createSymbol(symbolIndex) {
+      const symbol = new PIXI.Graphics();
+      const symbolData = SYMBOLS[symbolIndex];
+
+      // Draw different shapes based on symbol type
+      symbol.beginFill(symbolData.color);
+
+      switch (symbolData.name) {
+        case "cherry":
+          symbol.drawCircle(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10);
+          break;
+        case "lemon":
+          symbol.drawEllipse(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10, SYMBOL_SIZE / 3);
+          break;
+        case "orange":
+          symbol.drawCircle(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10);
+          break;
+        case "plum":
+          symbol.drawRoundedRect(10, 10, SYMBOL_SIZE - 20, SYMBOL_SIZE - 20, 15);
+          break;
+        case "seven":
+          symbol.drawStar(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, 5, SYMBOL_SIZE / 2 - 10, SYMBOL_SIZE / 4);
+          break;
+        case "bar":
+          symbol.drawRect(10, SYMBOL_SIZE / 3, SYMBOL_SIZE - 20, SYMBOL_SIZE / 3);
+          break;
+      }
+
+      symbol.endFill();
+
+      // Add symbol name text
+      const text = new PIXI.Text(symbolData.name, {
+        fontFamily: "Arial",
+        fontSize: 14,
+        fill: 0xffffff,
+      });
+      text.anchor.set(0.5);
+      text.position.set(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2);
+      symbol.addChild(text);
+
+      return symbol;
+    }
+
+    // Spin the reels
+    function spinReels() {
+      if (isSpinning || !app) return;
+
+      // Deduct bet from balance
+      if (balance < bet) return;
+      balance -= bet;
+      winAmount = 0;
+      isSpinning = true;
+      updateUI();
+
+      // Prepare new symbols for each reel
+      const newSymbolsPerReel = [];
+
+      for (let i = 0; i < REEL_COUNT; i++) {
+        const reelSymbols = [];
+        for (let j = 0; j < SYMBOLS_PER_REEL; j++) {
+          reelSymbols.push(Math.floor(Math.random() * SYMBOLS.length));
+        }
+        newSymbolsPerReel.push(reelSymbols);
+      }
+
+      // Start spinning animation for each reel with staggered delays
+      reels.forEach((reel, reelIndex) => {
+        // Reset position
+        symbols[reelIndex].forEach((symbol, symbolIndex) => {
+          symbol.position.y = symbolIndex * (SYMBOL_SIZE + SYMBOL_SPACING);
+        });
+
+        // Delay each reel's spin
+        const reelDelay = 200 * reelIndex;
+
+        // Animate the reel
+        let elapsed = 0;
+        const spinAnimation = () => {
+          elapsed += app.ticker.deltaMS;
+
+          // Move symbols down
+          symbols[reelIndex].forEach(symbol => {
+            symbol.position.y += SPIN_SPEED;
+
+            // If symbol goes below visible area, move it to the top
+            if (symbol.position.y > SYMBOLS_PER_REEL * (SYMBOL_SIZE + SYMBOL_SPACING)) {
+              symbol.position.y = -SYMBOL_SIZE;
+
+              // If we're past the initial acceleration phase, update symbol appearance
+              if (elapsed > reelDelay + 500) {
+                const symbolIndex = Math.floor(Math.random() * SYMBOLS.length);
+                symbol.removeChildren();
+
+                // Redraw the symbol
+                symbol.clear();
+                symbol.beginFill(SYMBOLS[symbolIndex].color);
+
+                switch (SYMBOLS[symbolIndex].name) {
+                  case "cherry":
+                    symbol.drawCircle(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10);
+                    break;
+                  case "lemon":
+                    symbol.drawEllipse(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10, SYMBOL_SIZE / 3);
+                    break;
+                  case "orange":
+                    symbol.drawCircle(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10);
+                    break;
+                  case "plum":
+                    symbol.drawRoundedRect(10, 10, SYMBOL_SIZE - 20, SYMBOL_SIZE - 20, 15);
+                    break;
+                  case "seven":
+                    symbol.drawStar(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, 5, SYMBOL_SIZE / 2 - 10, SYMBOL_SIZE / 4);
+                    break;
+                  case "bar":
+                    symbol.drawRect(10, SYMBOL_SIZE / 3, SYMBOL_SIZE - 20, SYMBOL_SIZE / 3);
+                    break;
+                }
+
+                symbol.endFill();
+
+                // Add symbol name text
+                const text = new PIXI.Text(SYMBOLS[symbolIndex].name, {
+                  fontFamily: "Arial",
+                  fontSize: 14,
+                  fill: 0xffffff,
+                });
+                text.anchor.set(0.5);
+                text.position.set(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2);
+                symbol.addChild(text);
+              }
+            }
+          });
+
+          // Stop spinning after duration
+          if (elapsed < reelDelay + SPIN_DURATION) {
+            requestAnimationFrame(spinAnimation);
+          } else {
+            // Align symbols to grid
+            symbols[reelIndex].forEach((symbol, symbolIndex) => {
+              // Only position the visible symbols
+              if (symbolIndex < SYMBOLS_PER_REEL) {
+                symbol.position.y = symbolIndex * (SYMBOL_SIZE + SYMBOL_SPACING);
+
+                // Update symbol to final result
+                if (symbolIndex < newSymbolsPerReel[reelIndex].length) {
+                  const finalSymbolIndex = newSymbolsPerReel[reelIndex][symbolIndex];
+                  symbol.removeChildren();
+
+                  // Redraw the symbol
+                  symbol.clear();
+                  symbol.beginFill(SYMBOLS[finalSymbolIndex].color);
+
+                  switch (SYMBOLS[finalSymbolIndex].name) {
+                    case "cherry":
+                      symbol.drawCircle(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10);
+                      break;
+                    case "lemon":
+                      symbol.drawEllipse(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10, SYMBOL_SIZE / 3);
+                      break;
+                    case "orange":
+                      symbol.drawCircle(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, SYMBOL_SIZE / 2 - 10);
+                      break;
+                    case "plum":
+                      symbol.drawRoundedRect(10, 10, SYMBOL_SIZE - 20, SYMBOL_SIZE - 20, 15);
+                      break;
+                    case "seven":
+                      symbol.drawStar(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2, 5, SYMBOL_SIZE / 2 - 10, SYMBOL_SIZE / 4);
+                      break;
+                    case "bar":
+                      symbol.drawRect(10, SYMBOL_SIZE / 3, SYMBOL_SIZE - 20, SYMBOL_SIZE / 3);
+                      break;
+                  }
+
+                  symbol.endFill();
+
+                  // Add symbol name text
+                  const text = new PIXI.Text(SYMBOLS[finalSymbolIndex].name, {
+                    fontFamily: "Arial",
+                    fontSize: 14,
+                    fill: 0xffffff,
+                  });
+                  text.anchor.set(0.5);
+                  text.position.set(SYMBOL_SIZE / 2, SYMBOL_SIZE / 2);
+                  symbol.addChild(text);
+                }
+              } else {
+                // Hide symbols that are not visible
+                symbol.position.y = -SYMBOL_SIZE * 2;
+              }
+            });
+
+            // If this is the last reel, check for wins
+            if (reelIndex === REEL_COUNT - 1) {
+              checkWins(newSymbolsPerReel);
+              isSpinning = false;
+              updateUI();
+            }
+          }
+        };
+
+        // Start animation after delay
+        setTimeout(() => {
+          requestAnimationFrame(spinAnimation);
+        }, reelDelay);
+      });
+    }
+
+    // Check for winning combinations
+    function checkWins(symbolsGrid) {
+      let currentWinAmount = 0;
+
+      // Check horizontal lines
+      for (let row = 0; row < SYMBOLS_PER_REEL; row++) {
+        const rowSymbols = symbolsGrid.map(reel => reel[row]);
+
+        // Check for 3 or more matching symbols
+        const counts = {};
+        rowSymbols.forEach(symbol => {
+          counts[symbol] = (counts[symbol] || 0) + 1;
+        });
+
+        // Find the symbol with the most matches
+        let maxCount = 0;
+        let maxSymbol = -1;
+
+        Object.entries(counts).forEach(([symbol, count]) => {
+          if (count > maxCount) {
+            maxCount = count;
+            maxSymbol = parseInt(symbol);
+          }
+        });
+
+        // Award winnings based on matches
+        if (maxCount >= 3) {
+          // More matches = higher multiplier
+          const multiplier = maxCount * (maxSymbol === 4 ? 3 : maxSymbol === 5 ? 5 : 2);
+          currentWinAmount += bet * multiplier;
+        }
+      }
+
+      if (currentWinAmount > 0) {
+        winAmount = currentWinAmount;
+        balance += currentWinAmount;
+      }
+    }
+
+    // Update UI elements
+    function updateUI() {
+      balanceElement.textContent = '$' + balance;
+      betAmountElement.textContent = bet;
+      
+      if (winAmount > 0) {
+        winMessageElement.style.display = 'block';
+        winAmountElement.textContent = winAmount;
+      } else {
+        winMessageElement.style.display = 'none';
+      }
+      
+      // Update button states
+      decreaseBetButton.disabled = isSpinning || bet <= 1;
+      increaseBetButton.disabled = isSpinning || bet >= 100;
+      spinButton.disabled = isSpinning || balance < bet;
+      spinButton.textContent = isSpinning ? 'Spinning...' : 'SPIN';
+    }
+
+    // Handle bet changes
+    function changeBet(amount) {
+      if (isSpinning) return;
+      bet = Math.max(1, Math.min(100, bet + amount));
+      updateUI();
+    }
+
+    // Event listeners
+    decreaseBetButton.addEventListener('click', () => changeBet(-5));
+    increaseBetButton.addEventListener('click', () => changeBet(5));
+    spinButton.addEventListener('click', spinReels);
+
+    // Responsive canvas sizing
+    function resizeCanvas() {
+      if (!app) return;
+      
+      const container = gameCanvas.parentElement;
+      const containerWidth = container.clientWidth;
+      const scale = containerWidth / app.renderer.width;
+      
+      if (scale < 1) {
+        app.renderer.resize(app.renderer.width * scale, app.renderer.height * scale);
+      }
+    }
+
+    // Initialize game when page loads
+    window.addEventListener('load', () => {
+      initGame();
+      resizeCanvas();
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', resizeCanvas);
+  </script>
+</body>
+</html>

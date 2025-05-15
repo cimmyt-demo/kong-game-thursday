@@ -1,0 +1,121 @@
+.mobile-wrapper {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  
+  .autoplay-button,
+  .stake-button {
+    height: 80px;
+    width: 80px;
+  }
+  
+  .spin-img {
+    height: 65px;
+    width: 65px;
+  }
+  
+  .spin-button {
+    height: 100px;
+    width: 100px;
+  }
+  
+  .autospininner-img {
+    height: 40px;
+    width: 40px;
+  }
+  
+  .totalbetinner-img {
+    height: 25px;
+  }
+  
+  .current-stake {
+    font-size: 1.2rem;
+    color: #f6d64e;
+  }
+  
+  #playground {
+    height: 35vh;
+  }
+  
+  .fs-text-image {
+    max-height: 25px;
+  }
+  
+  #remaining_fs_holder,
+  #total_fs_holder {
+    color: #8cc904;
+    font-size: 2.0rem;
+    font-weight: bold;
+  }
+  
+  @media screen and (min-width: 992px) {
+    .overlay {
+      position: absolute;
+      max-width: 320px;
+      max-height: 580px;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      left: 50%;
+      transform: translate(-50%, -0%);
+      background-color: rgba(0, 0, 0, 1);
+      z-index: 2000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+  
+    #playground {
+      max-height: 200px;
+      width: 100%;
+    }
+  
+    .mobile-wrapper {
+      max-width: 320px;
+      max-height: 490px;
+    }
+  
+    .autoplay-button,
+    .stake-button {
+      height: 55px;
+      width: 55px;
+    }
+  
+    .spin-img {
+      height: 45px;
+      width: 45px;
+    }
+  
+    .spin-button {
+      height: 70px;
+      width: 70px;
+    }
+  
+    .autospininner-img {
+      height: 30px;
+      width: 30px;
+    }
+  
+    .totalbetinner-img {
+      height: 21px;
+    }
+  
+    .current-stake {
+      font-size: 1.0rem;
+      color: #f6d64e;
+    }
+  
+    .fs-text-image {
+      max-height: 20px;
+    }
+  
+    #remaining_fs_holder,
+    #total_fs_holder {
+      color: #8cc904;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+  }
+  

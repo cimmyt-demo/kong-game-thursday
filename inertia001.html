@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixi Slot Machine</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    canvas {
+      border: 2px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <script src="https://pixijs.download/release/pixi.min.js"></script>
+  <script>
+    const app = new PIXI.Application({ width: 400, height: 400, backgroundColor: 0x000000 });
+    document.body.appendChild(app.view);
+
+    const SYMBOL_HEIGHT = 100;
+    const SYMBOL_WIDTH = 100;
+    const NUM_SYMBOLS = 5;
+
+    const textures = [];
+    for (let i = 0; i < NUM_SYMBOLS; i++) {
+      const gfx = new PIXI.Graphics();
+      gfx.beginFill(0xffffff * Math.random());
+      gfx.drawRect(0, 0, SYMBOL_WIDTH, SYMBOL_HEIGHT);
+      gfx.endFill();
+      const texture = app.renderer.generateTexture(gfx);
+      textures.push(texture);
+    }
+
+    class Reel {
+      constructor(yOffset) {
+        this.container = new PIXI.Container();
+        this.symbols = [];
+        this.speed = 0;
+        this.acceleration = -1.5;
+        this.isSpinning = false;
+        this.isStopping = false;
+
+        for (let i = 0; i < NUM_SYMBOLS; i++) {
+          const symbol = new PIXI.Sprite(textures[i % textures.length]);
+          symbol.y = i * SYMBOL_HEIGHT;
+          this.symbols.push(symbol);
+          this.container.addChild(symbol);
+        }
+
+        this.container.y = yOffset;
+        app.stage.addChild(this.container);
+      }
+
+      startSpin(speed = 30) {
+        this.speed = speed;
+        this.isSpinning = true;
+        this.isStopping = false;
+      }
+
+      stopSpin() {
+        this.isStopping = true;
+      }
+
+      update(delta) {
+        if (!this.isSpinning) return;
+
+        for (const symbol of this.symbols) {
+          symbol.y += this.speed * delta;
+          if (symbol.y >= SYMBOL_HEIGHT * NUM_SYMBOLS) {
+            symbol.y -= SYMBOL_HEIGHT * NUM_SYMBOLS;
+          }
+        }
+
+        if (this.isStopping) {
+          this.speed += this.acceleration * delta;
+          if (this.speed <= 0) {
+            this.speed = 0;
+            this.isSpinning = false;
+            this.alignToSymbol();
+          }
+        }
+      }
+
+      alignToSymbol() {
+        const offset = this.symbols[0].y % SYMBOL_HEIGHT;
+        for (const symbol of this.symbols) {
+          symbol.y -= offset;
+        }
+      }
+    }
+
+    const reel = new Reel(50);
+    reel.startSpin();
+
+    setTimeout(() => reel.stopSpin(), 3000);
+
+    app.ticker.add(delta => {
+      reel.update(delta);
+    });
+  </script>
+</body>
+</html>

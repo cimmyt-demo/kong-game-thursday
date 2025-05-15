@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kong (Treasure Hunt) Slot Machine</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Andada+Pro:ital,wght@0,400..840;1,400..840&family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Noto+Serif:ital,wght@0,100..900;1,100..900&family=Victor+Mono:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #2c2c2c;
+            touch-action: manipulation;
+        }
+        @font-face {
+            font-family: 'aldo';
+            src: url('aldo_the_apache') format('truetype'); /* Adjust the path and format */
+        }
+
+            
+
+        #game-container {
+            width: 100%;
+            height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'aldo', sans-serif;
+        }
+        .game-canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+            width: 96%;
+            margin: auto;
+            overflow: hidden;
+            z-index: 888;
+        }
+        .game-controls {
+            margin: 0px !important;
+            padding: 0px !important;
+            width: 100%;
+            background-image: url('wood.jpg');
+            border-radius: 12px 12px 0 0;
+            z-index: 1000;
+            bottom: 0 !important;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .spin-button, .autoplay-button {
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            padding: 12px;
+        }
+        /* Responsive adjustments */
+        @media (max-height: 600px) {
+            .game-controls {
+                padding: 5px;
+            }
+            .control-group {
+                gap: 5px;
+            }
+            .input-group {
+                margin-bottom: 5px;
+            }
+        }
+        /* Prevent text selection */
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        /* Allow input in number fields */
+        input[type="number"] {
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
+        }
+        /* Stake button and overlay styles */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 1);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .overlay-content {
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            margin-top: 100px;
+        }
+        .overlay-header {
+            color: #e4d594;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .option-button {
+            background: linear-gradient(to bottom, #353333, #272525);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px 0;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-button:hover, .option-button.selected {
+            background-color: #25282b;
+            box-shadow: 
+                inset 0 0 0 2px rgba(0, 0, 0, 0.15),
+                0 0 0 2px rgba(0, 0, 0, 0.15),
+                inset 0 0 0.875rem #FCEAAC,
+                0 0 0.875rem #FCEAAC;
+        }
+        .overlay-footer {
+            width: inherit;
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding-bottom: 50px;
+            bottom: 0;
+            position:absolute;
+        }
+        .overlay-footer button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        .cancel-button {
+            background-color: #333;
+            color: white;
+        }
+        .confirm-button {
+            background-color: #333;
+            box-shadow: 0 0 4px #e4d594;
+            color: white;
+        }
+        .divider-container {
+            color: #e4d594;
+        }
+        .divider {
+            height: 2px;
+            background-color: #e4d594;
+            width: 30vw;
+        }
+        .divider-text {
+            margin: 0 10px;
+        }
+        .divider-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 16px 0;
+        }
+        .check-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-left: 4px;
+            position: relative;
+        }
+        .check-icon:before {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            border-right: 2px solid white;
+            border-bottom: 2px solid white;
+            transform: rotate(45deg);
+            top: 0;
+            left: 4px;
+        }
+        
+        .victor-mono {
+            font-family: "Victor Mono", monospace;
+            font-optical-sizing: auto;
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        /* Settings overlay styles */
+        .sound-option {
+            background: linear-gradient(to bottom, #353333, #272525);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0px;
+        }
+        .sound-option.selected {
+            box-shadow: 
+                inset 0 0 0 2px rgba(0, 0, 0, 0.15),
+                0 0 0 2px rgba(0, 0, 0, 0.15),
+                inset 0 0 0.875rem #FCEAAC,
+                0 0 0.875rem #FCEAAC;
+        }
+        .icon-container {
+            font-size: 1.5rem;
+            display: inline-block;
+            width: 30px;
+            text-align: center;
+        }
+        .loader-container {
+            height: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+        }
+        .loader-bar {
+            height: 100%;
+            width: 0;
+            background: orange;
+            transition: width 0.3s ease;
+        }
+        .glowing-button {
+            position: absolute; /* Ensure ::after is positioned relative to this */
+            bottom: 9%;
+            padding: 6px 50px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            border-radius: 12px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #c09c0e;
+            background-color: #fada60;
+            font-weight: bold;
+            text-shadow: 
+                -1px -1px 0 orange,  
+                1px -1px 0 orange,
+                -1px  1px 0 orange,
+                1px  1px 0 orange;
+            overflow: hidden; /* Prevents the light effect from overflowing */
+        }
+
+        /* Light reflection effect */
+        .glowing-button::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 200%; /* Reduce width to prevent excessive overflow */
+            height: 100%;
+            background: linear-gradient(
+                100deg,
+                rgba(255, 255, 255, 0) 40%,
+                rgba(255, 255, 255, 0.4) 50%,
+                rgba(255, 255, 255, 0) 60%
+            );
+            animation: light-sweep 2s infinite linear;
+        }
+
+        @keyframes light-sweep {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        /* Free spins indicator */
+        .free-spins-indicator {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(192, 156, 14, 0.8);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            z-index: 100;
+            display: none;
+        }
+
+        /* Win message */
+        .win-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fada60;
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            animation: bounce 1s infinite;
+            z-index: 100;
+            display: none;
+        }
+    </style>
+    <style>
+        .mobile-wrapper {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .autoplay-button, .stake-button{
+            height: 80px;
+            width: 80px;
+        }
+        .spin-img{
+            height: 65px;
+            width: 65px;
+        }
+        .spin-button{
+            height: 100px;
+            width: 100px;
+        }
+        .autospininner-img{
+            height: 40px;
+            width: 40px;
+        }
+        .totalbetinner-img{
+            height: 25px;
+        }
+        .current-stake{
+            font-size: 1.2rem;
+            color: #f6d64e;
+        }
+        #playground{
+            height: 35vh;
+        }
+        .fs-text-image{
+            max-height: 25px;
+        }
+        #remaining_fs_holder, #total_fs_holder{
+            color: #8cc904;
+            font-size: 2.0rem;
+            font-weight: bold;
+        }
+
+        @media screen and (min-width: 992px) {
+            .sunburst-container {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 80vw;
+                max-width: 600px;
+                height: 80vw;
+                max-height: 600px;
+                z-index: 10; /* Higher than coins */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: visible;
+                pointer-events: none;
+            }
+            .overlay {
+                position: absolute;
+                max-width: 320px;
+                max-height: 580px;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                left: 50%;
+                transform: translate(-50%, -0%);
+                background-color: rgba(0, 0, 0, 1);
+                z-index: 2000;
+                display: none;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            #playground{
+                max-height: 200px;
+                width: 100%;
+            }
+            .mobile-wrapper {
+                max-width: 320px;
+                max-height: 490px;
+            }
+            .autoplay-button, .stake-button{
+                height: 55px;
+                width: 55px;
+            }
+            .spin-img{
+                height: 45px;
+                width: 45px;
+            }
+            .spin-button{
+                height: 70px;
+                width: 70px;
+            }
+            .autospininner-img{
+                height: 30px;
+                width: 30px;
+            }
+            .totalbetinner-img{
+                height:21px
+            }
+            .current-stake{
+                font-size: 1.0rem;
+                color: #f6d64e;
+            }
+            .fs-text-image{
+                max-height: 20px;
+            }
+            #remaining_fs_holder, #total_fs_holder{
+                color: #8cc904;
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+        }
+    </style>
+
+<style>
+    .btn-gold {
+      background-color: #b8860b;
+      color: white;
+      border: none;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .btn-gold:hover {
+      background-color: #a67c00;
+      color: white;
+    }
+
+    #winOverlay{
+        position: absolute;
+        width: 100%;
+        min-height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+
+    #closeBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 8px;
+      z-index: 20;
+    }
+
+    .win-content {
+      position: relative;
+      text-align: center;
+      z-index: 15;
+    }
+
+    /* Rotating sunburst effect */
+    .sunburst-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100vw;
+      max-width: 600px;
+      height: 80vw;
+      max-height: 600px;
+      z-index: 10; /* Higher than coins */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .sunburst {
+      width: 100%;
+      height: 100%;
+      background-image: url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/BigWin_FX-pnFZvgsE0rjtfTiTODDEY1oM6AHQJ4.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      animation: rotate 10s linear infinite;
+    }
+
+    /* Colored overlays for different win levels */
+    .big-win-color {
+      filter: none;
+    }
+
+    .mega-win-color {
+      filter: none; /* Original gold/yellow color */
+    }
+
+    .ultra-win-color {
+      filter: none;
+    }
+
+    @keyframes rotate {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .win-text {
+      font-size: calc(2rem + 2vw);
+      font-weight: bold;
+      margin-bottom: 16px;
+      text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+      animation: text-flicker 2s infinite;
+      transition: color 0.5s, transform 0.5s;
+      position: relative;
+      z-index: 20;
+    }
+
+    .counter-text {
+      font-size: calc(0.5rem + 2vw);
+      font-weight: bold;
+      color: #a67c00;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+      animation: pulse 1.5s infinite;
+      position: relative;
+      z-index: 20;
+    }
+
+    #coinsContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 5; /* Lower than sunburst */
+    }
+
+    .coin {
+      position: absolute;
+      filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.7));
+      transition: transform 0.05s ease-out;
+      z-index: 5; /* Lower than sunburst */
+    }
+
+    /* Win level styles */
+    .big-win {
+      color: #ffd700;
+    }
+
+    .mega-win {
+      color: #ffd700;
+    }
+
+    .ultra-win {
+      color: #ffd700;
+    }
+
+    @keyframes text-flicker {
+      0%, 100% {
+        opacity: 1;
+        text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+      }
+      50% {
+        opacity: 0.9;
+        text-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes scale-in {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .scale-in {
+      animation: scale-in 0.5s forwards;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+      .btn-group {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .btn-group .btn {
+        margin-bottom: 0.5rem;
+        width: 100%;
+      }
+      
+      .win-text {
+        font-size: calc(1.5rem + 2vw);
+      }
+      
+      .counter-text {
+        font-size: calc(1em + 2vw);
+      }
+    }
+  </style>
+
+</head>
+<body class="victor-mono w-100" style="background-image: url('page_bcg.png');background-size: cover;padding: 0 !important;margin: 0 !important;">
+<div class="mx-auto" >
+    <div class="mobile-wrapper mx-auto" >
+        
+        <div id="device_overlay" style="display: none;">
+            <div class="d-flex flex-column justify-content-center align-items-center text-center p-4" 
+                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.99); color: white; font-size: 1.5rem; text-align: center; z-index: 9999; display: flex;"
+                >
+                <div class="container">
+                    <h2 class="fw-bold">FOR AN OPTIMAL GAMING EXPERIENCE</h2>
+                    <p class="lead">USE A MOBILE DEVICE</p>
+                    <div class="my-3 text-center my-3">
+                        <i class="fa fa-mobile-alt fa-3x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="winOverlay" class="mobile-wrapper">
+            <button id="closeBtn" class="btn-close btn-close-white" aria-label="Close"></button>
+            <div id="coinsContainer"></div>
+            <div class="sunburst-container">
+                <div id="sunburst"  class="sunburst mega-win-color"></div>
+            </div>
+            <div class="win-content">
+                <h2 id="winText" class="win-text big-win">
+                <img id="winImg" style="max-width: 200px;" src="winlevels/bigwin.png" alt="">
+                </h2>
+                <div class="counter-text" id="winAmount">$0</div>
+            </div>
+        </div>
+        
+        <div id="jdb_overlay" style="height: 100vh;width: 100vw;padding: 0 !important;margin: 0 !important;background-color: black;position: absolute;z-index: 3000;display: none;">
+            <div style="height: 100%;width: 100%;" class="d-flex justify-content-center align-items-center">
+                <div class="row">
+                    <div class="col-7 col-lg-4 d-flex justify-content-center align-items-center mx-auto">
+                        <div>
+                            <img src="jdb_logo.png" alt="mx-auto">
+                            <div class="d-flex justify-content-center mx-auto">
+                                <div class="loader-container" style="width: 50%;border-style: solid;border-width: 1px;">
+                                    <div class="loader-bar" id="loader-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <div id="kong_overlay" style="height: 100vh;width: 100vw;padding: 0 !important;margin: 0 !important;background-color: black;position: absolute;z-index: 2900;background-image: url('kong_bcg.png');background-size:contain;display: none;">
+            <div class="d-flex justify-content-center">
+                <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
+            </div>
+        </div>
+    
+        <div id="game-container">
+            <div>
+                <img id="img_top" src="bg-top6.gif" style="width: 100%;height: auto;" alt="">
+                <img id="img_top_volcano_part_1" src="volcano.gif" style="width: 100%;height: auto;display: none;" alt="">
+                <img id="img_top_volcano_part_2" src="volcano-part-2-complete.gif" style="width: 100%;height: auto;display: none;" alt="">
+            </div>
+            <div id="playground" style="background: url('nbcg1.png');min-height: 35vh;width: 100%;background-size: cover;">
+                <div class="game-canvas-container">
+                    <!-- Free Spins Indicator -->
+                    <div id="free-spins-indicator" class="free-spins-indicator">
+                        FREE SPINS: <span id="free-spins-count">0</span> | MULTIPLIER: <span id="bonus-multiplier">0</span>x
+                    </div>
+                    
+                    <!-- Win Message -->
+                    <div id="win-message" class="win-message">
+                        <div>BIG WIN!</div>
+                        <div id="win-amount">0.00</div>
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Controls -->
+            <div class="game-controls p-2">
+                <div id="results_holder" class="w-100 text-center text-white d-flex justify-content-center align-items-center" style="background-image: url('resultsbcg3.png');background-size: cover;height: 30px;font-size: 1.3rem;">
+                    <div style="margin: 5px 0px;">
+                        WIN <span class="px-1" id="update_winnings">0.00</span>
+                    </div>
+                </div>
+                <div id="freespins_display" style="display: none; justify-content: center; align-items: center; padding-top: 2px;max-width: 100%;height: 100px;">
+                    <img class="fs-text-image"  src="freespin_part_a.png" alt="">
+                    <span class="px-3" id="remaining_fs_holder" >0</span>
+                    <img class="fs-text-image" src="freespin_part_b.png"  alt="">
+                    <span class="px-3" id="total_fs_holder">0</span>
+                </div>
+                <div id="normalspins_display" style="display: flex; justify-content: center; align-items: center; padding-top: 2px">
+                    <div id="autoPlayButton" class="rounded-circle d-flex justify-content-center align-items-center autoplay-button" style="background-image: url('autospinbcg.png');background-size: cover;">
+                        <img src="autospininnerimg.png" class="autospininner-img"  alt="">
+                    </div>
+                    <div id="spinButton" class="mx-4 d-flex justify-content-center align-items-center spin-button" style="border-radius: 50%;background-image: url('spinbcg.png');background-size: cover;">
+                        <div id="remainingAutoSpins" style="z-index: 2;position: absolute;color: darkorange;font-weight:bolder;font-size: 1.5rem;">
+                        </div>
+                        <div class="d-flex justify-content-center align-items-center spin-img" id="spin_img" style="background: url('spininnerimg.png');background-size: cover;">
+                            
+                        </div>
+                    </div>
+                    
+                    <!-- Stake button that opens the overlay -->
+                    <div id="stakeButton" class="text-center d-flex justify-content-center align-items-center stake-button" style="background-image: url('totalbetbcg.png');background-size: cover;color: orange;font-size: 0.85rem;line-height: 1;font-weight: 900;border-radius: 50%;">
+                        <div>
+                            <div class="d-flex justify-content-center">
+                                <img src="totalbetinnerimg.png" class="totalbetinner-img"  alt="">
+                            </div>
+                            <div class="text-center">
+                                <span id="currentStake" class="current-stake">0.3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container mb-2">
+                    <div style="display: flex; width: 100%; position: relative; align-items: center;">
+                        <!-- Button at the start (left) -->
+                        <div id="settingsButton" style="border-radius: 50%;width: 50px; height: 50px;background-image: url('settings.png');background-size: cover;">
+                        </div>
+                
+                        <!-- Button at the center -->
+                        <div style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;">
+                            <span class="text-center">
+                                <span class="badge px-4 py-2 text-white" style="background-color: rgba(0,0,0,0.7);">CREDIT: <span id="balanceText">1000.00</span></span>
+                                <br>
+                                <span class="text-white text-center" style="font-size: 0.8rem;">
+                                    &lt; <span>DEMO GAME</span> &gt;
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Stake Selection Overlay -->
+        <div id="stakeOverlay" class="overlay">
+            <div class="divider-container">
+                <div class="divider-wrapper">
+                    <div class="divider"></div>
+                    <div class="divider-text">TOTAL BET</div>
+                    <div class="divider"></div>
+                </div>
+            </div>
+            <div class="overlay-content">
+                <div class="overlay-header">SELECT BET</div>
+                <div class="options-grid" id="stakeOptions">
+                    <button class="option-button selected" data-value="0.3">0.3</button>
+                    <button class="option-button" data-value="0.6">0.6</button>
+                    <button class="option-button" data-value="0.9">0.9</button>
+                    <button class="option-button" data-value="1.5">1.5</button>
+                    <button class="option-button" data-value="3.0">3.0</button>
+                </div>
+                <div class="overlay-footer">
+                    <button class="cancel-button px-4" id="cancelStake">Cancel</button>
+                    <button class="confirm-button px-5" id="confirmStake">OK</button>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Auto Spin Overlay -->
+        <div id="autoSpinOverlay" class="overlay">
+            <div class="divider-container">
+                <div class="divider-wrapper">
+                    <div class="divider"></div>
+                    <div class="divider-text">AUTO SPINS</div>
+                    <div class="divider"></div>
+                </div>
+            </div>
+            <div class="overlay-content">
+                <div class="overlay-header">SELECT SPINS</div>
+                <div class="options-grid" id="autoSpinOptions">
+                    <button class="option-button" data-value="5">5</button>
+                    <button class="option-button" data-value="10">10</button>
+                    <button class="option-button" data-value="25">25</button>
+                    <button class="option-button" data-value="50">50</button>
+                    <button class="option-button" data-value="100">100</button>
+                    <button class="option-button" data-value="200">200</button>
+                </div>
+                <div class="overlay-footer">
+                    <button class="cancel-button" id="cancelAutoSpin">Cancel</button>
+                    <button class="confirm-button px-5" id="confirmAutoSpin">Ok</button>
+                </div>
+            </div>
+        </div>
+    
+        <!-- Settings Overlay -->
+        <div id="settingsOverlay" class="overlay">
+            <div class="divider-container">
+                <div class="divider-wrapper">
+                    <div class="divider"></div>
+                    <div class="divider-text">SETTINGS</div>
+                    <div class="divider"></div>
+                </div>
+            </div>
+            <div class="overlay-content">
+                <div class="overlay-header">SOUND OPTIONS</div>
+                <div>
+                    <!-- Sound Effects Option -->
+                    <div class="d-flex justify-content-center">
+                        <div id="soundEffectsOption" class="sound-option selected mx-auto col-10">
+                            <div>Sound Effects</div>
+                            <div>
+                                <span id="soundEffectsIcon" class="icon-container">🔊</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-center">
+                        <!-- Background Music Option -->
+                        <div id="backgroundMusicOption" class="sound-option selected mx-auto col-10">
+                            <div>Background Music</div>
+                            <div>
+                                <span id="backgroundMusicIcon" class="icon-container">🔊</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="overlay-footer">
+                    <button class="cancel-button px-4" id="cancelSettings">Cancel</button>
+                    <button class="confirm-button px-5" id="confirmSettings">OK</button>
+                </div>
+            </div>
+        </div>
+    
+    
+    </div>
+</div>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/@fand/gifuct-js@1.0.0/src/index.min.js"></script>
+
+    <script src="https://unpkg.com/omggif/omggif.js"></script>
+    <script>
+        coinImages = [
+            "coins/0_BigWin_SS.png", "coins/1_BigWin_SS.png", "coins/2_BigWin_SS.png", "coins/3_BigWin_SS.png",
+            "coins/4_BigWin_SS.png", "coins/5_BigWin_SS.png", "coins/6_BigWin_SS.png", "coins/7_BigWin_SS.png",
+            "coins/8_BigWin_SS.png", "coins/9_BigWin_SS.png", "coins/10_BigWin_SS.png", "coins/11_BigWin_SS.png",
+            "coins/12_BigWin_SS.png", "coins/13_BigWin_SS.png", "coins/14_BigWin_SS.png", "coins/15_BigWin_SS.png",
+            "coins/16_BigWin_SS.png", "coins/17_BigWin_SS.png", "coins/18_BigWin_SS.png", "coins/19_BigWin_SS.png",
+            "coins/20_BigWin_SS.png", "coins/21_BigWin_SS.png", "coins/22_BigWin_SS.png", "coins/23_BigWin_SS.png",
+            "coins/24_BigWin_SS.png", "coins/25_BigWin_SS.png", "coins/26_BigWin_SS.png", "coins/27_BigWin_SS.png",
+            "coins/28_BigWin_SS.png", "coins/29_BigWin_SS.png", "coins/30_BigWin_SS.png"
+        ];
+      
+
+      // Preload images for smoother animation
+      coinImages.forEach(src => {
+        const img = new Image();
+        img.src = src;
+        img.crossOrigin = "anonymous";
+      });
+
+      // Win level configurations
+      const winLevels = {
+        big: {
+          imgSrc: 'winlevels/bigwin.png',
+          text: 'BIG WIN',
+          textClass: 'big-win',
+          sunburstClass: 'big-win-color',
+          threshold: 100,
+          coinCount: 60
+        },
+        mega: {
+          imgSrc: 'winlevels/megawin.gif',
+          text: 'MEGA WIN',
+          textClass: 'mega-win',
+          sunburstClass: 'mega-win-color',
+          threshold: 300,
+          coinCount: 100
+        },
+        ultra: {
+          imgSrc: 'winlevels/ultrawin.gif',
+          text: 'ULTRA WIN',
+          textClass: 'ultra-win',
+          sunburstClass: 'ultra-win-color',
+          threshold: Infinity,
+          coinCount: 160
+        }
+      };
+
+      // Function to determine win level based on amount
+      function getWinLevel(amount) {
+        if (amount < winLevels.big.threshold) {
+          return 'big';
+        } else if (amount < winLevels.mega.threshold) {
+          return 'mega';
+        } else {
+          return 'ultra';
+        }
+      }
+
+      // Function to show the win animation
+      function showWinAnimation(amount) {
+        // Reset any existing animations
+        clearTimeout(window.autoCloseTimeout);
+        
+        // Set initial win level
+        let currentLevel = 'big';
+        updateWinLevel(currentLevel);
+        
+        // Show the overlay
+        const winOverlay = document.getElementById('winOverlay');
+        winOverlay.style.display = 'flex';
+        
+        // Start with $0
+        let currentAmount = 0;
+        const winAmount = document.getElementById('winAmount');
+        winAmount.textContent = '$' + currentAmount.toLocaleString();
+        
+        // Create the coin fountain
+        setTimeout(() => {
+          createCoinFountain(winLevels[currentLevel].coinCount);
+        }, 100);
+        
+        // Animate the counter
+        const duration = 5000; // 5 seconds for the counter
+        const fps = 60;
+        const increment = amount / (duration / 1000 * fps);
+        const startTime = performance.now();
+        
+        function updateCounter(timestamp) {
+          const elapsed = timestamp - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          currentAmount = progress * amount;
+          winAmount.textContent = '$' + Math.floor(currentAmount).toLocaleString();
+          
+          // Check if we need to upgrade the win level
+          const newLevel = getWinLevel(currentAmount);
+          if (newLevel !== currentLevel) {
+            currentLevel = newLevel;
+            updateWinLevel(currentLevel);
+            
+            // Add more coins for the new level
+            createCoinFountain(winLevels[currentLevel].coinCount);
+          }
+          
+          if (progress < 1) {
+            requestAnimationFrame(updateCounter);
+          } else {
+            // Counter finished
+            winAmount.textContent = '$' + amount.toLocaleString();
+            
+            // Auto close after 3 seconds
+            window.autoCloseTimeout = setTimeout(() => {
+              closeWinAnimation();
+            }, 2000);
+          }
+        }
+        
+        requestAnimationFrame(updateCounter);
+      }
+      
+      // Function to update the win level visuals
+      function updateWinLevel(level) {
+        const winText = document.getElementById('winText');
+        const winImg = document.getElementById('winImg');
+        const sunburst = document.getElementById('sunburst');
+        
+        // Remove all classes
+        winText.classList.remove('big-win', 'mega-win', 'ultra-win');
+        sunburst.classList.remove('big-win-color', 'mega-win-color', 'ultra-win-color');
+        
+        // Add new classes
+        winText.classList.add(winLevels[level].textClass);
+        sunburst.classList.add(winLevels[level].sunburstClass);
+        
+        winImg.style.transform = 'scale(0.8)';
+        setTimeout(() => {
+          winImg.src = winLevels[level].imgSrc;
+          winImg.style.transform = 'scale(1.2)';
+          setTimeout(() => {
+            winImg.style.transform = 'scale(1)';
+          }, 150);
+        }, 150);
+      }
+
+      // Function to close the win animation
+      function closeWinAnimation() {
+        const winOverlay = document.getElementById('winOverlay');
+        winOverlay.style.display = 'none';
+        clearTimeout(window.autoCloseTimeout);
+        
+        // Clear all coins
+        const coinsContainer = document.getElementById('coinsContainer');
+        coinsContainer.innerHTML = '';
+      }
+
+      // Function to create the coin fountain with 3D rotating coins
+      function createCoinFountain(numberOfCoins) {
+        const coinsContainer = document.getElementById('coinsContainer');
+        
+        // Create fountain of coins
+        const containerWidth = coinsContainer.offsetWidth;
+        const containerHeight = coinsContainer.offsetHeight;
+        
+        // Center bottom position
+        const centerX = containerWidth / 2;
+        
+        // Adjust coin count based on screen size
+        const isMobile = window.innerWidth < 576;
+        const actualCoinCount = isMobile ? Math.floor(numberOfCoins * 0.6) : numberOfCoins;
+        
+        for (let i = 0; i < actualCoinCount; i++) {
+          setTimeout(() => {
+            // Create coin container element
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            
+            // Random size between 10-30px on mobile, 20-40px on desktop
+            const minSize = isMobile ? 15 : 25;
+            const maxSizeRange = isMobile ? 25 : 25;
+            const coinSize = Math.floor(Math.random() * maxSizeRange) + minSize;
+            coin.style.width = `${coinSize}px`;
+            coin.style.height = `${coinSize}px`;
+            
+            // Create the img element inside the coin div
+            const coinImg = document.createElement('img');
+            coinImg.src = coinImages[0]; // Start with the first image
+            coinImg.style.width = '100%';
+            coinImg.style.height = '100%';
+            coinImg.crossOrigin = "anonymous"; // Avoid CORS issues
+            coin.appendChild(coinImg);
+            
+            // Start at center bottom with slight random offset
+            const startX = centerX + (Math.random() - 0.5) * 50;
+            coin.style.left = `${startX}px`;
+            coin.style.bottom = '0px';
+            
+            // Add to container
+            coinsContainer.appendChild(coin);
+            
+            // Animate the coin in a fountain pattern with 3D rotation
+            animateCoinFountain(coin, coinImg, startX, containerHeight);
+          }, i * 70); // Stagger the coin creation
+        }
+      }
+
+      // Function to animate a single coin in a fountain pattern with 3D rotation
+      function animateCoinFountain(coin, coinImg, startX, containerHeight) {
+        const coinsContainer = document.getElementById('coinsContainer');
+        const containerWidth = coinsContainer.offsetWidth;
+        
+        // Adjust physics based on screen size
+        const isMobile = window.innerWidth < 576;
+        const velocityMultiplier = isMobile ? 0.8 : 1;
+        
+        // Random angle for the fountain spread (narrower at the bottom, wider at the top)
+        const angle = ((Math.random() - 0.5) * Math.PI) / 2; // -45 to +45 degrees
+        
+        // Random initial velocity (speed)
+        const initialVelocity = (15 + Math.random() * 10) * velocityMultiplier;
+        
+        // Calculate velocity components
+        const vx = initialVelocity * Math.sin(angle);
+        const vy = initialVelocity * Math.cos(angle);
+        
+        // Animation parameters
+        const gravity = 0.5 * velocityMultiplier;
+        const duration = 2000 + Math.random() * 1000;
+        const fps = 60;
+        const totalFrames = (duration / 1000) * fps;
+        
+        // Animation variables
+        let currentFrame = 0;
+        let x = startX;
+        let y = 0;
+        let velocityY = vy;
+        
+        // 3D rotation variables
+        let currentImageIndex = 0;
+        const rotationSpeed = (0.1 + Math.random() * 0.2) * velocityMultiplier; // Random rotation speed
+        
+        // Animation function
+        const animate = () => {
+          if (!coin.parentNode) return; // Stop if coin was removed
+          
+          // Update position with gravity
+          x += vx;
+          velocityY -= gravity;
+          y += velocityY;
+          
+          // Update coin position
+          coin.style.left = `${x}px`;
+          coin.style.bottom = `${y}px`;
+          
+          // Update 3D rotation - change the image based on the current frame
+          currentImageIndex = (currentImageIndex + rotationSpeed) % coinImages.length;
+          coinImg.src = coinImages[Math.floor(currentImageIndex)];
+          
+          // Add perspective tilt based on movement direction
+          const tiltX = vx * 2; // Tilt based on horizontal velocity
+          const tiltY = velocityY; // Tilt based on vertical velocity
+          coin.style.transform = `perspective(500px) rotateX(${tiltY}deg) rotateY(${tiltX}deg)`;
+          
+          // Adjust shadow based on height
+          const shadowBlur = Math.min(5 + y/20, 15);
+          coin.style.filter = `drop-shadow(0 0 ${shadowBlur}px rgba(255, 215, 0, 0.7))`;
+          
+          // Check if coin is still visible
+          if (y < -100 || x < -100 || x > containerWidth + 100) {
+            if (coin.parentNode) {
+              coin.parentNode.removeChild(coin);
+            }
+            return;
+          }
+          
+          // Continue animation
+          currentFrame++;
+          if (currentFrame < totalFrames) {
+            requestAnimationFrame(animate);
+          } else {
+            // Remove coin after animation completes
+            if (coin.parentNode) {
+              coin.parentNode.removeChild(coin);
+            }
+          }
+        };
+        
+        // Start animation
+        requestAnimationFrame(animate);
+      }
+
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        // Adjust sunburst size if needed
+        const sunburstContainer = document.querySelector('.sunburst-container');
+        if (sunburstContainer) {
+          const size = Math.min(window.innerWidth * 0.8, 400);
+          sunburstContainer.style.width = `${size}px`;
+          sunburstContainer.style.height = `${size}px`;
+        }
+      });
+
+      document.getElementById('closeBtn').addEventListener('click', () => {
+        closeWinAnimation();
+      });
+      
+      document.getElementById('winOverlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('winOverlay')) {
+          closeWinAnimation();
+        }
+      });
+
+      // Make the function available globally
+      window.showWinAnimation = showWinAnimation;
+      window.closeWinAnimation = closeWinAnimation;
+
+
+        ///separator
+
+        async function fetchGifAsBuffer(url) {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        return arrayBuffer;
+        }
+
+        async function getGifDuration(url) {
+        const arrayBuffer = await fetchGifAsBuffer(url);
+        const gif = gifuct.parseGIF(arrayBuffer);
+        const frames = gifuct.decompressFrames(gif, true);
+        
+        const duration = frames.reduce((total, frame) => {
+            const delay = frame.delay || 10; // in hundredths of a second
+            return total + delay * 10; // convert to milliseconds
+        }, 0);
+
+        return duration;
+        }
+
+        async function onGifFinish(url, callback) {
+        const duration = await getGifDuration(url);
+        console.log(`GIF duration: ${duration}ms`);
+        setTimeout(callback, duration);
+        }
+
+        // Use the function
+        const gifElement = document.getElementById("myGif");
+        const gifUrl = gifElement.src;
+
+        onGifFinish(gifUrl, () => {
+        console.log("GIF finished playing once.");
+        // You can trigger any logic here, like hiding the GIF or showing a message
+        });
+  </script>
+
+
+    <script>
+        if (window.innerWidth <= 900) {
+            document.getElementById("device_overlay").style.display = "none";
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            let loaderBar = document.getElementById("loader-bar");
+            let progress = 0;
+            
+            function updateProgress() {
+                progress += Math.random() * 10;
+                if (progress < 100) {
+                    loaderBar.style.width = progress + "%";
+                    setTimeout(updateProgress, 200);
+                } else {
+                    loaderBar.style.width = "100%";
+                    setTimeout(() => document.querySelector(".loader-container").style.display = "none", 500);
+                    document.getElementById('jdb_overlay').style.display = "none";
+                }
+            }
+            
+            updateProgress();
+        });
+
+        function hideKongOverlay(){
+            document.getElementById('kong_overlay').style.display = "none";
+            // Background music
+            const backgroundMusic = new Audio();
+            backgroundMusic.src = "gameaudio.mp3";
+            backgroundMusic.loop = true;
+            backgroundMusic.volume = 0.5;
+
+            // Try to play background music (will be blocked by browsers until user interaction)
+            backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+        }
+
+        // Mobile-optimized game configuration
+        const gameContainer = document.querySelector('.game-canvas-container');
+        const app = new PIXI.Application({
+            width: gameContainer.clientWidth,
+            height: gameContainer.clientHeight,
+            autoDensity: true,
+            resolution: window.devicePixelRatio || 1,
+            transparent: true
+        });
+        gameContainer.appendChild(app.view);
+
+        // Load the background image
+        const backgroundTexture = PIXI.Texture.from('nbcg2.png');
+        const backgroundSprite = new PIXI.Sprite(backgroundTexture);
+
+
+        // Function to resize the background
+        function resizeBackground() {
+            backgroundSprite.width = app.screen.width;
+            backgroundSprite.height = app.screen.height;
+        }
+
+        // Ensure the background resizes properly
+        resizeBackground();
+        app.stage.addChild(backgroundSprite);
+
+
+        // Change the background image
+        function changeBackground(newImagePath) {
+            const newTexture = PIXI.Texture.from(newImagePath);
+            backgroundSprite.texture = newTexture;
+        }
+
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            app.renderer.resize(gameContainer.clientWidth, gameContainer.clientHeight);
+            resizeBackground();
+        });
+
+        // Kong game constants
+        const KONG_SYMBOLS = {
+        "Treasure Chest": {
+            name: "Treasure Chest",
+            image: 'treasurechest.png',
+            payouts: [0, 0, 40, 100, 250]
+        },
+        "Explorer": {
+            name: "Explorer",
+            image: 'explorer.png',
+            payouts: [0, 0, 30, 80, 200]
+        },
+        "Compass": {
+            name: "Compass",
+            image: 'compass.png',
+            payouts: [0, 0, 25, 60, 175]
+        },
+        "Binoculars": {
+            name: "Binoculars",
+            image: 'binoculars.png',
+            payouts: [0, 0, 20, 50, 150]
+        },
+        "A": {
+            name: "A",
+            image: 'a.png',
+            payouts: [0, 0, 10, 20, 100]
+        },
+        "K": {
+            name: "K",
+            image: 'k.png',
+            payouts: [0, 0, 8, 15, 90]
+        },
+        "Q": {
+            name: "Q",
+            image: 'q.png',
+            payouts: [0, 0, 6, 12, 80]
+        },
+        "J": {
+            name: "J",
+            image: 'j.png',
+            payouts: [0, 0, 5, 10, 70]
+        },
+        "Wild": {
+            name: "Wild",
+            image: 'wild.png',
+            payouts: [0, 0, 50, 125, 300]  },
+        "Scatter": {
+            name: "Scatter",
+            image: 'scatter.png',
+            payouts: [0, 0, 5, 20, 50]
+        }
+    };
+
+        // Bet levels as defined in the documentation
+        const BET_LEVELS = [0.3, 0.6, 0.9, 1.5, 3.0];
+
+        // Multiplier mapping for bet amounts
+        const BET_MULTIPLIERS = {
+            0.3: 1,
+            0.6: 2,
+            0.9: 3,
+            1.5: 5,
+            3.0: 10
+        };
+
+        // Game variables
+        const symbols = [
+        { name: 'Treasure Chest', image: 'treasurechest.png', multiplier: 2 },
+        { name: 'Explorer', image: 'explorer.png', multiplier: 5 },
+        { name: 'Compass', image: 'compass.png', multiplier: 5 },
+        { name: 'Binoculars', image: 'binoculars.png', multiplier: 5 },
+        { name: 'A', image: 'a.png', multiplier: 5 },
+        { name: 'K', image: 'k.png', multiplier: 5 },
+        { name: 'Q', image: 'q.png', multiplier: 5 },
+        { name: 'J', image: 'j.png', multiplier: 5 },
+        { name: 'Wild', image: 'wild.png', multiplier: 10 },
+        { name: 'Scatter', image: 'scatter.png', multiplier: 3 }
+    ];
+        const symbolMultiplierMap = new Map(symbols.map(s => [s.name, s.multiplier]));
+
+        // Preload reel background image
+        // const reelBackgroundTexture = PIXI.Texture.from('reel-bg.jpg');
+
+        const reels = [];
+        const reelSymbols = []; // Array to track symbols separately from reel containers
+        const numReels = 5;
+        const numRows = 3;
+        let spinning = false;
+        let balance = 1000;
+        let stake = 0.3;
+        let autoSpins = 0;
+        let currentInterval;
+        let selectedStake = 0.3; // Default stake value
+        let selectedAutoSpins = 0; // Default auto spins value
+
+        // Free spins state
+        let isFreeSpinMode = false;
+        let freeSpinCount = 0;
+        let bonusMultiplier = 0;
+        let originalBetAmount = 0;
+
+        // Sound control variables
+        let soundEffectsEnabled = true;
+        let backgroundMusicEnabled = true;
+        let tempSoundEffectsEnabled = true;
+        let tempBackgroundMusicEnabled = true;
+
+        // Display elements
+        const remainingAutoSpins = document.getElementById('remainingAutoSpins')
+        const spinButtonInnerImage = document.getElementById('spin_img')
+        const balanceText = document.getElementById('balanceText');
+        const currentStakeElement = document.getElementById('currentStake');
+        const spinButton = document.getElementById('spinButton');
+        const autoPlayButton = document.getElementById('autoPlayButton');
+        const stakeButton = document.getElementById('stakeButton');
+        const stakeOverlay = document.getElementById('stakeOverlay');
+        const autoSpinOverlay = document.getElementById('autoSpinOverlay');
+        const stakeOptions = document.getElementById('stakeOptions');
+        const autoSpinOptions = document.getElementById('autoSpinOptions');
+        const cancelStakeButton = document.getElementById('cancelStake');
+        const confirmStakeButton = document.getElementById('confirmStake');
+        const cancelAutoSpinButton = document.getElementById('cancelAutoSpin');
+        const confirmAutoSpinButton = document.getElementById('confirmAutoSpin');
+        const winMessageElement = document.getElementById('win-message');
+        const winAmountElement = document.getElementById('win-amount');
+        const freeSpinsIndicator = document.getElementById('free-spins-indicator');
+        const freeSpinsCountElement = document.getElementById('free-spins-count');
+        const bonusMultiplierElement = document.getElementById('bonus-multiplier');
+
+        // Settings elements
+        const settingsButton = document.getElementById('settingsButton');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const soundEffectsOption = document.getElementById('soundEffectsOption');
+        const backgroundMusicOption = document.getElementById('backgroundMusicOption');
+        const soundEffectsIcon = document.getElementById('soundEffectsIcon');
+        const backgroundMusicIcon = document.getElementById('backgroundMusicIcon');
+        const cancelSettingsButton = document.getElementById('cancelSettings');
+        const confirmSettingsButton = document.getElementById('confirmSettings');
+
+        // Sound effects
+        const spinSound = new Audio();
+        spinSound.src = 'spin.mp3';
+        spinSound.preload = 'auto';
+        
+        const winSound = new Audio();
+        winSound.src = 'win.mp3';
+        winSound.preload = 'auto';
+
+        // Background music
+        const backgroundMusic = new Audio();
+        backgroundMusic.src = 'gameaudio.mp3';
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
+        backgroundMusic.preload = 'auto';
+
+
+        function rotateSpinButtonImage(){
+            spinButtonInnerImage.style.transform = 'rotate(180deg)';
+        }
+
+        // Calculate reel dimensions based on available space
+        function calculateReelDimensions() {
+            const availableWidth = app.screen.width;
+            const availableHeight = app.screen.height;
+            
+            const reelWidth = availableWidth / numReels * 0.99;
+            const reelHeight = availableHeight * 0.99;
+            
+            return { reelWidth, reelHeight };
+        }
+
+        // Create reels
+        function createReels() {
+            // Clear existing reels
+            reels.forEach(reel => {
+                app.stage.removeChild(reel);
+            });
+            reels.length = 0;
+            reelSymbols.length = 0;
+            
+            const { reelWidth, reelHeight } = calculateReelDimensions();
+
+            const borderSize = 0;
+
+            // Load animated GIF as frames (you must have frame0.png, frame1.png, ..., frameN.png)
+            let isBonusRound = true; // Or true when it's triggered
+
+            const frameTextures = [];
+            const totalFrames = 12; // 🔁 Update this to match how many frames your GIF has
+
+            for (let f = 0; f < totalFrames; f++) {
+                frameTextures.push(PIXI.Texture.from(`green/${f}_Base_Reel_SpeedUp_SS.png`));
+            }
+
+            for (let i = 0; i < numReels; i++) {
+                const reel = new PIXI.Container();
+                reel.x = (app.screen.width / numReels) * i + (app.screen.width / numReels - reelWidth) / 2;
+                reel.y = (app.screen.height - reelHeight) / 2;
+
+                const symbolContainer = new PIXI.Container();
+                reel.addChild(symbolContainer);
+
+                reels.push(reel);
+                reelSymbols.push(symbolContainer);
+                app.stage.addChild(reel);
+
+                // ✅ Only add the animated border to the last reel if it's a bonus round
+                if (i === numReels - 1 && isBonusRound) {
+                    const animatedBorder = new PIXI.AnimatedSprite(frameTextures);
+                    animatedBorder.animationSpeed = 0.15;
+                    animatedBorder.loop = true;
+                    animatedBorder.play();
+
+                    animatedBorder.width = reelWidth + borderSize * 2.15;
+                    animatedBorder.height = reelHeight + borderSize * 2.15;
+                    animatedBorder.x = reel.x - borderSize;
+                    animatedBorder.y = reel.y - borderSize;
+
+                    app.stage.addChild(animatedBorder);
+
+                    app.ticker.add(() => {
+                        animatedBorder.x = reel.x - borderSize;
+                        animatedBorder.y = reel.y - borderSize;
+                    });
+                }
+            }
+
+            // Populate reels
+            populateReels();
+        }
+
+        // Populate all reels with symbols
+        function populateReels() {
+            for (let i = 0; i < numReels; i++) {
+                populateReel(i);
+            }
+        }
+
+        // Populate a single reel with symbols
+        function populateReel(reelIndex) {
+            const symbolContainer = reelSymbols[reelIndex];
+            symbolContainer.removeChildren();
+            
+            const { reelWidth, reelHeight } = calculateReelDimensions();
+            
+            const rowSymbols = [];
+            for (let j = 0; j < numRows; j++) {
+                const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+                const texture = PIXI.Texture.from(symbol.image);
+                const sprite = new PIXI.Sprite(texture);
+                sprite.y = j * (reelHeight / numRows);
+                sprite.x = reelWidth * 0.03; // Add a small margin
+                sprite.width = reelWidth * 0.99;
+                sprite.height = (reelHeight / numRows) * 1;
+                sprite.symbolName = symbol.name;
+                symbolContainer.addChild(sprite);
+                rowSymbols.push(sprite);
+            }
+            
+            return rowSymbols;
+        }
+
+        // Function to display final symbols for a specific reel
+        function displayFinalSymbolsForReel(reelIndex, reelSymbolNames) {
+            const { reelWidth, reelHeight } = calculateReelDimensions();
+            const symbolContainer = reelSymbols[reelIndex];
+            symbolContainer.removeChildren();
+            
+            // Loop through each row in the reel
+            for (let j = 0; j < numRows; j++) {
+                const symbolName = reelSymbolNames[j];
+                const symbolData = KONG_SYMBOLS[symbolName];
+                
+                if (symbolData) {
+                    const texture = PIXI.Texture.from(symbolData.image);
+                    const sprite = new PIXI.Sprite(texture);
+                    sprite.y = j * (reelHeight / numRows);
+                    sprite.x = reelWidth * 0.01; // Add a small margin
+                    sprite.width = reelWidth * 0.96;
+                    sprite.height = (reelHeight / numRows) * 1;
+                    sprite.symbolName = symbolName;
+                    sprite.reelIndex = reelIndex;
+                    sprite.rowIndex = j;
+                    symbolContainer.addChild(sprite);
+                }
+            }
+        }
+
+        // Add this new function to display the API symbols
+        function displayAPISymbols(apiReels) {
+            // Loop through each reel
+            for (let i = 0; i < numReels; i++) {
+                displayFinalSymbolsForReel(i, apiReels[i]);
+            }
+        }
+
+        function spinAnimation(callback, apiResult) {
+            if (currentInterval) clearInterval(currentInterval);
+            
+            const spinCounts = [15, 20, 25, 30, 35]; // Different stop times for each reel
+            const remainingSpins = [...spinCounts];
+
+            
+            
+            currentInterval = setInterval(() => {
+                let allStopped = true;
+                
+                for (let i = 0; i < numReels; i++) {
+                    if (remainingSpins[i] > 0) {
+                        // Continue spinning with random symbols until ready to stop
+                        populateReel(i);
+                        remainingSpins[i]--;
+                        allStopped = false;
+                    } else if (remainingSpins[i] === 0) {
+                        // When a reel is ready to stop, immediately display the final symbols
+                        if (apiResult && apiResult.reels && apiResult.reels[i]) {
+                            displayFinalSymbolsForReel(i, apiResult.reels[i]);
+                        }
+                        remainingSpins[i] = -1; // Mark as completely stopped
+                    }
+                }
+                
+                if (allStopped) {
+                    clearInterval(currentInterval);
+                    spinning = false;
+                    currentInterval = null;
+                    
+                    // Ensure the final display matches exactly what the API returned
+                    if (apiResult && apiResult.reels) {
+                        displayAPISymbols(apiResult.reels);
+                        
+                        // Highlight winning symbols if there's a win
+                        if (apiResult.win_amount > 0) {
+                            highlightWinningSymbols(apiResult.reels, apiResult.winning_positions);
+                        }
+                    }
+                    
+                    callback();
+                }
+            }, 100);
+        }
+
+        function highlightWinningSymbols(apiReels, winningPositions) {
+            // If no winning positions are passed, initialize it as an empty array
+            winningPositions = winningPositions || [];
+
+            console.log('------------Listing winning positions----------------');
+            console.log(winningPositions);
+
+            // Define a mapping of symbol names to z-index values
+            const symbolZIndexMap = {
+                "Treasure Chest": 80,
+                "Wild": 100,
+                "Scatter": 90,
+                "Explorer": 60,
+                "Compass": 60,
+                "Binoculars": 70,
+                "A": 50,
+                "K": 50,
+                "Q": 50,
+                "J": 50
+                // Add other symbols and their respective z-indexes here
+            };
+
+            // Loop through each reel
+            for (let i = 0; i < numReels; i++) {
+                const symbolContainer = reelSymbols[i]; // Container for current reel symbols
+
+                // Loop through each symbol (child sprite) in this reel
+                for (let j = 0; j < symbolContainer.children.length; j++) {
+                    const sprite = symbolContainer.children[j];             // Visual representation (sprite)
+                    const currentSymbolName = apiReels[i][j];               // Symbol name from API
+
+                    // Check if this symbol is in the list of winning positions
+                    const isWinning = winningPositions.some(pos =>
+                        pos.symbol === currentSymbolName && pos.reel === i && pos.row === j
+                    );
+
+                    console.log('------------nice--------------------');
+                    console.log(isWinning);
+
+                    if (isWinning) {
+                        // Reset visual styles
+                        sprite.filters = [];
+                        sprite.visible = true;
+                        sprite.alpha = 1;
+                        sprite.tint = 0xFFFFFF;
+                        sprite.rotation = 0;
+
+                        // Assign zIndex based on the symbol name from the mapping
+                        sprite.zIndex = symbolZIndexMap[currentSymbolName] || 0;  // Default to 0 if not found in map
+
+                        // Store original values for later reset
+                        const originalX = sprite.x;
+                        const originalY = sprite.y;
+                        const originalScale = { x: sprite.scale.x, y: sprite.scale.y };
+                        const originalTexture = sprite.texture;
+
+                        // Define the maximum scale increase (20%)
+                        const maxScaleX = originalScale.x * 1.0;
+                        const maxScaleY = originalScale.y * 1.0;
+
+                        let animationTicker;
+
+                        switch (currentSymbolName) {
+                            case "Treasure Chest":
+                                animationTicker = () => {
+                                    sprite.visible = Math.floor(Date.now() / 100) % 2 === 0;
+                                    sprite.scale.set(maxScaleX, maxScaleY);
+                                };
+                                break;
+
+
+                            case "Wild":
+                                const blinkTexture = PIXI.Texture.from("wild3.gif");
+                                animationTicker = () => {
+                                    sprite.texture = Math.floor(Date.now() / 850) % 2 === 0
+                                        ? blinkTexture
+                                        : originalTexture;
+                                    sprite.scale.set(originalScale.x, originalScale.y);
+                                };
+                                break;
+
+                            case "Scatter":
+                                animationTicker = () => {
+                                    sprite.alpha = 0.5 
+                                    + 0.5 * Math.sin(Date.now() / 200);
+                                    sprite.scale.set(maxScaleX, maxScaleY);
+                                };
+                                break;
+
+                            case "Explorer":
+                                animationTicker = () => {
+                                    sprite.visible = Math.floor(Date.now() / 450) % 2 === 0;
+                                    sprite.scale.set(maxScaleX, maxScaleY);
+                                };
+                                break;
+
+                            case "Compass":
+                            case "Binoculars":
+                                animationTicker = () => {
+                                    sprite.x = originalX + Math.sin(Date.now() / 80) * 4;
+                                    sprite.scale.set(maxScaleX, maxScaleY);
+                                };
+                                break;
+
+                            case "A":
+                            case "K":
+                            case "Q":
+                            case "J":
+                                animationTicker = () => {
+                                    sprite.visible = Math.floor(Date.now() / 450) % 2 === 0;
+                                    sprite.scale.set(maxScaleX, maxScaleY);
+                                };
+                                break;
+
+                            default:
+                                const blinkTexture2 = PIXI.Texture.from("explorer_blink.gif");
+                                animationTicker = () => {
+                                    sprite.texture = Math.floor(Date.now() / 300) % 2 === 0
+                                        ? blinkTexture2
+                                        : originalTexture;
+                                    sprite.scale.set(originalScale.x, originalScale.y);
+                                };
+                                
+                                
+                        }
+
+                        // Start the animation
+                        const tickerRef = app.ticker.add(animationTicker);
+                        sprite._tickerRef = tickerRef;
+
+                        // Stop animation after 3 seconds and reset everything
+                        setTimeout(() => {
+                            if (app.ticker && sprite._tickerRef) {
+                                app.ticker.remove(sprite._tickerRef);
+                            }
+
+                            sprite.visible = true;
+                            sprite.alpha = 1;
+                            sprite.tint = 0xFFFFFF;
+                            sprite.scale.set(originalScale.x, originalScale.y);
+                            sprite.rotation = 0;
+                            sprite.texture = originalTexture;
+                            sprite.x = originalX;
+                            sprite.y = originalY;
+
+                            // Reset zIndex to ensure it doesn't affect other symbols
+                            sprite.zIndex = 0;
+
+                            delete sprite._tickerRef;
+                        }, 3000);
+                    }
+                }
+            }
+        }
+
+
+        // Function to play spin sound
+        function playSpinSound() {
+            if (soundEffectsEnabled && spinSound) {
+                spinSound.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+
+        // Function to play win sound
+        function playWinSound() {
+            if (soundEffectsEnabled && winSound) {
+                winSound.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+
+        // Kong API integration
+        async function spinKongGame(params) {
+            try {
+
+                // dnwwndnwfnfnnw(dfdf);
+
+                console.log(
+                    JSON.stringify(params)
+                )
+                const API_BASE_URL = "https://b.api.ibibe.africa";
+                
+                const response = await fetch(`${API_BASE_URL}/spin/kong`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(params),
+                });
+
+                if (!response.ok) {
+                    // Handle HTTP errors
+                    const errorText = await response.text();
+                    console.error(`API error (${response.status}): ${errorText}`);
+                    throw new Error(`API error (${response.status}): ${errorText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.log('------------------------')
+                console.error("Error calling Kong API:", error);
+                
+                // Fallback to mock response if API call fails
+                return generateMockResponse(params);
+            }
+        }
+
+        // Mock response generator for fallback
+        function generateMockResponse(params) {
+            // Generate random reels
+            const reels = [];
+            for (let i = 0; i < 5; i++) {
+                const reel = [];
+                for (let j = 0; j < 3; j++) {
+                    const symbolKeys = Object.keys(KONG_SYMBOLS);
+                    const randomIndex = Math.floor(Math.random() * symbolKeys.length * 0.8);
+                    const symbol = symbolKeys[Math.min(randomIndex, symbolKeys.length - 1)];
+                    reel.push(symbol);
+                }
+                reels.push(reel);
+            }
+            
+            // Determine if free spins are triggered (rare event - 5% chance)
+            const freeSpinTriggered = params.is_free_spin ? false : Math.random() < 0.05;
+            
+            // Calculate win amount (simplified logic for demo)
+            let winAmount = 0;
+            let bonusMultiplier = params.bonus_multiplier;
+            let freeSpinCount = params.free_spin_count;
+            
+            // Check for winning combinations
+            const hasWin = Math.random() < 0.3; // 30% chance of winning
+            
+            if (hasWin) {
+                // Calculate a random win amount based on bet
+                const betAmount = params.is_free_spin ? params.original_bet_amount : params.bet_amount;
+                const multiplier = Math.floor(Math.random() * 10) + 1; // 1-10x multiplier
+                winAmount = betAmount * multiplier;
+                
+                // Apply bonus multiplier in free spin mode
+                if (params.is_free_spin && params.bonus_multiplier > 0) {
+                    winAmount *= params.bonus_multiplier;
+                }
+            }
+            
+            // Handle free spins logic
+            if (freeSpinTriggered) {
+                freeSpinCount = 13; // Initial free spins award
+                
+                // Determine bonus multiplier based on scatter count (simplified)
+                const scatterCount = Math.floor(Math.random() * 3) + 5; // 5-7 scatters
+                
+                if (scatterCount === 5) bonusMultiplier = 3;
+                else if (scatterCount === 6) bonusMultiplier = 6;
+                else if (scatterCount === 7) bonusMultiplier = 9;
+                else if (scatterCount === 8) bonusMultiplier = 18;
+                else if (scatterCount === 9) bonusMultiplier = 36;
+                else bonusMultiplier = 72;
+            } else if (params.is_free_spin) {
+                // Decrement free spin count
+                freeSpinCount = Math.max(0, params.free_spin_count - 1);
+            }
+
+
+            return {
+                status: "success",
+                message: "",
+                reels: reels,
+                win_amount: winAmount,
+                is_free_spin: freeSpinCount > 0,
+                free_spin_count: freeSpinCount,
+                bonus_multiplier: bonusMultiplier,
+                free_spin_triggered: freeSpinTriggered
+            };
+        }
+
+
+
+        function rotateSpinButtonImage() {
+            const spinButtonInnerImage = document.getElementById('spin_img');
+            spinButtonInnerImage.style.transition = 'transform 0.5s ease';
+            spinButtonInnerImage.style.transform = 'rotate(180deg)';
+        }
+
+        function resetSpinButtonImage() {
+            const spinButtonInnerImage = document.getElementById('spin_img');
+            spinButtonInnerImage.style.transition = 'transform 0.5s ease';
+            spinButtonInnerImage.style.transform = 'rotate(360deg)';
+        }
+
+        // Update the spin function to include rotation handling
+        async function spin() {
+            if (spinning || (balance < stake && !isFreeSpinMode)) return;
+            if (stake <= 0 || (stake > balance && !isFreeSpinMode)) {
+                alert("Invalid stake amount!");
+                return;
+            }
+
+            // Rotate the spin button image before spinning
+            rotateSpinButtonImage();
+
+            // Deduct bet amount if not in free spin mode
+            if (!isFreeSpinMode) {
+                balance -= stake;
+                balanceText.textContent = balance.toFixed(2);
+            }
+
+            // Play spin sound if enabled
+            playSpinSound();
+            spinning = true;
+
+            // Hide win message
+            winMessageElement.style.display = 'none';
+            document.getElementById('update_winnings').innerHTML = '0.00';
+
+            // Call the Kong API
+            const spinRequest = {
+                client_id: "1",
+                game_id: "44",
+                player_id: "22",
+                bet_amount: isFreeSpinMode ? 0 : stake,
+                is_free_spin: isFreeSpinMode,
+                free_spin_count: freeSpinCount,
+                bonus_multiplier: bonusMultiplier,
+                original_bet_amount: isFreeSpinMode ? originalBetAmount : 0
+            };
+
+            try {
+                const result = await spinKongGame(spinRequest);
+                console.log(result)
+
+                // Update the reels with the result
+                spinAnimation(() => {
+                    // Reset the spin button image after animation completes
+                    resetSpinButtonImage();
+
+                    // Update win amount
+                    if (result.win_amount > 0) {
+                        updateWinnings(result.win_amount);
+                        showWinMessage(result.win_amount, bonusMultiplier);
+
+                        // Update balance with winnings
+                        balance += result.win_amount;
+                        balanceText.textContent = balance.toFixed(2);
+
+                        // Play win sound
+                        playWinSound();
+                    } else {
+                        document.getElementById('update_winnings').innerHTML = '0.00';
+                    }
+
+                    // Handle free spins
+                    if (result.free_spin_triggered && !isFreeSpinMode) {
+
+                        document.getElementById('img_top').src = 'volcano.gif'
+
+                        document.getElementById("playground").style.backgroundImage = "url('nbcg3.png')";
+
+                        changeBackground('nbcg4.png');
+                        resizeBackground();
+
+                        document.getElementById("results_holder").style.backgroundImage = "url('resultsbcg4.png')";
+
+
+
+                        async function fetchGifAsBuffer(url) {
+                            const response = await fetch(url);
+                            const buffer = await response.arrayBuffer();
+                            return new Uint8Array(buffer); // omggif needs Uint8Array
+                        }
+
+                        function getGifDuration(buffer) {
+                            const reader = new GifReader(buffer);
+                            const frameCount = reader.numFrames();
+                            let duration = 0;
+
+                            for (let i = 0; i < frameCount; i++) {
+                            const info = {};
+                            reader.frameInfo(i, info);
+                            // Delay is in hundredths of a second (1/100 s)
+                            const delay = info.delay || 10;
+                            duration += delay * 10; // Convert to milliseconds
+                            }
+
+                            return duration;
+                        }
+
+                        async function onGifFinish(url, callback) {
+                            // const buffer = await fetchGifAsBuffer(url);
+                            // const duration = getGifDuration(buffer);
+                            // console.log(`GIF duration: ${duration}ms`);
+                            setTimeout(callback, 4500);
+                        }
+
+                        const gifElement = document.getElementById("img_top");
+                        const gifUrl = gifElement.src;
+
+                        onGifFinish(gifUrl, () => {
+                            // console.log("GIF finished playing once.");
+                            document.getElementById('img_top').src = 'volcano-part-2-complete.gif'
+                            // Add your custom logic here
+                        });
+                        
+                        // Free spins were just triggered
+                        isFreeSpinMode = true;
+                        freeSpinCount = result.free_spin_count;
+                        bonusMultiplier = result.bonus_multiplier;
+                        originalBetAmount = stake;
+
+
+                        document.getElementById('freespins_display').style.display = "flex";
+                        document.getElementById('normalspins_display').style.display = "none";
+
+                        document.getElementById('remaining_fs_holder').innerHTML = freeSpinCount;
+                        document.getElementById('total_fs_holder').innerHTML = freeSpinCount;
+
+
+                        // Update free spins indicator
+                        freeSpinsIndicator.style.display = 'block';
+                        freeSpinsCountElement.textContent = freeSpinCount;
+                        bonusMultiplierElement.textContent = bonusMultiplier;
+                    } else if (isFreeSpinMode) {
+                        // Already in free spin mode
+                        freeSpinCount = result.free_spin_count;
+                        freeSpinsCountElement.textContent = freeSpinCount;
+
+                        document.getElementById('remaining_fs_holder').innerHTML = freeSpinCount;
+
+                        // Check if free spins are over
+                        if (result.free_spin_count === 0) {
+                            isFreeSpinMode = false;
+                            bonusMultiplier = 0;
+                            originalBetAmount = 0;
+                            freeSpinsIndicator.style.display = 'none';
+                            document.getElementById('freespins_display').style.display = "none";
+                            document.getElementById('normalspins_display').style.display = "flex";
+
+                            document.getElementById('remaining_fs_holder').innerHTML = 0;
+                            document.getElementById('total_fs_holder').innerHTML = 0;
+
+
+                            document.getElementById('img_top').src = 'bg-top6.gif'
+
+                            document.getElementById("playground").style.backgroundImage = "url('nbcg1.png')";
+
+                            changeBackground('nbcg2.png');
+                            resizeBackground();
+
+                            document.getElementById("results_holder").style.backgroundImage = "url('resultsbcg3.png')";
+                            
+
+                        }
+                    }
+
+                    // Update auto spins
+                    if (autoSpins > 0) {
+                        autoSpins--;
+                        if (autoSpins == 0){
+                            remainingAutoSpins.innerHTML = ``;
+                        }else{
+                            remainingAutoSpins.innerHTML = `${autoSpins}`
+                        }
+                        if (autoSpins > 0 && balance >= stake) {
+                            setTimeout(() => spin(), 1000);
+                        }
+                    }
+                    
+                    else{
+                        remainingAutoSpins.innerHTML = ' ';
+                    }
+                    
+
+                    // Continue free spins automatically
+                    if (isFreeSpinMode && freeSpinCount > 0 && !spinning) {
+                        setTimeout(() => spin(), 1500);
+                    }
+                }, result);
+            } catch (error) {
+                console.error("Error during spin:", error);
+                spinning = false;
+
+                // Reset the spin button image on error
+                resetSpinButtonImage();
+
+                // Return bet amount if spin failed and not in free spin mode
+                if (!isFreeSpinMode) {
+                    balance += stake;
+                    balanceText.textContent = balance.toFixed(2);
+                }
+
+                alert("Error during spin. Please try again.");
+            }
+        }
+
+        // Update the spinButton event listener to handle the async function
+        spinButton.removeEventListener('click', spin);
+        spinButton.addEventListener('click', () => spin());
+
+        function updateWinnings(targetAmount) {
+            let element = document.getElementById('update_winnings');
+            let currentAmount = parseFloat(element.innerHTML) || 0;
+            let increment = (targetAmount - currentAmount) / 50; // Adjust speed
+
+            let counter = setInterval(() => {
+                currentAmount += increment;
+                element.innerHTML = `${currentAmount.toFixed(2)}`;
+
+                if ((increment > 0 && currentAmount >= targetAmount) || (increment < 0 && currentAmount <= targetAmount)) {
+                    element.innerHTML = `${targetAmount.toFixed(2)}`;
+                    clearInterval(counter);
+                }
+            }, 20); // Update every 20ms
+        }
+
+        // Show win message
+        function showWinMessage(amount, multiplier) {
+            // winMessageElement.style.display = 'block';
+            
+            // if (multiplier > 0) {
+            //     winAmountElement.innerHTML = `${amount.toFixed(2)} <span style="color: orange;">x${multiplier}</span>`;
+            // } else {
+            //     winAmountElement.textContent = amount.toFixed(2);
+            // }
+            
+            // Hide win message after a delay
+            // setTimeout(() => {
+            //     winMessageElement.style.display = 'none';
+            // }, 3000);
+            if (amount > 10){
+                showWinAnimation(amount)
+            }
+        }
+
+        // Stake button and overlay
+        stakeButton.addEventListener('click', () => {
+            if (!spinning && !isFreeSpinMode) {
+                stakeOverlay.style.display = 'block';
+                
+                // Highlight the currently selected stake
+                const stakeOptionButtons = stakeOptions.querySelectorAll('.option-button');
+                stakeOptionButtons.forEach(button => {
+                    const value = parseFloat(button.dataset.value);
+                    if (value === stake) {
+                        button.classList.add('selected');
+                    } else {
+                        button.classList.remove('selected');
+                    }
+                });
+            }
+        });
+
+        // Auto play button and overlay functionality
+        autoPlayButton.addEventListener('click', () => {
+            if (!spinning && !isFreeSpinMode) {
+                if (autoSpins > 0) {
+                    // Cancel auto spins
+                    autoSpins = 0;
+                } else {
+                    autoSpinOverlay.style.display = 'block';
+                    
+                    // Highlight the currently selected auto spins
+                    const autoSpinOptionButtons = autoSpinOptions.querySelectorAll('.option-button');
+                    autoSpinOptionButtons.forEach(button => {
+                        const value = parseInt(button.dataset.value);
+                        if (value === selectedAutoSpins) {
+                            button.classList.add('selected');
+                        } else {
+                            button.classList.remove('selected');
+                        }
+                    });
+                }
+            }
+        });
+
+        // Settings button and overlay functionality
+        settingsButton.addEventListener('click', () => {
+            // Store current settings temporarily in case user cancels
+            tempSoundEffectsEnabled = soundEffectsEnabled;
+            tempBackgroundMusicEnabled = backgroundMusicEnabled;
+            
+            settingsOverlay.style.display = 'block';
+            
+            // Update the display to match current settings
+            updateSoundOptionStyling(soundEffectsOption, soundEffectsIcon, soundEffectsEnabled);
+            updateSoundOptionStyling(backgroundMusicOption, backgroundMusicIcon, backgroundMusicEnabled);
+        });
+
+        // Function to update sound option styling
+        function updateSoundOptionStyling(option, icon, enabled) {
+            if (enabled) {
+                option.classList.add('selected');
+                icon.textContent = '🔊';
+            } else {
+                option.classList.remove('selected');
+                icon.textContent = '🔇';
+            }
+        }
+
+        // Toggle sound effects
+        soundEffectsOption.addEventListener('click', () => {
+            tempSoundEffectsEnabled = !tempSoundEffectsEnabled;
+            updateSoundOptionStyling(soundEffectsOption, soundEffectsIcon, tempSoundEffectsEnabled);
+        });
+
+        // Toggle background music
+        backgroundMusicOption.addEventListener('click', () => {
+            tempBackgroundMusicEnabled = !tempBackgroundMusicEnabled;
+            updateSoundOptionStyling(backgroundMusicOption, backgroundMusicIcon, tempBackgroundMusicEnabled);
+        });
+
+        // Cancel settings
+        cancelSettingsButton.addEventListener('click', () => {
+            settingsOverlay.style.display = 'none';
+            // Revert to previous settings (don't apply changes)
+        });
+
+        // Confirm settings
+        confirmSettingsButton.addEventListener('click', () => {
+            // Apply the temporary settings
+            soundEffectsEnabled = tempSoundEffectsEnabled;
+            backgroundMusicEnabled = tempBackgroundMusicEnabled;
+            
+            // Update background music based on new setting
+            if (backgroundMusicEnabled) {
+                backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+            } else {
+                backgroundMusic.pause();
+            }
+            
+            settingsOverlay.style.display = 'none';
+        });
+
+        // Handle stake option selection
+        stakeOptions.addEventListener('click', (e) => {
+            if (e.target.classList.contains('option-button')) {
+                // Remove selected class from all options
+                const options = stakeOptions.querySelectorAll('.option-button');
+                options.forEach(option => option.classList.remove('selected'));
+                
+                // Add selected class to clicked option
+                e.target.classList.add('selected');
+                
+                // Update selected stake value
+                selectedStake = parseFloat(e.target.dataset.value);
+            }
+        });
+
+        // Handle auto spin option selection
+        autoSpinOptions.addEventListener('click', (e) => {
+            if (e.target.classList.contains('option-button')) {
+                // Remove selected class from all options
+                const options = autoSpinOptions.querySelectorAll('.option-button');
+                options.forEach(option => option.classList.remove('selected'));
+                
+                // Add selected class to clicked option
+                e.target.classList.add('selected');
+                
+                // Update selected auto spins value
+                selectedAutoSpins = parseInt(e.target.dataset.value);
+            }
+        });
+
+        // Cancel stake selection
+        cancelStakeButton.addEventListener('click', () => {
+            stakeOverlay.style.display = 'none';
+            // Don't update the stake value
+        });
+
+        // Confirm stake selection
+        confirmStakeButton.addEventListener('click', () => {
+            stake = selectedStake;
+            currentStakeElement.textContent = stake.toFixed(1);
+            stakeOverlay.style.display = 'none';
+        });
+
+        // Cancel auto spin selection
+        cancelAutoSpinButton.addEventListener('click', () => {
+            autoSpinOverlay.style.display = 'none';
+            // Don't update the auto spins value
+        });
+
+        // Confirm auto spin selection and start auto play
+        confirmAutoSpinButton.addEventListener('click', () => {
+            if (selectedAutoSpins > 0) {
+                autoSpins = selectedAutoSpins;
+                autoSpinOverlay.style.display = 'none';
+                spin();
+            }
+        });
+
+        // Initialize
+        createReels();
+        balanceText.textContent = balance.toFixed(2);
+        currentStakeElement.textContent = stake.toFixed(1);
+        
+        // Handle orientation change specifically
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                app.renderer.resize(gameContainer.clientWidth, gameContainer.clientHeight);
+                resizeBackground();
+                createReels();
+            }, 300); // Delay to allow orientation to complete
+        });
+    </script>
+</body>
+</html>

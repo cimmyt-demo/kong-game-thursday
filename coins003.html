@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slot Machine Win Animation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #1a1a2e;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    button {
+      padding: 12px 24px;
+      background-color: #b8860b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #a67c00;
+    }
+
+    #winOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    #closeBtn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .win-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+    }
+
+    /* Shining light effect */
+    .shine-effect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .shine-effect::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+      animation: rotate 5s linear infinite;
+    }
+
+    .shine-effect::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%);
+      animation: rotate 8s linear infinite reverse;
+    }
+
+    .shine-rays {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+    }
+
+    .shine-rays::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(
+        transparent 0deg,
+        rgba(255,255,255,0) 340deg,
+        rgba(255,255,255,0.5) 350deg,
+        rgba(255,255,255,0) 360deg
+      );
+      animation: rotate 3s linear infinite;
+    }
+
+    .shine-rays::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: conic-gradient(
+        transparent 0deg,
+        rgba(255,255,255,0) 170deg,
+        rgba(255,255,255,0.5) 180deg,
+        rgba(255,255,255,0) 190deg,
+        transparent 190deg,
+        rgba(255,255,255,0) 340deg,
+        rgba(255,255,255,0.5) 350deg,
+        rgba(255,255,255,0) 360deg
+      );
+      animation: rotate 4s linear infinite reverse;
+    }
+
+    @keyframes rotate {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Win level specific shine effects */
+    .big-win-shine {
+      background-color: rgba(76, 201, 240, 0.3);
+      box-shadow: 0 0 50px 20px rgba(76, 201, 240, 0.5), 
+                  0 0 100px 40px rgba(76, 201, 240, 0.3);
+    }
+
+    .big-win-shine::before,
+    .big-win-shine::after,
+    .big-win-shine .shine-rays::before,
+    .big-win-shine .shine-rays::after {
+      filter: hue-rotate(180deg);
+    }
+
+    .mega-win-shine {
+      background-color: rgba(255, 215, 0, 0.3);
+      box-shadow: 0 0 50px 20px rgba(255, 215, 0, 0.5), 
+                  0 0 100px 40px rgba(255, 215, 0, 0.3);
+    }
+
+    .ultra-win-shine {
+      background-color: rgba(255, 0, 84, 0.3);
+      box-shadow: 0 0 50px 20px rgba(255, 0, 84, 0.5), 
+                  0 0 100px 40px rgba(255, 0, 84, 0.3);
+    }
+
+    .ultra-win-shine::before,
+    .ultra-win-shine::after,
+    .ultra-win-shine .shine-rays::before,
+    .ultra-win-shine .shine-rays::after {
+      filter: hue-rotate(320deg);
+    }
+
+    .win-text {
+      font-size: 60px;
+      font-weight: bold;
+      margin-bottom: 16px;
+      text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+      animation: text-flicker 2s infinite;
+      transition: color 0.5s, transform 0.5s;
+      position: relative;
+      z-index: 2;
+    }
+
+    .counter-text {
+      font-size: 70px;
+      font-weight: bold;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+      animation: pulse 1.5s infinite;
+      position: relative;
+      z-index: 2;
+    }
+
+    #coinsContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .coin {
+      position: absolute;
+      filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.7));
+      z-index: 5;
+    }
+
+    /* Win level styles */
+    .big-win {
+      color: #4cc9f0;
+    }
+
+    .mega-win {
+      color: #ffd700;
+    }
+
+    .ultra-win {
+      color: #ff0054;
+    }
+
+    @keyframes text-flicker {
+      0%, 100% {
+        opacity: 1;
+        text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+      }
+      50% {
+        opacity: 0.9;
+        text-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes scale-in {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .scale-in {
+      animation: scale-in 0.5s forwards;
+    }
+  </style>
+</head>
+<body>
+  <h1>Slot Machine Win Animation</h1>
+  <div>
+    <button id="bigWinBtn" style="margin-right: 10px;">Show BIG WIN ($50)</button>
+    <button id="megaWinBtn" style="margin-right: 10px;">Show MEGA WIN ($500)</button>
+    <button id="ultraWinBtn">Show ULTRA WIN ($5000)</button>
+  </div>
+
+  <div id="winOverlay">
+    <button id="closeBtn">✕</button>
+    <div class="win-content">
+      <div id="shineEffect" class="shine-effect big-win-shine">
+        <div class="shine-rays"></div>
+      </div>
+      <h2 id="winText" class="win-text big-win">BIG WIN</h2>
+      <div class="counter-text" id="winAmount">$0</div>
+    </div>
+    <div id="coinsContainer"></div>
+  </div>
+
+  <script>
+    // Create a simple coin SVG as a data URL
+    const coinSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="30" fill="#ffd700" stroke="#b8860b" stroke-width="2"/>
+        <text x="32" y="38" font-size="24" text-anchor="middle" fill="#b8860b" font-weight="bold">$</text>
+      </svg>
+    `;
+    const coinDataUrl = 'data:image/svg+xml;base64,' + btoa(coinSvg);
+
+    const winOverlay = document.getElementById('winOverlay');
+    const closeBtn = document.getElementById('closeBtn');
+    const bigWinBtn = document.getElementById('bigWinBtn');
+    const megaWinBtn = document.getElementById('megaWinBtn');
+    const ultraWinBtn = document.getElementById('ultraWinBtn');
+    const winText = document.getElementById('winText');
+    const winAmount = document.getElementById('winAmount');
+    const coinsContainer = document.getElementById('coinsContainer');
+    const shineEffect = document.getElementById('shineEffect');
+
+    // Win level configurations
+    const winLevels = {
+      big: {
+        text: 'BIG WIN',
+        textClass: 'big-win',
+        shineClass: 'big-win-shine',
+        threshold: 100,
+        coinCount: 30
+      },
+      mega: {
+        text: 'MEGA WIN',
+        textClass: 'mega-win',
+        shineClass: 'mega-win-shine',
+        threshold: 1000,
+        coinCount: 50
+      },
+      ultra: {
+        text: 'ULTRA WIN',
+        textClass: 'ultra-win',
+        shineClass: 'ultra-win-shine',
+        threshold: Infinity,
+        coinCount: 80
+      }
+    };
+
+    // Function to determine win level based on amount
+    function getWinLevel(amount) {
+      if (amount < winLevels.big.threshold) {
+        return 'big';
+      } else if (amount < winLevels.mega.threshold) {
+        return 'mega';
+      } else {
+        return 'ultra';
+      }
+    }
+
+    // Function to show the win animation
+    function showWinAnimation(amount) {
+      // Reset any existing animations
+      clearTimeout(window.autoCloseTimeout);
+      
+      // Set initial win level
+      let currentLevel = 'big';
+      updateWinLevel(currentLevel);
+      
+      // Show the overlay
+      winOverlay.style.display = 'flex';
+      
+      // Start with $0
+      let currentAmount = 0;
+      winAmount.textContent = '$' + currentAmount.toLocaleString();
+      
+      // Create the coin fountain
+      setTimeout(() => {
+        createCoinFountain(winLevels[currentLevel].coinCount);
+      }, 100);
+      
+      // Animate the counter
+      const duration = 3000; // 3 seconds for the counter
+      const fps = 60;
+      const increment = amount / (duration / 1000 * fps);
+      const startTime = performance.now();
+      
+      function updateCounter(timestamp) {
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        currentAmount = progress * amount;
+        winAmount.textContent = '$' + Math.floor(currentAmount).toLocaleString();
+        
+        // Check if we need to upgrade the win level
+        const newLevel = getWinLevel(currentAmount);
+        if (newLevel !== currentLevel) {
+          currentLevel = newLevel;
+          updateWinLevel(currentLevel);
+          
+          // Add more coins for the new level
+          createCoinFountain(winLevels[currentLevel].coinCount);
+        }
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateCounter);
+        } else {
+          // Counter finished
+          winAmount.textContent = '$' + amount.toLocaleString();
+          
+          // Auto close after 3 seconds
+          window.autoCloseTimeout = setTimeout(() => {
+            closeWinAnimation();
+          }, 3000);
+        }
+      }
+      
+      requestAnimationFrame(updateCounter);
+    }
+    
+    // Function to update the win level visuals
+    function updateWinLevel(level) {
+      // Remove all classes
+      winText.classList.remove('big-win', 'mega-win', 'ultra-win');
+      shineEffect.classList.remove('big-win-shine', 'mega-win-shine', 'ultra-win-shine');
+      
+      // Add new classes
+      winText.classList.add(winLevels[level].textClass);
+      shineEffect.classList.add(winLevels[level].shineClass);
+      
+      // Update text with animation
+      winText.style.transform = 'scale(0.8)';
+      setTimeout(() => {
+        winText.textContent = winLevels[level].text;
+        winText.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+          winText.style.transform = 'scale(1)';
+        }, 150);
+      }, 150);
+    }
+
+    // Function to close the win animation
+    function closeWinAnimation() {
+      winOverlay.style.display = 'none';
+      clearTimeout(window.autoCloseTimeout);
+    }
+
+    // Function to create the coin fountain
+    function createCoinFountain(numberOfCoins) {
+      // Create fountain of coins
+      const containerWidth = coinsContainer.offsetWidth;
+      const containerHeight = coinsContainer.offsetHeight;
+      
+      // Center bottom position
+      const centerX = containerWidth / 2;
+      
+      for (let i = 0; i < numberOfCoins; i++) {
+        setTimeout(() => {
+          // Create coin element
+          const coin = document.createElement('img');
+          coin.src = coinDataUrl;
+          coin.className = 'coin';
+          
+          // Random size between 30-60px
+          const coinSize = Math.floor(Math.random() * 30) + 30;
+          coin.style.width = `${coinSize}px`;
+          coin.style.height = `${coinSize}px`;
+          
+          // Start at center bottom with slight random offset
+          const startX = centerX + (Math.random() - 0.5) * 50;
+          coin.style.left = `${startX}px`;
+          coin.style.bottom = '0px';
+          
+          // Add to container
+          coinsContainer.appendChild(coin);
+          
+          // Animate the coin in a fountain pattern
+          animateCoinFountain(coin, startX, containerHeight);
+        }, i * 50); // Stagger the coin creation
+      }
+    }
+
+    // Function to animate a single coin in a fountain pattern
+    function animateCoinFountain(coin, startX, containerHeight) {
+      const containerWidth = coinsContainer.offsetWidth;
+      
+      // Random angle for the fountain spread (narrower at the bottom, wider at the top)
+      const angle = ((Math.random() - 0.5) * Math.PI) / 2; // -45 to +45 degrees
+      
+      // Random initial velocity (speed)
+      const initialVelocity = 15 + Math.random() * 10;
+      
+      // Calculate velocity components
+      const vx = initialVelocity * Math.sin(angle);
+      const vy = initialVelocity * Math.cos(angle);
+      
+      // Animation parameters
+      const gravity = 0.5;
+      const duration = 2000 + Math.random() * 1000;
+      const fps = 60;
+      const totalFrames = (duration / 1000) * fps;
+      
+      // Animation variables
+      let currentFrame = 0;
+      let x = startX;
+      let y = 0;
+      let velocityY = vy;
+      let rotation = 0;
+      
+      // Animation function
+      const animate = () => {
+        if (!coin.parentNode) return; // Stop if coin was removed
+        
+        // Update position with gravity
+        x += vx;
+        velocityY -= gravity;
+        y += velocityY;
+        rotation += 5;
+        
+        // Update coin position and rotation
+        coin.style.left = `${x}px`;
+        coin.style.bottom = `${y}px`;
+        coin.style.transform = `rotate(${rotation}deg)`;
+        
+        // Check if coin is still visible
+        if (y < -100 || x < -100 || x > containerWidth + 100) {
+          if (coin.parentNode) {
+            coin.parentNode.removeChild(coin);
+          }
+          return;
+        }
+        
+        // Continue animation
+        currentFrame++;
+        if (currentFrame < totalFrames) {
+          requestAnimationFrame(animate);
+        } else {
+          // Remove coin after animation completes
+          if (coin.parentNode) {
+            coin.parentNode.removeChild(coin);
+          }
+        }
+      };
+      
+      // Start animation
+      requestAnimationFrame(animate);
+    }
+
+    // Event listeners
+    bigWinBtn.addEventListener('click', () => {
+      showWinAnimation(50);
+    });
+    
+    megaWinBtn.addEventListener('click', () => {
+      showWinAnimation(500);
+    });
+    
+    ultraWinBtn.addEventListener('click', () => {
+      showWinAnimation(5000);
+    });
+    
+    closeBtn.addEventListener('click', () => {
+      closeWinAnimation();
+    });
+    
+    winOverlay.addEventListener('click', (e) => {
+      if (e.target === winOverlay) {
+        closeWinAnimation();
+      }
+    });
+
+    // Make the function available globally
+    window.showWinAnimation = showWinAnimation;
+  </script>
+</body>
+</html>

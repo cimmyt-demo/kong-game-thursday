@@ -1,0 +1,205 @@
+.btn-gold {
+    background-color: #b8860b;
+    color: white;
+    border: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+  
+  .btn-gold:hover {
+    background-color: #a67c00;
+    color: white;
+  }
+  
+  #winOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  #closeBtn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 20;
+  }
+  
+  .win-content {
+    position: relative;
+    text-align: center;
+    z-index: 15;
+  }
+  
+  /* Rotating sunburst effect */
+  .sunburst-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80vw;
+    max-width: 600px;
+    height: 80vw;
+    max-height: 600px;
+    z-index: 10; /* Higher than coins */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    pointer-events: none;
+  }
+  
+  .sunburst {
+    width: 100%;
+    height: 100%;
+    background-image: url("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/BigWin_FX-pnFZvgsE0rjtfTiTODDEY1oM6AHQJ4.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    animation: rotate 10s linear infinite;
+  }
+  
+  /* Colored overlays for different win levels */
+  .big-win-color {
+    filter: none;
+  }
+  
+  .mega-win-color {
+    filter: none; /* Original gold/yellow color */
+  }
+  
+  .ultra-win-color {
+    filter: none;
+  }
+  
+  @keyframes rotate {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .win-text {
+    font-size: calc(2rem + 2vw);
+    font-weight: bold;
+    margin-bottom: 16px;
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+    animation: text-flicker 2s infinite;
+    transition: color 0.5s, transform 0.5s;
+    position: relative;
+    z-index: 20;
+  }
+  
+  .counter-text {
+    font-size: calc(2.5rem + 2vw);
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+    animation: pulse 1.5s infinite;
+    position: relative;
+    z-index: 20;
+  }
+  
+  #coinsContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 5; /* Lower than sunburst */
+  }
+  
+  .coin {
+    position: absolute;
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.7));
+    transition: transform 0.05s ease-out;
+    z-index: 5; /* Lower than sunburst */
+  }
+  
+  /* Win level styles */
+  .big-win {
+    color: #ffd700;
+  }
+  
+  .mega-win {
+    color: #ffd700;
+  }
+  
+  .ultra-win {
+    color: #ffd700;
+  }
+  
+  @keyframes text-flicker {
+    0%,
+    100% {
+      opacity: 1;
+      text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+    }
+    50% {
+      opacity: 0.9;
+      text-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+    }
+  }
+  
+  @keyframes pulse {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+  
+  @keyframes scale-in {
+    0% {
+      transform: scale(0.5);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .scale-in {
+    animation: scale-in 0.5s forwards;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 576px) {
+    .btn-group {
+      flex-direction: column;
+      width: 100%;
+    }
+  
+    .btn-group .btn {
+      margin-bottom: 0.5rem;
+      width: 100%;
+    }
+  
+    .win-text {
+      font-size: calc(1.5rem + 2vw);
+    }
+  
+    .counter-text {
+      font-size: calc(2rem + 2vw);
+    }
+  }
+  

@@ -1,0 +1,530 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #2c2c2c;
+    touch-action: manipulation;
+}
+
+#game-container {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'aldo', sans-serif;
+}
+
+.game-canvas-container {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    width: 96%;
+    margin: auto;
+    overflow: hidden;
+    z-index: 888;
+}
+
+.game-controls {
+    margin: 0px !important;
+    padding: 0px !important;
+    width: 100%;
+    background-image: url('wood.jpg');
+    border-radius: 12px 12px 0 0;
+    z-index: 1000;
+    bottom: 0 !important;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.spin-button, .autoplay-button {
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-height: 600px) {
+    .game-controls {
+        padding: 5px;
+    }
+    .control-group {
+        gap: 5px;
+    }
+    .input-group {
+        margin-bottom: 5px;
+    }
+}
+
+/* Prevent text selection */
+* {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Allow input in number fields */
+input[type="number"] {
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}
+
+/* Stake button and overlay styles */
+.stake-button {
+    background-color: #212529;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 1);
+    z-index: 2000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.overlay-content {
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    padding: 20px;
+    margin-top: 100px;
+}
+
+.overlay-header {
+    color: #e4d594;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.option-button {
+    background: linear-gradient(to bottom, #353333, #272525);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px 0;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.option-button:hover, .option-button.selected {
+    background-color: #25282b;
+    box-shadow: 
+        inset 0 0 0 2px rgba(0, 0, 0, 0.15),
+        0 0 0 2px rgba(0, 0, 0, 0.15),
+        inset 0 0 0.875rem #FCEAAC,
+        0 0 0.875rem #FCEAAC;
+}
+
+.overlay-footer {
+    width: 80%;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-bottom: 50px;
+    position: fixed;
+    bottom: 0;
+}
+
+.overlay-footer button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.cancel-button {
+    background-color: #333;
+    color: white;
+}
+
+.confirm-button {
+    background-color: #333;
+    box-shadow: 0 0 4px #e4d594;
+    color: white;
+}
+
+.divider-container {
+    color: #e4d594;
+}
+
+.divider {
+    height: 2px;
+    background-color: #e4d594;
+    width: 30vw;
+}
+
+.divider-text {
+    margin: 0 10px;
+}
+
+.divider-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 16px 0;
+}
+
+.check-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-left: 4px;
+    position: relative;
+}
+
+.check-icon:before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 12px;
+    border-right: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(45deg);
+    top: 0;
+    left: 4px;
+}
+
+.victor-mono {
+    font-family: "Victor Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* Settings overlay styles */
+.sound-option {
+    background: linear-gradient(to bottom, #353333, #272525);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 15px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px 0px;
+}
+
+.sound-option.selected {
+    box-shadow: 
+        inset 0 0 0 2px rgba(0, 0, 0, 0.15),
+        0 0 0 2px rgba(0, 0, 0, 0.15),
+        inset 0 0 0.875rem #FCEAAC,
+        0 0 0.875rem #FCEAAC;
+}
+
+.icon-container {
+    font-size: 1.5rem;
+    display: inline-block;
+    width: 30px;
+    text-align: center;
+}
+
+.loader-container {
+    height: 10px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+}
+
+.loader-bar {
+    height: 100%;
+    width: 0;
+    background: orange;
+    transition: width 0.3s ease;
+}
+
+.glowing-button {
+    position: absolute;
+    bottom: 9%;
+    padding: 6px 50px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    border-radius: 12px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #c09c0e;
+    background-color: #fada60;
+    font-weight: bold;
+    text-shadow: 
+        -1px -1px 0 orange,  
+        1px -1px 0 orange,
+        -1px  1px 0 orange,
+        1px  1px 0 orange;
+    overflow: hidden;
+}
+
+.glowing-button::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+        100deg,
+        rgba(255, 255, 255, 0) 40%,
+        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0) 60%
+    );
+    animation: light-sweep 2s infinite linear;
+}
+
+@keyframes light-sweep {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+.free-spins-indicator {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(192, 156, 14, 0.8);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    z-index: 100;
+    display: none;
+}
+
+.win-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #fada60;
+    padding: 15px 30px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    animation: bounce 1s infinite;
+    z-index: 100;
+    display: none;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translate(-50%, -55%);
+    }
+    50% {
+        transform: translate(-50%, -45%);
+    }
+}
+
+/* Winning symbol highlight animations - ENHANCED */
+@keyframes winningSymbolPulse {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 215, 0, 0.8));
+        transform: scale(1);
+    }
+    50% {
+        filter: brightness(1.5) drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+        transform: scale(1.05);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 215, 0, 0.8));
+        transform: scale(1);
+    }
+}
+
+@keyframes treasureChestWin {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 215, 0, 0.8));
+        transform: scale(1) rotate(-2deg);
+    }
+    50% {
+        filter: brightness(1.7) drop-shadow(0 0 15px rgba(255, 215, 0, 1));
+        transform: scale(1.08) rotate(2deg);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 215, 0, 0.8));
+        transform: scale(1) rotate(-2deg);
+    }
+}
+
+@keyframes wildWin {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 0, 0, 0.8));
+        transform: scale(1) rotate(0deg);
+    }
+    25% {
+        filter: brightness(1.5) drop-shadow(0 0 15px rgba(255, 0, 0, 0.8));
+        transform: scale(1.1) rotate(0deg);
+    }
+    50% {
+        filter: brightness(1.5) drop-shadow(0 0 15px rgba(0, 255, 0, 0.8));
+        transform: scale(1.1) rotate(0deg);
+    }
+    75% {
+        filter: brightness(1.5) drop-shadow(0 0 15px rgba(0, 0, 255, 0.8));
+        transform: scale(1.1) rotate(0deg);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 0, 0, 0.8));
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes scatterWin {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0.8));
+        transform: scale(1);
+    }
+    25% {
+        filter: brightness(1.5) drop-shadow(0 0 20px rgba(255, 255, 255, 0.9));
+        transform: scale(1.15);
+    }
+    50% {
+        filter: brightness(1.2) drop-shadow(0 0 10px rgba(255, 255, 255, 0.7));
+        transform: scale(1.05);
+    }
+    75% {
+        filter: brightness(1.5) drop-shadow(0 0 20px rgba(255, 255, 255, 0.9));
+        transform: scale(1.15);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 255, 255, 0.8));
+        transform: scale(1);
+    }
+}
+
+@keyframes explorerWin {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(139, 69, 19, 0.8));
+        transform: scale(1) translateY(0);
+    }
+    50% {
+        filter: brightness(1.4) drop-shadow(0 0 12px rgba(139, 69, 19, 0.9));
+        transform: scale(1.07) translateY(-3px);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(139, 69, 19, 0.8));
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes compassWin {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(70, 130, 180, 0.8));
+        transform: scale(1) rotate(0deg);
+    }
+    50% {
+        filter: brightness(1.4) drop-shadow(0 0 12px rgba(70, 130, 180, 0.9));
+        transform: scale(1.05) rotate(15deg);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(70, 130, 180, 0.8));
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+@keyframes binocularsWin {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(0, 128, 0, 0.8));
+        transform: scale(1) translateX(0);
+    }
+    25% {
+        filter: brightness(1.3) drop-shadow(0 0 10px rgba(0, 128, 0, 0.9));
+        transform: scale(1.05) translateX(-3px);
+    }
+    75% {
+        filter: brightness(1.3) drop-shadow(0 0 10px rgba(0, 128, 0, 0.9));
+        transform: scale(1.05) translateX(3px);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(0, 128, 0, 0.8));
+        transform: scale(1) translateX(0);
+    }
+}
+
+@keyframes cardSymbolWin {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 215, 0, 0.6));
+        transform: scale(1);
+    }
+    50% {
+        filter: brightness(1.3) drop-shadow(0 0 8px rgba(255, 215, 0, 0.7));
+        transform: scale(1.04);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 0px rgba(255, 215, 0, 0.6));
+        transform: scale(1);
+    }
+}
+
+.winning-symbol-treasure-chest {
+    animation: treasureChestWin 1.2s infinite;
+}
+
+.winning-symbol-wild {
+    animation: wildWin 1.5s infinite;
+}
+
+.winning-symbol-scatter {
+    animation: scatterWin 2s infinite;
+}
+
+.winning-symbol-explorer {
+    animation: explorerWin 1.2s infinite;
+}
+
+.winning-symbol-compass {
+    animation: compassWin 1.3s infinite;
+}
+
+.winning-symbol-binoculars {
+    animation: binocularsWin 1.4s infinite;
+}
+
+.winning-symbol-card {
+    animation: cardSymbolWin 1s infinite;
+}
+
+.winning-symbol {
+    animation: winningSymbolPulse 1s infinite;
+}

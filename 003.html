@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Slot Machine Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: white;
+            touch-action: manipulation;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .game-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .spin-button {
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background-color: #e63946;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .spin-button:hover {
+            background-color: #c1121f;
+        }
+
+        .spin-button:disabled {
+            background-color: #888;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Win overlay styles */
+        #winOverlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            top: 0;
+            left: 0;
+        }
+
+        #closeBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 20;
+        }
+
+        .win-content {
+            position: relative;
+            text-align: center;
+            z-index: 15;
+        }
+
+        /* Rotating sunburst effect */
+        .sunburst-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw;
+            max-width: 600px;
+            height: 80vw;
+            max-height: 600px;
+            z-index: 10; /* Higher than coins */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            pointer-events: none;
+        }
+
+        .sunburst {
+            width: 100%;
+            height: 100%;
+            background-image: url('https://placeholder.svg?height=400&width=400&query=gold sunburst pattern');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            animation: rotate 10s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .win-text {
+            font-size: calc(2rem + 2vw);
+            font-weight: bold;
+            margin-bottom: 16px;
+            text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+            animation: text-flicker 2s infinite;
+            transition: color 0.5s, transform 0.5s;
+            position: relative;
+            z-index: 20;
+        }
+
+        .counter-text {
+            font-size: calc(0.5rem + 2vw);
+            font-weight: bold;
+            color: #a67c00;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+            animation: pulse 1.5s infinite;
+            position: relative;
+            z-index: 20;
+        }
+
+        #coinsContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 5; /* Lower than sunburst */
+        }
+
+        .coin {
+            position: absolute;
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.7));
+            transition: transform 0.05s ease-out;
+            z-index: 5; /* Lower than sunburst */
+        }
+
+        /* Win level styles */
+        .big-win {
+            color: #ffd700;
+        }
+
+        .mega-win {
+            color: #ffd700;
+        }
+
+        .ultra-win {
+            color: #ffd700;
+        }
+
+        @keyframes text-flicker {
+            0%, 100% {
+                opacity: 1;
+                text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+            }
+            50% {
+                opacity: 0.9;
+                text-shadow: 0 0 15px currentColor, 0 0 25px currentColor;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes scale-in {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .scale-in {
+            animation: scale-in 0.5s forwards;
+        }
+
+        /* Free spins indicator */
+        .free-spins-indicator {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(192, 156, 14, 0.8);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1.0rem;
+            font-weight: bold;
+            z-index: 100;
+            display: none;
+        }
+
+        /* Settings overlay */
+        #settingsOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .settings-content {
+            width: 80%;
+            max-width: 400px;
+            padding: 20px;
+            background-color: #333;
+            border-radius: 10px;
+        }
+
+        .settings-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #444;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .settings-option.selected {
+            background-color: #555;
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .settings-footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .settings-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .cancel-button {
+            background-color: #666;
+            color: white;
+        }
+
+        .confirm-button {
+            background-color: #e63946;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Slot Machine Game</h1>
+    <div class="game-container">
+        <canvas id="slotMachine" width="700" height="450"></canvas>
+        
+        <!-- Free Spins Indicator -->
+        <div id="free-spins-indicator" class="free-spins-indicator">
+            FREE SPINS: <span id="free-spins-count">0</span> | MULTIPLIER: <span id="bonus-multiplier">0</span>x
+        </div>
+        
+        <!-- Win Overlay -->
+        <div id="winOverlay">
+            <button id="closeBtn" class="btn-close" aria-label="Close">×</button>
+            <div id="coinsContainer"></div>
+            <div class="sunburst-container">
+                <div id="sunburst" class="sunburst mega-win-color"></div>
+            </div>
+            <div class="win-content">
+                <h2 id="winText" class="win-text big-win">BIG WIN</h2>
+                <div class="counter-text" id="winAmount">$0</div>
+            </div>
+        </div>
+        
+        <!-- Settings Overlay -->
+        <div id="settingsOverlay">
+            <div class="settings-content">
+                <h3>Settings</h3>
+                <div id="soundEffectsOption" class="settings-option selected">
+                    <span>Sound Effects</span>
+                    <span id="soundEffectsIcon">🔊</span>
+                </div>
+                <div id="backgroundMusicOption" class="settings-option selected">
+                    <span>Background Music</span>
+                    <span id="backgroundMusicIcon">🔊</span>
+                </div>
+                <div class="settings-footer">
+                    <button id="cancelSettings" class="settings-button cancel-button">Cancel</button>
+                    <button id="confirmSettings" class="settings-button confirm-button">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <button id="spinButton" class="spin-button">SPIN</button>
+        <button id="settingsButton" class="spin-button" style="background-color: #4361ee;">⚙️</button>
+    </div>
+
+    <script>
+        // Game configuration
+        const REEL_COUNT = 5;
+        const SYMBOLS_PER_REEL = 3;
+        const SYMBOL_SIZE = 100;
+        const REEL_WIDTH = SYMBOL_SIZE;
+        const REEL_HEIGHT = SYMBOL_SIZE * SYMBOLS_PER_REEL;
+        const WALL_THICKNESS = 50;
+        const GAME_WIDTH = REEL_WIDTH * REEL_COUNT + WALL_THICKNESS * 2;
+        const GAME_HEIGHT = REEL_HEIGHT + WALL_THICKNESS * 2;
+        
+        // Extra symbols to draw above and below visible area for smooth scrolling
+        const EXTRA_SYMBOLS = 2;
+
+        // Symbol definitions with colors for backgrounds
+        const SYMBOLS = [
+            { name: 'cherry', color: '#ff5252' },
+            { name: 'lemon', color: '#ffeb3b' },
+            { name: 'orange', color: '#ff9800' },
+            { name: 'plum', color: '#9c27b0' },
+            { name: 'seven', color: '#f44336' },
+            { name: 'watermelon', color: '#4caf50' },
+            { name: 'bell', color: '#ffc107' },
+            { name: 'bar', color: '#2196f3' },
+            { name: 'wild', color: '#00bcd4' },
+            { name: 'scatter', color: '#e91e63' }
+        ];
+
+        // Wall colors (different backgrounds)
+        const WALL_BACKGROUNDS = [
+            '#3a0ca3', // top
+            '#4361ee', // right
+            '#4cc9f0', // bottom
+            '#7209b7'  // left
+        ];
+
+        // Get canvas and context
+        const canvas = document.getElementById('slotMachine');
+        const ctx = canvas.getContext('2d');
+        const spinButton = document.getElementById('spinButton');
+        const settingsButton = document.getElementById('settingsButton');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const soundEffectsOption = document.getElementById('soundEffectsOption');
+        const backgroundMusicOption = document.getElementById('backgroundMusicOption');
+        const soundEffectsIcon = document.getElementById('soundEffectsIcon');
+        const backgroundMusicIcon = document.getElementById('backgroundMusicIcon');
+        const cancelSettingsButton = document.getElementById('cancelSettings');
+        const confirmSettingsButton = document.getElementById('confirmSettings');
+        const freeSpinsIndicator = document.getElementById('free-spins-indicator');
+        const freeSpinsCountElement = document.getElementById('free-spins-count');
+        const bonusMultiplierElement = document.getElementById('bonus-multiplier');
+
+        // Game state
+        let spinning = false;
+        let reels = [];
+        let finalResults = [];
+        let winAmount = 0;
+        let winAmountDisplay = 0;
+        let winAnimationStartTime = 0;
+        let isAnimatingWin = false;
+        let symbolImages = {}; // Object to store loaded images
+        let imagesLoaded = 0;
+        let totalImages = SYMBOLS.length;
+        let isFreeSpinMode = false;
+        let freeSpinCount = 0;
+        let bonusMultiplier = 0;
+        let originalBetAmount = 0;
+        let balance = 1000; // Starting balance
+        let stake = 1; // Default bet amount
+        let autoSpins = 0;
+        let soundEffectsEnabled = true;
+        let backgroundMusicEnabled = true;
+        let tempSoundEffectsEnabled = true;
+        let tempBackgroundMusicEnabled = true;
+
+        // Audio elements
+        const backgroundMusic = new Audio();
+        backgroundMusic.src = 'https://assets.mixkit.co/sfx/preview/mixkit-game-level-music-689.mp3';
+        backgroundMusic.loop = true;
+        backgroundMusic.volume = 0.5;
+        backgroundMusic.preload = 'auto';
+
+        const spinSound = new Audio();
+        spinSound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-slot-machine-spin-1084.mp3';
+        spinSound.preload = 'auto';
+        
+        const winSound = new Audio();
+        winSound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3';
+        winSound.preload = 'auto';
+
+        const bigWinSound = new Audio();
+        bigWinSound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-casino-win-notification-1986.mp3';
+        bigWinSound.loop = true;
+        bigWinSound.volume = 0.8;
+
+        const freeSpinSound = new Audio();
+        freeSpinSound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-magical-atmosphere-sound-712.mp3';
+        freeSpinSound.loop = true;
+        freeSpinSound.volume = 0.9;
+
+        // Coin images for win animation
+        const coinImages = [
+            'https://placeholder.svg?height=40&width=40&query=gold coin 1',
+            'https://placeholder.svg?height=40&width=40&query=gold coin 2',
+            'https://placeholder.svg?height=40&width=40&query=gold coin 3',
+            'https://placeholder.svg?height=40&width=40&query=gold coin 4'
+        ];
+
+        // Win level configurations
+        const winLevels = {
+            big: {
+                text: 'BIG WIN',
+                textClass: 'big-win',
+                sunburstClass: 'big-win-color',
+                threshold: 50,
+                coinCount: 50
+            },
+            mega: {
+                text: 'MEGA WIN',
+                textClass: 'mega-win',
+                sunburstClass: 'mega-win-color',
+                threshold: 150,
+                coinCount: 100
+            },
+            ultra: {
+                text: 'ULTRA WIN',
+                textClass: 'ultra-win',
+                sunburstClass: 'ultra-win-color',
+                threshold: Infinity,
+                coinCount: 200
+            }
+        };
+
+        // Preload all symbol images
+        function preloadImages() {
+            SYMBOLS.forEach(symbol => {
+                const img = new Image();
+                img.crossOrigin = "anonymous"; // Avoid CORS issues
+                img.onload = () => {
+                    imagesLoaded++;
+                    if (imagesLoaded === totalImages) {
+                        // All images loaded, start the game
+                        initGame();
+                    }
+                };
+                img.onerror = (err) => {
+                    console.error(`Error loading image for ${symbol.name}:`, err);
+                    // Create a fallback image with just the symbol color
+                    createColoredPlaceholder(symbol);
+                };
+                
+                // Use placeholder images with the symbol name
+                img.src = `https://placeholder.svg?height=${SYMBOL_SIZE}&width=${SYMBOL_SIZE}&query=slot machine ${symbol.name} symbol colorful no text`;
+                symbolImages[symbol.name] = img;
+            });
+        }
+
+        // Create a colored placeholder image for a symbol
+        function createColoredPlaceholder(symbol) {
+            const placeholderCanvas = document.createElement('canvas');
+            placeholderCanvas.width = SYMBOL_SIZE;
+            placeholderCanvas.height = SYMBOL_SIZE;
+            const placeholderCtx = placeholderCanvas.getContext('2d');
+            
+            // Draw colored background
+            placeholderCtx.fillStyle = symbol.color;
+            placeholderCtx.fillRect(0, 0, SYMBOL_SIZE, SYMBOL_SIZE);
+            
+            // Add some visual elements based on the symbol type
+            placeholderCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            
+            // Draw different shapes based on symbol type
+            switch(symbol.name) {
+                case 'cherry':
+                    // Draw circles for cherries
+                    placeholderCtx.beginPath();
+                    placeholderCtx.arc(SYMBOL_SIZE/3, SYMBOL_SIZE/2, SYMBOL_SIZE/6, 0, Math.PI * 2);
+                    placeholderCtx.arc(SYMBOL_SIZE*2/3, SYMBOL_SIZE/2, SYMBOL_SIZE/6, 0, Math.PI * 2);
+                    placeholderCtx.fill();
+                    break;
+                case 'lemon':
+                    // Draw oval for lemon
+                    placeholderCtx.beginPath();
+                    placeholderCtx.ellipse(SYMBOL_SIZE/2, SYMBOL_SIZE/2, SYMBOL_SIZE/3, SYMBOL_SIZE/4, 0, 0, Math.PI * 2);
+                    placeholderCtx.fill();
+                    break;
+                case 'orange':
+                    // Draw circle for orange
+                    placeholderCtx.beginPath();
+                    placeholderCtx.arc(SYMBOL_SIZE/2, SYMBOL_SIZE/2, SYMBOL_SIZE/3, 0, Math.PI * 2);
+                    placeholderCtx.fill();
+                    break;
+                case 'plum':
+                    // Draw circle for plum
+                    placeholderCtx.beginPath();
+                    placeholderCtx.arc(SYMBOL_SIZE/2, SYMBOL_SIZE/2, SYMBOL_SIZE/3, 0, Math.PI * 2);
+                    placeholderCtx.fill();
+                    break;
+                case 'seven':
+                    // Draw 7 shape
+                    placeholderCtx.fillRect(SYMBOL_SIZE/4, SYMBOL_SIZE/4, SYMBOL_SIZE/2, SYMBOL_SIZE/8);
+                    placeholderCtx.fillRect(SYMBOL_SIZE*2/3, SYMBOL_SIZE/4, SYMBOL_SIZE/8, SYMBOL_SIZE/2);
+                    break;
+                case 'watermelon':
+                    // Draw semi-circle for watermelon
+                    placeholderCtx.beginPath();
+                    placeholderCtx.arc(SYMBOL_SIZE/2, SYMBOL_SIZE/2, SYMBOL_SIZE/3, 0, Math.PI);
+                    placeholderCtx.fill();
+                    break;
+                case 'bell':
+                    // Draw bell shape
+                    placeholderCtx.beginPath();
+                    placeholderCtx.arc(SYMBOL_SIZE/2, SYMBOL_SIZE/3, SYMBOL_SIZE/4, Math.PI, Math.PI * 2);
+                    placeholderCtx.lineTo(SYMBOL_SIZE*3/4, SYMBOL_SIZE*2/3);
+                    placeholderCtx.lineTo(SYMBOL_SIZE/4, SYMBOL_SIZE*2/3);
+                    placeholderCtx.closePath();
+                    placeholderCtx.fill();
+                    break;
+                case 'bar':
+                    // Draw bars
+                    placeholderCtx.fillRect(SYMBOL_SIZE/4, SYMBOL_SIZE/3, SYMBOL_SIZE/2, SYMBOL_SIZE/8);
+                    placeholderCtx.fillRect(SYMBOL_SIZE/4, SYMBOL_SIZE/2, SYMBOL_SIZE/2, SYMBOL_SIZE/8);
+                    placeholderCtx.fillRect(SYMBOL_SIZE/4, SYMBOL_SIZE*2/3, SYMBOL_SIZE/2, SYMBOL_SIZE/8);
+                    break;
+                case 'wild':
+                    // Draw star for wild
+                    drawStar(placeholderCtx, SYMBOL_SIZE/2, SYMBOL_SIZE/2, 5, SYMBOL_SIZE/3, SYMBOL_SIZE/6);
+                    break;
+                case 'scatter':
+                    // Draw diamond for scatter
+                    placeholderCtx.beginPath();
+                    placeholderCtx.moveTo(SYMBOL_SIZE/2, SYMBOL_SIZE/4);
+                    placeholderCtx.lineTo(SYMBOL_SIZE*3/4, SYMBOL_SIZE/2);
+                    placeholderCtx.lineTo(SYMBOL_SIZE/2, SYMBOL_SIZE*3/4);
+                    placeholderCtx.lineTo(SYMBOL_SIZE/4, SYMBOL_SIZE/2);
+                    placeholderCtx.closePath();
+                    placeholderCtx.fill();
+                    break;
+            }
+            
+            // Create image from canvas
+            const placeholderImg = new Image();
+            placeholderImg.src = placeholderCanvas.toDataURL();
+            symbolImages[symbol.name] = placeholderImg;
+            
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) {
+                // All images loaded (including placeholders), start the game
+                initGame();
+            }
+        }
+
+        // Helper function to draw a star
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = Math.PI / 2 * 3;
+            let x = cx;
+            let y = cy;
+            let step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Initialize the game
+        function initGame() {
+            // Create initial reels
+            for (let i = 0; i < REEL_COUNT; i++) {
+                // Initialize each reel
+                reels[i] = {
+                    position: 0,
+                    symbols: [],
+                    finalSymbols: [],
+                    isSpinning: false, // Track if this reel is currently spinning
+                    specialSymbols: {} // Track which symbols are special (larger with higher z-index)
+                };
+                
+                // Generate initial symbols (visible + extra for scrolling)
+                const totalSymbols = SYMBOLS_PER_REEL + EXTRA_SYMBOLS * 2;
+                for (let j = 0; j < totalSymbols; j++) {
+                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                    reels[i].symbols.push({
+                        name: SYMBOLS[randomIndex].name,
+                        isSpecial: Math.random() < 0.3, // 30% chance to be special
+                        scale: Math.random() * 0.5 + 1.1 // Random scale between 1.1 and 1.6
+                    });
+                }
+                
+                // Set initial final symbols (what will be shown when not spinning)
+                reels[i].finalSymbols = reels[i].symbols.slice(EXTRA_SYMBOLS, EXTRA_SYMBOLS + SYMBOLS_PER_REEL);
+            }
+            
+            // Draw initial state
+            drawGame();
+            
+            // Add event listener for spin button
+            spinButton.addEventListener('click', spinReels);
+            
+            // Add event listener for settings button
+            settingsButton.addEventListener('click', displaySettingsOverlay);
+            
+            // Add event listeners for settings options
+            soundEffectsOption.addEventListener('click', toggleSoundEffects);
+            backgroundMusicOption.addEventListener('click', toggleBackgroundMusic);
+            
+            // Add event listeners for settings buttons
+            cancelSettingsButton.addEventListener('click', hideSettingsOverlay);
+            confirmSettingsButton.addEventListener('click', confirmSettings);
+            
+            // Add event listener for win overlay close button
+            document.getElementById('closeBtn').addEventListener('click', closeWinAnimation);
+            
+            // Try to play background music (will be blocked by browsers until user interaction)
+            document.addEventListener('click', function() {
+                if (backgroundMusicEnabled && !backgroundMusic.playing) {
+                    backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                }
+            }, { once: true });
+        }
+
+        // Generate mock results
+        function generateMockResults() {
+            const newResults = [];
+            
+            // Check if we should trigger free spins (10% chance if not already in free spin mode)
+            const triggerFreeSpins = !isFreeSpinMode && Math.random() < 0.1;
+            
+            // If triggering free spins, ensure at least one scatter on each reel
+            if (triggerFreeSpins) {
+                for (let i = 0; i < REEL_COUNT; i++) {
+                    const reelSymbols = [];
+                    
+                    // Add one scatter symbol
+                    const scatterPosition = Math.floor(Math.random() * SYMBOLS_PER_REEL);
+                    
+                    for (let j = 0; j < SYMBOLS_PER_REEL; j++) {
+                        if (j === scatterPosition) {
+                            reelSymbols.push({
+                                name: 'scatter',
+                                isSpecial: true,
+                                scale: 1.3
+                            });
+                        } else {
+                            const randomIndex = Math.floor(Math.random() * (SYMBOLS.length - 1));
+                            const symbolName = SYMBOLS[randomIndex].name === 'scatter' ? 'seven' : SYMBOLS[randomIndex].name;
+                            reelSymbols.push({
+                                name: symbolName,
+                                isSpecial: Math.random() < 0.3,
+                                scale: Math.random() * 0.5 + 1.1
+                            });
+                        }
+                    }
+                    newResults.push(reelSymbols);
+                }
+            } else {
+                // Normal results
+                for (let i = 0; i < REEL_COUNT; i++) {
+                    const reelSymbols = [];
+                    for (let j = 0; j < SYMBOLS_PER_REEL; j++) {
+                        const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                        reelSymbols.push({
+                            name: SYMBOLS[randomIndex].name,
+                            isSpecial: Math.random() < 0.3,
+                            scale: Math.random() * 0.5 + 1.1
+                        });
+                    }
+                    newResults.push(reelSymbols);
+                }
+            }
+            
+            return {
+                reels: newResults,
+                triggerFreeSpins: triggerFreeSpins
+            };
+        }
+
+        // Generate a random win amount
+        function generateWinAmount(results, isFreeSpinMode, bonusMultiplier) {
+            // Extract symbol names from results for easier processing
+            const symbolNames = results.map(reel => 
+                reel.map(symbol => symbol.name)
+            );
+            
+            // Check for winning combinations
+            let totalWin = 0;
+            
+            // Check for 3+ matching symbols on a line (simplified)
+            for (let row = 0; row < SYMBOLS_PER_REEL; row++) {
+                let currentSymbol = symbolNames[0][row];
+                let count = 1;
+                
+                // Skip if scatter (scatter wins are calculated separately)
+                if (currentSymbol === 'scatter') continue;
+                
+                // Count consecutive matching symbols
+                for (let reel = 1; reel < REEL_COUNT; reel++) {
+                    // Wild symbols match anything
+                    if (symbolNames[reel][row] === 'wild' || 
+                        symbolNames[reel][row] === currentSymbol) {
+                        count++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Calculate win based on symbol and count
+                if (count >= 3) {
+                    let symbolValue;
+                    switch (currentSymbol) {
+                        case 'seven': symbolValue = 50; break;
+                        case 'bar': symbolValue = 40; break;
+                        case 'bell': symbolValue = 30; break;
+                        case 'watermelon': symbolValue = 25; break;
+                        case 'plum': symbolValue = 20; break;
+                        case 'orange': symbolValue = 15; break;
+                        case 'lemon': symbolValue = 10; break;
+                        case 'cherry': symbolValue = 5; break;
+                        case 'wild': symbolValue = 100; break;
+                        default: symbolValue = 5;
+                    }
+                    
+                    // Win formula: symbol value * count * stake
+                    let win = symbolValue * (count - 2) * stake;
+                    
+                    // Apply bonus multiplier in free spin mode
+                    if (isFreeSpinMode && bonusMultiplier > 0) {
+                        win *= bonusMultiplier;
+                    }
+                    
+                    totalWin += win;
+                }
+            }
+            
+            // Check for scatter wins (simplified)
+            let scatterCount = 0;
+            for (let reel = 0; reel < REEL_COUNT; reel++) {
+                for (let row = 0; row < SYMBOLS_PER_REEL; row++) {
+                    if (symbolNames[reel][row] === 'scatter') {
+                        scatterCount++;
+                    }
+                }
+            }
+            
+            // Scatter wins (if not triggering free spins)
+            if (scatterCount >= 3 && !results.triggerFreeSpins) {
+                let scatterWin = 5 * scatterCount * stake;
+                
+                // Apply bonus multiplier in free spin mode
+                if (isFreeSpinMode && bonusMultiplier > 0) {
+                    scatterWin *= bonusMultiplier;
+                }
+                
+                totalWin += scatterWin;
+            }
+            
+            return Math.round(totalWin);
+        }
+
+        // Draw the game
+        function drawGame() {
+            // Clear canvas
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            
+            // Draw the game in layers:
+            // 1. Background
+            drawBackground();
+            
+            // 2. All walls (drawn first, symbols will appear on top)
+            drawWalls();
+            
+            // 3. Reel backgrounds
+            drawReelBackgrounds();
+            
+            // 4. Draw spinning reels (these will appear to go under the bottom wall)
+            drawSpinningReels();
+            
+            // 5. Draw stopped reels (these will appear on top of all walls)
+            drawStoppedReels();
+            
+            // 6. Win display (if there's a win)
+            if (winAmount > 0 && !spinning) {
+                drawWinDisplay();
+            }
+            
+            // 7. Balance and bet display
+            drawBalanceAndBet();
+        }
+
+        // Draw background
+        function drawBackground() {
+            ctx.fillStyle = '#222222';
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        }
+
+        // Draw all walls
+        function drawWalls() {
+            // Top wall
+            ctx.fillStyle = WALL_BACKGROUNDS[0];
+            ctx.fillRect(0, 0, GAME_WIDTH, WALL_THICKNESS);
+            
+            // Right wall
+            ctx.fillStyle = WALL_BACKGROUNDS[1];
+            ctx.fillRect(GAME_WIDTH - WALL_THICKNESS, 0, WALL_THICKNESS, GAME_HEIGHT);
+            
+            // Bottom wall
+            ctx.fillStyle = WALL_BACKGROUNDS[2];
+            ctx.fillRect(0, GAME_HEIGHT - WALL_THICKNESS, GAME_WIDTH, WALL_THICKNESS);
+            
+            // Left wall
+            ctx.fillStyle = WALL_BACKGROUNDS[3];
+            ctx.fillRect(0, 0, WALL_THICKNESS, GAME_HEIGHT);
+            
+            // Add texture/pattern to walls
+            for (let i = 0; i < 4; i++) {
+                const wall = [
+                    { x: 0, y: 0, width: GAME_WIDTH, height: WALL_THICKNESS },
+                    { x: GAME_WIDTH - WALL_THICKNESS, y: 0, width: WALL_THICKNESS, height: GAME_HEIGHT },
+                    { x: 0, y: GAME_HEIGHT - WALL_THICKNESS, width: GAME_WIDTH, height: WALL_THICKNESS },
+                    { x: 0, y: 0, width: WALL_THICKNESS, height: GAME_HEIGHT }
+                ][i];
+                
+                // Add pattern to wall
+                ctx.save();
+                ctx.globalAlpha = 0.2;
+                for (let j = 0; j < 10; j++) {
+                    ctx.beginPath();
+                    if (i % 2 === 0) { // horizontal walls
+                        ctx.moveTo(wall.x + j * 70, wall.y);
+                        ctx.lineTo(wall.x + j * 70 + 30, wall.y + wall.height);
+                    } else { // vertical walls
+                        ctx.moveTo(wall.x, wall.y + j * 45);
+                        ctx.lineTo(wall.x + wall.width, wall.y + j * 45 + 20);
+                    }
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+            
+            // Add shadows to walls for depth
+            // Top wall shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, WALL_THICKNESS - 5, GAME_WIDTH, 5);
+            
+            // Bottom wall shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, GAME_HEIGHT - WALL_THICKNESS, GAME_WIDTH, 5);
+        }
+
+        // Draw reel backgrounds
+        function drawReelBackgrounds() {
+            // Draw background for reels area
+            ctx.fillStyle = isFreeSpinMode ? '#1a237e' : '#000000';
+            ctx.fillRect(
+                WALL_THICKNESS, 
+                WALL_THICKNESS, 
+                REEL_WIDTH * REEL_COUNT, 
+                REEL_HEIGHT
+            );
+            
+            // Draw individual reel backgrounds
+            for (let i = 0; i < REEL_COUNT; i++) {
+                const reelX = WALL_THICKNESS + i * REEL_WIDTH;
+                const reelY = WALL_THICKNESS;
+                
+                // Draw reel background
+                ctx.fillStyle = isFreeSpinMode ? '#303f9f' : '#333333';
+                ctx.fillRect(reelX, reelY, REEL_WIDTH, REEL_HEIGHT);
+                
+                // Draw reel border
+                ctx.strokeStyle = isFreeSpinMode ? '#5c6bc0' : '#666666';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(reelX, reelY, REEL_WIDTH, REEL_HEIGHT);
+            }
+            
+            // Draw dividing lines between symbols
+            for (let i = 1; i < SYMBOLS_PER_REEL; i++) {
+                ctx.beginPath();
+                ctx.moveTo(WALL_THICKNESS, WALL_THICKNESS + i * SYMBOL_SIZE);
+                ctx.lineTo(WALL_THICKNESS + REEL_WIDTH * REEL_COUNT, WALL_THICKNESS + i * SYMBOL_SIZE);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        // Draw spinning reels (below bottom wall)
+        function drawSpinningReels() {
+            // Create clipping region for spinning reels
+            // This should allow symbols to go below the bottom wall but not through the top wall
+            ctx.save();
+            
+            // Create a path that includes the reel area plus overflow to the sides
+            // but NOT through the top wall or below the bottom wall
+            ctx.beginPath();
+            ctx.rect(
+                0, // Allow overflow to left
+                WALL_THICKNESS, // Start at top of reels (below top wall)
+                GAME_WIDTH, // Allow overflow to right
+                GAME_HEIGHT - WALL_THICKNESS * 2 // Stop at bottom wall
+            );
+            ctx.clip();
+            
+            // Draw spinning reels
+            for (let i = 0; i < REEL_COUNT; i++) {
+                // Only draw if this reel is still spinning
+                if (!reels[i].isSpinning) continue;
+                
+                // Draw regular symbols first
+                drawReelSymbols(i, false, true);
+                
+                // Draw special symbols on top
+                drawReelSymbols(i, true, true);
+            }
+            
+            ctx.restore();
+        }
+
+        // Draw stopped reels (above all walls)
+        function drawStoppedReels() {
+            // No clipping region for stopped reels - allow them to overflow in all directions
+            
+            // Draw stopped reels
+            for (let i = 0; i < REEL_COUNT; i++) {
+                // Only draw if this reel has stopped spinning
+                if (reels[i].isSpinning) continue;
+                
+                // Draw regular symbols first
+                drawReelSymbols(i, false, false);
+                
+                // Draw special symbols on top
+                drawReelSymbols(i, true, false);
+            }
+        }
+
+        // Draw win display
+        function drawWinDisplay() {
+            // Position in the center of the game
+            const x = GAME_WIDTH / 2;
+            const y = WALL_THICKNESS + REEL_HEIGHT / 2;
+            
+            // If we're animating the win amount, update the display value
+            if (isAnimatingWin) {
+                const elapsed = Date.now() - winAnimationStartTime;
+                const duration = 1500; // 1.5 seconds for the animation
+                
+                if (elapsed < duration) {
+                    // Calculate progress (0 to 1)
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Ease-out function for smoother animation
+                    const easedProgress = 1 - Math.pow(1 - progress, 3);
+                    
+                    // Update the display value
+                    winAmountDisplay = Math.floor(winAmount * easedProgress);
+                    
+                    // Request next frame
+                    requestAnimationFrame(drawGame);
+                } else {
+                    // Animation complete
+                    winAmountDisplay = winAmount;
+                    isAnimatingWin = false;
+                }
+            }
+            
+            // Only draw if there's a win to display
+            if (winAmountDisplay > 0) {
+                // Draw background
+                ctx.save();
+                ctx.globalAlpha = 0.8;
+                ctx.fillStyle = '#000000';
+                const padding = 20;
+                const width = 240;
+                const height = 80;
+                ctx.beginPath();
+                ctx.roundRect(x - width/2, y - height/2, width, height, 15);
+                ctx.fill();
+                ctx.restore();
+                
+                // Draw win text
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('WIN!', x, y - 15);
+                
+                // Draw win amount
+                ctx.fillStyle = '#ffdd00';
+                ctx.font = 'bold 36px Arial';
+                ctx.fillText('$' + winAmountDisplay, x, y + 20);
+                
+                // Add glow effect
+                ctx.shadowColor = '#ffdd00';
+                ctx.shadowBlur = 15;
+                ctx.fillText('$' + winAmountDisplay, x, y + 20);
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // Draw balance and bet display
+        function drawBalanceAndBet() {
+            // Position at the bottom of the game
+            const x = GAME_WIDTH / 2;
+            const y = GAME_HEIGHT - WALL_THICKNESS / 2;
+            
+            // Draw balance
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`Balance: $${balance.toFixed(2)}`, WALL_THICKNESS + 10, y);
+            
+            // Draw bet
+            ctx.textAlign = 'right';
+            ctx.fillText(`Bet: $${stake.toFixed(2)}`, GAME_WIDTH - WALL_THICKNESS - 10, y);
+            
+            // Draw free spins info if in free spin mode
+            if (isFreeSpinMode) {
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#ffdd00';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(`Free Spins: ${freeSpinCount} | Multiplier: ${bonusMultiplier}x`, x, y);
+            }
+        }
+
+        // Draw symbols for a reel
+        function drawReelSymbols(reelIndex, drawSpecial, isSpinning) {
+            const reelX = WALL_THICKNESS + reelIndex * REEL_WIDTH;
+            const reelY = WALL_THICKNESS;
+            
+            // If the reel is spinning, draw all symbols
+            // If the reel has stopped, only draw the 3 visible symbols
+            const symbolsToDraw = isSpinning ? reels[reelIndex].symbols : reels[reelIndex].finalSymbols;
+            
+            // Draw symbols
+            for (let j = 0; j < symbolsToDraw.length; j++) {
+                const symbolObj = symbolsToDraw[j];
+                
+                // Skip if we're not drawing the right type (special or regular)
+                if (symbolObj.isSpecial !== drawSpecial) continue;
+                
+                const symbolData = SYMBOLS.find(s => s.name === symbolObj.name);
+                
+                // Calculate position
+                let symbolX = reelX;
+                let symbolY;
+                
+                if (isSpinning) {
+                    // For spinning reels, calculate position with scrolling offset
+                    symbolY = reelY - SYMBOL_SIZE * EXTRA_SYMBOLS + j * SYMBOL_SIZE + reels[reelIndex].position;
+                    
+                    // Only draw if near the visible area (with extra margin for overflow)
+                    const margin = symbolObj.isSpecial ? SYMBOL_SIZE : SYMBOL_SIZE / 2;
+                    if (symbolY > reelY - margin && symbolY < reelY + REEL_HEIGHT + margin) {
+                        drawSymbol(symbolX, symbolY, symbolData, symbolObj.isSpecial, symbolObj.scale);
+                    }
+                } else {
+                    // For stopped reels, position symbols exactly in the visible slots
+                    symbolY = reelY + j * SYMBOL_SIZE;
+                    drawSymbol(symbolX, symbolY, symbolData, symbolObj.isSpecial, symbolObj.scale);
+                }
+            }
+        }
+
+        // Draw a symbol using images
+        function drawSymbol(x, y, symbol, isSpecial, scale) {
+            // Calculate center position
+            const centerX = x + SYMBOL_SIZE / 2;
+            const centerY = y + SYMBOL_SIZE / 2;
+            
+            // Save context for transformations
+            ctx.save();
+            
+            // Draw symbol background
+            ctx.fillStyle = symbol.color;
+            ctx.fillRect(x, y, SYMBOL_SIZE, SYMBOL_SIZE);
+            
+            // Apply scaling transformation for special symbols
+            if (isSpecial) {
+                // Scale from center
+                ctx.translate(centerX, centerY);
+                ctx.scale(scale, scale);
+                ctx.translate(-centerX, -centerY);
+                
+                // Add glow effect for special symbols
+                ctx.shadowColor = symbol.color;
+                ctx.shadowBlur = 15;
+                
+                // Add border for special symbols
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(x, y, SYMBOL_SIZE, SYMBOL_SIZE);
+            }
+            
+            // Draw the symbol image
+            const img = symbolImages[symbol.name];
+            if (img) {
+                // Calculate image dimensions to fit within the symbol area
+                const imgPadding = 5;
+                const imgSize = SYMBOL_SIZE - imgPadding * 2;
+                
+                // Draw the image
+                ctx.drawImage(img, x + imgPadding, y + imgPadding, imgSize, imgSize);
+            }
+            
+            // Restore context
+            ctx.restore();
+        }
+
+        // Spin the reels
+        function spinReels() {
+            if (spinning) return;
+            
+            // Check if we have enough balance
+            if (!isFreeSpinMode && balance < stake) {
+                alert("Not enough balance to spin!");
+                return;
+            }
+            
+            // Reset win amount
+            winAmount = 0;
+            winAmountDisplay = 0;
+            isAnimatingWin = false;
+            
+            spinning = true;
+            spinButton.disabled = true;
+            
+            // Deduct bet amount if not in free spin mode
+            if (!isFreeSpinMode) {
+                balance -= stake;
+            }
+            
+            // Play spin sound if enabled
+            if (soundEffectsEnabled) {
+                spinSound.play().catch(e => console.log("Audio play failed:", e));
+            }
+            
+            // Generate new results
+            const mockResults = generateMockResults();
+            finalResults = mockResults.reels;
+            
+            // Prepare reels for spinning
+            for (let i = 0; i < REEL_COUNT; i++) {
+                // Reset position
+                reels[i].position = 0;
+                
+                // Set spinning state
+                reels[i].isSpinning = true;
+                
+                // Generate new symbols for spinning
+                const totalSymbols = SYMBOLS_PER_REEL + EXTRA_SYMBOLS * 2;
+                reels[i].symbols = [];
+                
+                // Add random symbols for the spinning effect
+                for (let j = 0; j < totalSymbols - SYMBOLS_PER_REEL; j++) {
+                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                    reels[i].symbols.push({
+                        name: SYMBOLS[randomIndex].name,
+                        isSpecial: Math.random() < 0.3, // 30% chance to be special
+                        scale: Math.random() * 0.5 + 1.1 // Random scale between 1.1 and 1.6
+                    });
+                }
+                
+                // Add the final result symbols at the end
+                reels[i].symbols = reels[i].symbols.concat(finalResults[i]);
+            }
+            
+            // Animate each reel with different durations
+            for (let i = 0; i < REEL_COUNT; i++) {
+                // Set up animation for this reel
+                const duration = 2000 + i * 500; // Longer duration for more scrolling
+                const startTime = Date.now();
+                
+                // Animate this reel
+                animateReel(i, duration, startTime);
+            }
+            
+            // Update the button state
+            drawGame();
+        }
+
+        // Animate a single reel
+        function animateReel(reelIndex, duration, startTime) {
+            // Calculate progress
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function (ease-out)
+            const easedProgress = progress < 0.7 
+                ? progress * 1.42857 // Linear for first 70%
+                : 1 - Math.pow(1 - (progress - 0.7) * 3.33333, 3); // Ease out for last 30%
+            
+            // Calculate total distance to scroll
+            const totalSymbols = reels[reelIndex].symbols.length;
+            const totalDistance = (totalSymbols - SYMBOLS_PER_REEL) * SYMBOL_SIZE;
+            
+            // Update reel position
+            reels[reelIndex].position = easedProgress * totalDistance;
+            
+            // Redraw the game
+            drawGame();
+            
+            // Continue animation if not complete
+            if (progress < 1) {
+                requestAnimationFrame(() => {
+                    animateReel(reelIndex, duration, startTime);
+                });
+            } else {
+                // Animation complete for this reel
+                // Update the final symbols
+                reels[reelIndex].finalSymbols = finalResults[reelIndex];
+                
+                // Reset the reel for next spin
+                reels[reelIndex].position = 0;
+                
+                // Mark this reel as stopped
+                reels[reelIndex].isSpinning = false;
+                
+                // Check if all reels have stopped
+                const allStopped = reels.every(reel => !reel.isSpinning);
+                if (allStopped) {
+                    spinning = false;
+                    spinButton.disabled = false;
+                    
+                    // Check for free spins trigger
+                    if (mockResults.triggerFreeSpins && !isFreeSpinMode) {
+                        // Trigger free spins
+                        isFreeSpinMode = true;
+                        freeSpinCount = 10;
+                        bonusMultiplier = 3;
+                        originalBetAmount = stake;
+                        
+                        // Update free spins indicator
+                        freeSpinsIndicator.style.display = 'block';
+                        freeSpinsCountElement.textContent = freeSpinCount;
+                        bonusMultiplierElement.textContent = bonusMultiplier;
+                        
+                        // Play free spin sound
+                        if (soundEffectsEnabled) {
+                            backgroundMusic.pause();
+                            freeSpinSound.play().catch(e => console.log("Audio play failed:", e));
+                        }
+                        
+                        // Show free spins message
+                        alert("You've won 10 Free Spins with a 3x Multiplier!");
+                    }
+                    
+                    // Generate win amount
+                    winAmount = generateWinAmount(mockResults, isFreeSpinMode, bonusMultiplier);
+                    
+                    // Add win amount to balance
+                    if (winAmount > 0) {
+                        balance += winAmount;
+                        
+                        // Play win sound
+                        if (soundEffectsEnabled) {
+                            winSound.play().catch(e => console.log("Audio play failed:", e));
+                        }
+                        
+                        // Start win animation
+                        winAmountDisplay = 0;
+                        isAnimatingWin = true;
+                        winAnimationStartTime = Date.now();
+                        
+                        // Show big win animation for large wins
+                        if (winAmount >= winLevels.big.threshold) {
+                            showWinAnimation(winAmount);
+                        }
+                    }
+                    
+                    // Handle free spins
+                    if (isFreeSpinMode) {
+                        freeSpinCount--;
+                        freeSpinsCountElement.textContent = freeSpinCount;
+                        
+                        // Check if free spins are over
+                        if (freeSpinCount <= 0) {
+                            isFreeSpinMode = false;
+                            bonusMultiplier = 0;
+                            originalBetAmount = 0;
+                            freeSpinsIndicator.style.display = 'none';
+                            
+                            // Switch back to normal music
+                            if (soundEffectsEnabled) {
+                                freeSpinSound.pause();
+                                backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                            }
+                            
+                            // Show free spins summary
+                            alert("Free Spins completed!");
+                        } else {
+                            // Auto-spin for free spins after a delay
+                            setTimeout(() => {
+                                if (!spinning) {
+                                    spinReels();
+                                }
+                            }, 2000);
+                        }
+                    }
+                }
+                
+                // Redraw to show the stopped reel on top of the bottom wall
+                drawGame();
+            }
+        }
+
+        // Function to determine win level based on amount
+        function getWinLevel(amount) {
+            if (amount < winLevels.big.threshold) {
+                return 'big';
+            } else if (amount < winLevels.mega.threshold) {
+                return 'mega';
+            } else {
+                return 'ultra';
+            }
+        }
+
+        // Function to show the win animation
+        function showWinAnimation(amount) {
+            // Pause background music and play big win sound
+            if (backgroundMusicEnabled) {
+                backgroundMusic.pause();
+            }
+            if (soundEffectsEnabled) {
+                bigWinSound.play().catch(e => console.log("Audio play failed:", e));
+            }
+            
+            // Set initial win level
+            let currentLevel = getWinLevel(amount);
+            updateWinLevel(currentLevel);
+            
+            // Show the overlay
+            const winOverlay = document.getElementById('winOverlay');
+            winOverlay.style.display = 'flex';
+            
+            // Start with $0
+            let currentAmount = 0;
+            const winAmount = document.getElementById('winAmount');
+            winAmount.textContent = '$' + currentAmount.toLocaleString();
+            
+            // Create the coin fountain
+            setTimeout(() => {
+                createCoinFountain(winLevels[currentLevel].coinCount);
+            }, 200);
+            
+            // Animate the counter
+            const duration = 5000; // 5 seconds for the counter
+            const fps = 60;
+            const increment = amount / (duration / 1000 * fps);
+            const startTime = performance.now();
+            
+            function updateCounter(timestamp) {
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                currentAmount = progress * amount;
+                winAmount.textContent = '$' + Math.floor(currentAmount).toLocaleString();
+                
+                // Check if we need to upgrade the win level
+                const newLevel = getWinLevel(currentAmount);
+                if (newLevel !== currentLevel) {
+                    currentLevel = newLevel;
+                    updateWinLevel(currentLevel);
+                    
+                    // Add more coins for the new level
+                    createCoinFountain(winLevels[currentLevel].coinCount);
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    // Counter finished
+                    winAmount.textContent = '$' + amount.toLocaleString();
+                    
+                    // Auto close after 3 seconds
+                    setTimeout(() => {
+                        closeWinAnimation();
+                    }, 3000);
+                }
+            }
+            
+            requestAnimationFrame(updateCounter);
+        }
+
+        // Function to update the win level visuals
+        function updateWinLevel(level) {
+            const winText = document.getElementById('winText');
+            const sunburst = document.getElementById('sunburst');
+            
+            // Remove all classes
+            winText.classList.remove('big-win', 'mega-win', 'ultra-win');
+            sunburst.classList.remove('big-win-color', 'mega-win-color', 'ultra-win-color');
+            
+            // Add new classes
+            winText.classList.add(winLevels[level].textClass);
+            sunburst.classList.add(winLevels[level].sunburstClass);
+            
+            // Update text
+            winText.textContent = winLevels[level].text;
+        }
+
+        // Function to close the win animation
+        function closeWinAnimation() {
+            const winOverlay = document.getElementById('winOverlay');
+            winOverlay.style.display = 'none';
+            
+            // Stop big win sound and resume background music
+            if (soundEffectsEnabled) {
+                bigWinSound.pause();
+                bigWinSound.currentTime = 0;
+                
+                if (backgroundMusicEnabled) {
+                    if (isFreeSpinMode) {
+                        freeSpinSound.play().catch(e => console.log("Audio play failed:", e));
+                    } else {
+                        backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                    }
+                }
+            }
+            
+            // Clear all coins
+            const coinsContainer = document.getElementById('coinsContainer');
+            coinsContainer.innerHTML = '';
+        }
+
+        // Function to create the coin fountain
+        function createCoinFountain(numberOfCoins) {
+            const coinsContainer = document.getElementById('coinsContainer');
+            
+            // Create fountain of coins
+            const containerWidth = coinsContainer.offsetWidth;
+            const containerHeight = coinsContainer.offsetHeight;
+            
+            // Center bottom position
+            const centerX = containerWidth / 2;
+            
+            // Adjust coin count based on screen size
+            const isMobile = window.innerWidth < 576;
+            const actualCoinCount = isMobile ? Math.floor(numberOfCoins * 0.6) : numberOfCoins;
+            
+            for (let i = 0; i < actualCoinCount; i++) {
+                setTimeout(() => {
+                    // Create coin element
+                    const coin = document.createElement('div');
+                    coin.className = 'coin';
+                    
+                    // Random size between 20-40px
+                    const coinSize = Math.floor(Math.random() * 20) + 20;
+                    coin.style.width = `${coinSize}px`;
+                    coin.style.height = `${coinSize}px`;
+                    
+                    // Create the img element inside the coin div
+                    const coinImg = document.createElement('img');
+                    coinImg.src = coinImages[Math.floor(Math.random() * coinImages.length)];
+                    coinImg.style.width = '100%';
+                    coinImg.style.height = '100%';
+                    coinImg.crossOrigin = "anonymous"; // Avoid CORS issues
+                    coin.appendChild(coinImg);
+                    
+                    // Start at center bottom with slight random offset
+                    const startX = centerX + (Math.random() - 0.5) * 50;
+                    coin.style.left = `${startX}px`;
+                    coin.style.bottom = '0px';
+                    
+                    // Add to container
+                    coinsContainer.appendChild(coin);
+                    
+                    // Animate the coin in a fountain pattern
+                    animateCoinFountain(coin, startX, containerHeight);
+                }, i * 40); // Stagger the coin creation
+            }
+        }
+
+        // Function to animate a single coin in a fountain pattern
+        function animateCoinFountain(coin, startX, containerHeight) {
+            const coinsContainer = document.getElementById('coinsContainer');
+            const containerWidth = coinsContainer.offsetWidth;
+            
+            // Random angle for the fountain spread
+            const angle = ((Math.random() - 0.5) * Math.PI) / 3.0; // -60 to +60 degrees
+            
+            // Random initial velocity (speed)
+            const initialVelocity = 15 + Math.random() * 10;
+            
+            // Calculate velocity components
+            const vx = initialVelocity * Math.sin(angle);
+            const vy = initialVelocity * Math.cos(angle);
+            
+            // Animation parameters
+            const gravity = 0.5;
+            const duration = 2000 + Math.random() * 1000;
+            const fps = 60;
+            const totalFrames = (duration / 1000) * fps;
+            
+            // Animation variables
+            let currentFrame = 0;
+            let x = startX;
+            let y = 0;
+            let velocityY = vy;
+            let rotation = 0;
+            
+            // Animation function
+            const animate = () => {
+                if (!coin.parentNode) return; // Stop if coin was removed
+                
+                // Update position with gravity
+                x += vx;
+                velocityY -= gravity;
+                y += velocityY;
+                
+                // Update rotation
+                rotation += 10;
+                
+                // Update coin position and rotation
+                coin.style.left = `${x}px`;
+                coin.style.bottom = `${y}px`;
+                coin.style.transform = `rotate(${rotation}deg)`;
+                
+                // Check if coin is still visible
+                if (y < -100 || x < -100 || x > containerWidth + 100) {
+                    if (coin.parentNode) {
+                        coin.parentNode.removeChild(coin);
+                    }
+                    return;
+                }
+                
+                // Continue animation
+                currentFrame++;
+                if (currentFrame < totalFrames) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Remove coin after animation completes
+                    if (coin.parentNode) {
+                        coin.parentNode.removeChild(coin);
+                    }
+                }
+            };
+            
+            // Start animation
+            requestAnimationFrame(animate);
+        }
+
+        // Settings functions
+        function displaySettingsOverlay() {
+            settingsOverlay.style.display = 'flex';
+            
+            // Store current settings
+            tempSoundEffectsEnabled = soundEffectsEnabled;
+            tempBackgroundMusicEnabled = backgroundMusicEnabled;
+            
+            // Update UI to match current settings
+            updateSoundOptionStyling(soundEffectsOption, soundEffectsIcon, soundEffectsEnabled);
+            updateSoundOptionStyling(backgroundMusicOption, backgroundMusicIcon, backgroundMusicEnabled);
+        }
+
+        function hideSettingsOverlay() {
+            settingsOverlay.style.display = 'none';
+            // Revert to previous settings (don't apply changes)
+            tempSoundEffectsEnabled = soundEffectsEnabled;
+            tempBackgroundMusicEnabled = backgroundMusicEnabled;
+        }
+
+        function confirmSettings() {
+            // Apply the temporary settings
+            soundEffectsEnabled = tempSoundEffectsEnabled;
+            backgroundMusicEnabled = tempBackgroundMusicEnabled;
+            
+            // Update background music based on new setting
+            if (backgroundMusicEnabled) {
+                if (isFreeSpinMode) {
+                    freeSpinSound.play().catch(e => console.log("Audio play failed:", e));
+                } else {
+                    backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                }
+            } else {
+                backgroundMusic.pause();
+                freeSpinSound.pause();
+            }
+            
+            settingsOverlay.style.display = 'none';
+        }
+
+        function toggleSoundEffects() {
+            tempSoundEffectsEnabled = !tempSoundEffectsEnabled;
+            updateSoundOptionStyling(soundEffectsOption, soundEffectsIcon, tempSoundEffectsEnabled);
+        }
+
+        function toggleBackgroundMusic() {
+            tempBackgroundMusicEnabled = !tempBackgroundMusicEnabled;
+            updateSoundOptionStyling(backgroundMusicOption, backgroundMusicIcon, tempBackgroundMusicEnabled);
+        }
+
+        function updateSoundOptionStyling(option, icon, enabled) {
+            if (enabled) {
+                option.classList.add('selected');
+                icon.textContent = '🔊';
+            } else {
+                option.classList.remove('selected');
+                icon.textContent = '🔇';
+            }
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            drawGame();
+        });
+
+        // Start by preloading images
+        preloadImages();
+    </script>
+</body>
+</html>

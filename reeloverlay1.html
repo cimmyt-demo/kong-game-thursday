@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PixiJS Animated Overlay on Winning Reel</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; }
+        canvas { display: block; margin: 0 auto; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.5.8/browser/pixi.min.js"></script>
+    <script>
+        const app = new PIXI.Application({ width: 800, height: 600, backgroundColor: 0x000000 });
+        document.body.appendChild(app.view);
+
+        const REEL_COUNT = 5;
+        const SYMBOL_SIZE = 100;
+        const reels = [];
+
+        // Prepare array of overlay frame URLs (make sure these exist in your assets folder)
+        const overlayFrameUrls = [];
+        for (let i = 1; i <= 9; i++) {
+            overlayFrameUrls.push(`00${i}.png`); // Change to your actual image names
+        }
+
+        // Load symbols and all overlay frames
+        const loader = PIXI.Loader.shared;
+        loader.add("symbol", "https://pixijs.io/examples/examples/assets/eggHead.png");
+
+        overlayFrameUrls.forEach((url, i) => {
+            loader.add(`overlay${i}`, url);
+        });
+
+        loader.load(setup);
+
+        function setup(loader, resources) {
+            // Create reels
+            for (let i = 0; i < REEL_COUNT; i++) {
+                const reel = new PIXI.Container();
+                reel.x = i * (SYMBOL_SIZE + 20) + 100;
+                reel.y = 200;
+
+                for (let j = 0; j < 3; j++) {
+                    const symbol = new PIXI.Sprite(resources.symbol.texture);
+                    symbol.y = j * SYMBOL_SIZE;
+                    symbol.width = SYMBOL_SIZE;
+                    symbol.height = SYMBOL_SIZE;
+                    reel.addChild(symbol);
+                }
+
+                app.stage.addChild(reel);
+                reels.push(reel);
+            }
+
+            // Create animated overlay sprite
+            const overlayFrames = overlayFrameUrls.map((url, i) => resources[`overlay${i}`].texture);
+            const animatedOverlay = new PIXI.AnimatedSprite(overlayFrames);
+            animatedOverlay.anchor.set(0.5);
+            animatedOverlay.visible = false;
+            animatedOverlay.animationSpeed = 1 / 5; // 5 frames per second (200ms per frame)
+            animatedOverlay.loop = true;
+            app.stage.addChild(animatedOverlay);
+
+            function showWinningOverlay(reelIndex) {
+                const winningReel = reels[reelIndex];
+                const bounds = winningReel.getBounds();
+
+                animatedOverlay.x = bounds.x + bounds.width / 2;
+                animatedOverlay.y = bounds.y + bounds.height / 2;
+                animatedOverlay.width = bounds.width;
+                animatedOverlay.height = bounds.height;
+                animatedOverlay.visible = true;
+                animatedOverlay.play();
+            }
+
+            // Show animated overlay on reel index 2 after 2 seconds
+            setTimeout(() => {
+                showWinningOverlay(2);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
