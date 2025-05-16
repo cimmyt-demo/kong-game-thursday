@@ -2442,8 +2442,13 @@ function addBonusFrameToLastReel(){
 
     // Display balance
     function displayBalance(amount) {
-        balanceText.innerHTML = parseFloat(amount).toFixed(2);
+        const formattedAmount = parseFloat(amount).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+        balanceText.innerHTML = formattedAmount;
     }
+
 
     // Show features overlay
     function showFeaturesOverlay() {
