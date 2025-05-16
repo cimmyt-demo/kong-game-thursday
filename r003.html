@@ -1303,7 +1303,7 @@
             </div>
         </div>
         
-        <div id="jdb_overlay" >
+        <div id="jdb_overlay" style="display: none;">
             <div style="height: 100%; width: 100%;" class="d-flex justify-content-center align-items-center">
                 <div class="row">
                     <div class="d-flex justify-content-center align-items-center mx-auto">
@@ -1320,7 +1320,7 @@
             </div>
         </div>
     
-        <div id="kong_overlay">
+        <div id="kong_overlay" style="display: none;">
             <div class="d-flex justify-content-center">
                 <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
             </div>
@@ -4169,7 +4169,7 @@ function spinAnimation(callback, apiResult) {
     const waitingForResults = apiResult === null;
     
     // Normal spin counts for each reel
-    let spinCounts = [50, 57, 64, 71, 78]; 
+    let spinCounts = [50, 65, 80, 95, 110]; 
     
     // If waiting for results, set higher spin counts to keep spinning longer
     if (waitingForResults) {
@@ -4192,7 +4192,7 @@ function spinAnimation(callback, apiResult) {
     const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
     
     // Speed of symbol movement (pixels per frame)
-    const scrollSpeed = isQuickSpinMode ? 40 : 30;
+    const scrollSpeed = isQuickSpinMode ? 50 : 40;
     
     currentInterval = setInterval(() => {
         let allStopped = true;
