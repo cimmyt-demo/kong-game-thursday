@@ -4094,7 +4094,8 @@ function handleSpinCompletion(apiResult) {
                 freeSpinSound.pause();
                 backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
             }
-            
+
+            freeSpinCount = 0;
             remainingFreeSpinCount = 0;
             isFreeSpinMode = false;
             bonusMultiplier = 0;
