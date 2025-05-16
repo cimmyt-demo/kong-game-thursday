@@ -3781,9 +3781,64 @@ function updateSpinningReelsWithResults(results) {
 }
 
 
+let winValueDisplayInterval = null; // holds the interval ID globally
+
+function groupWinValuesDisplay(spinResults) {
+    if (spinResults.length > 0){
+        document.getElementById('display_win_amount').style.display = 'block';
+    }
+    // Clear any previous interval to stop the old loop
+    if (winValueDisplayInterval !== null) {
+        clearInterval(winValueDisplayInterval);
+        winValueDisplayInterval = null;
+    }
+
+    let winValuesGroupedByWay = {};
+    let uniqueWinValues = [];
+
+    // Group win_value by 'ways' and ensure uniqueness
+    for (let i = 0; i < spinResults.length; i++) {
+        let currentWay = spinResults[i].ways;
+        let currentWinValue = spinResults[i].win_value;
+
+        if (!winValuesGroupedByWay[currentWay]) {
+            winValuesGroupedByWay[currentWay] = new Set();
+        }
+
+        winValuesGroupedByWay[currentWay].add(currentWinValue);
+    }
+
+    // Flatten all unique win_values into one array
+    for (let wayKey in winValuesGroupedByWay) {
+        uniqueWinValues = uniqueWinValues.concat(Array.from(winValuesGroupedByWay[wayKey]));
+    }
+
+    // If no values, clear display and return
+    if (uniqueWinValues.length === 0) {
+        document.getElementById('win-amount2').innerHTML = '';
+        return;
+    }
+
+    // Display the first value
+    document.getElementById('win-amount2').innerHTML = parseFloat(uniqueWinValues[0]).toFixed(2);
+
+    // If only one value, no need to loop
+    if (uniqueWinValues.length === 1) {
+        return;
+    }
+
+    let currentIndex = 1; // already showed index 0
+
+    // Start interval to loop through values every 2 seconds
+    winValueDisplayInterval = setInterval(() => {
+        document.getElementById('win-amount2').innerHTML = parseFloat(uniqueWinValues[currentIndex]).toFixed(2);
+        currentIndex = (currentIndex + 1) % uniqueWinValues.length;
+    }, 2000);
+}
+
+
+
 function updateWinnings(targetAmount) {
-    document.getElementById('display_win_amount').style.display = 'block';
-    document.getElementById('win-amount2').innerHTML = parseFloat(targetAmount).toFixed(2);
     let element = document.getElementById('update_winnings');
     let currentAmount = parseFloat(element.innerHTML) || 0;
     let increment = (targetAmount - currentAmount) / 50; // Adjust speed
@@ -4096,6 +4151,7 @@ function handleSpinCompletion(apiResult) {
 
     // Inside the spinAnimation callback, after all reels have stopped
     if ((apiResult.winningPositions && apiResult.winningPositions.length > 0) || apiResult.triggerFreeSpins){
+        groupWinValuesDisplay(apiResult.winningPositions)
         // Highlight winning symbols after a short delay
         setTimeout(() => {
             highlightWinningSymbols(apiResult.reels, apiResult.winningPositions);
