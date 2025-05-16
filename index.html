@@ -4,38 +4,74 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KONG</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0;
-      background: #222;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      padding: 1rem;
-    }
-    .iphone-frame {
-      width: 320.33px;
-      height: 600.43px;
-      border: 7px solid #000;
-      border-radius: 11px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-      overflow: hidden;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
-  </style>
 </head>
-<body class="d-flex justify-content-center align-items-center">
-  <div class="iphone-frame d-flex justify-content-center align-items-center">
-    <iframe src="r003.html"></iframe>
-  </div>
+<body>
+  <script>
+    // Create and append <style> block
+    const style = document.createElement('style');
+    style.textContent = `
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #222;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      .iphone-frame {
+        width: 352.36px;
+        height: 660.47px;
+        border: 7px solid #000;
+        border-radius: 11px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        overflow: hidden;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      iframe {
+        border: none;
+        display: block;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Create frame container
+    const frameDiv = document.createElement('div');
+    frameDiv.id = 'frame';
+
+    // Assign class based on device width
+    if (window.innerWidth >= 576) {
+      frameDiv.className = 'iphone-frame';
+    } else {
+      frameDiv.style.display = 'flex';
+      frameDiv.style.justifyContent = 'center';
+      frameDiv.style.alignItems = 'center';
+    }
+
+    // Create iframe
+    const iframe = document.createElement('iframe');
+    iframe.id = 'kong-iframe';
+    iframe.src = 'r003.html';
+
+    // Size iframe based on width
+    if (window.innerWidth < 500) {
+      iframe.style.width = window.innerWidth + 'px';
+      iframe.style.height = window.innerHeight + 'px';
+    } else {
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+    }
+
+    // Append iframe to frame, and frame to body
+    frameDiv.appendChild(iframe);
+    document.body.appendChild(frameDiv);
+
+    // Optional: Handle screen resizing (optional if only initial load matters)
+    // window.addEventListener('resize', () => location.reload());
+  </script>
 </body>
 </html>

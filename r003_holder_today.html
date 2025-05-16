@@ -356,27 +356,27 @@
             max-height: 100vh;
         }
         .autoplay-button, .stake-button{
-            height: 65px;
-            width: 65px;
+            height: 55px;
+            width: 55px;
         }
         .spin-img{
-            height: 50px;
-            width: 50px;
+            height: 45px;
+            width: 45px;
         }
         .spin-button{
-            height: 80px;
-            width: 80px;
+            height: 70px;
+            width: 70px;
         }
         .autospininner-img{
-            height: 35px;
-            width: 35px;
+            height: 30px;
+            width: 30px;
         }
         .autospininnerimgstop{
-            height: 25px;
-            width: 25px;
+            height: 20px;
+            width: 20px;
         }
         .totalbetinner-img{
-            height: 27px;
+            height: 23px;
         }
         .current-stake{
             font-size: 1.1rem;
@@ -720,7 +720,7 @@
 </head>
 <body class="w-100">
 <div style="background-image: url('page_bcg.png'); background-size: cover; height: 100vh; padding: 0 !important;">
-    <div style="z-index: 3; position: absolute;" class="mt-2">
+    <div style="z-index: 3; position: absolute;">
         <button id="featuresButton" class="btn btn-warning mt-5 mb-2 mx-3">
             Feature
         </button>
@@ -1481,7 +1481,7 @@
     const WALL_THICKNESS = {
         top: 20,
         right: 7,
-        bottom: 60,
+        bottom: 25,
         left: 7
     };
     const GAME_WIDTH = REEL_WIDTH * REEL_COUNT + WALL_THICKNESS.left + WALL_THICKNESS.right;
@@ -1713,34 +1713,30 @@
         }
       };
 
-function resizeCanvas() {
-    const container = document.querySelector('.game-canvas-container');
-    const cssWidth = container.clientWidth;
-    const cssHeight = container.clientHeight;
 
-    const dpr = 2; // 2x internal resolution
+    function resizeCanvas() {
+        const container = document.querySelector('.game-canvas-container');
+        const cssWidth = container.clientWidth;
+        const cssHeight = container.clientHeight;
 
-    // Logical size (CSS) - keep the visual size exactly the same
-    canvas.style.width = cssWidth + 'px';
-    canvas.style.height = cssHeight + 'px';
+        const dpr = 1;
 
-    // Internal pixel size - 2x resolution
-    canvas.width = Math.floor(cssWidth * dpr);
-    canvas.height = Math.floor(cssHeight * dpr);
+        // Logical size (CSS)
+        canvas.style.width = cssWidth + 'px';
+        canvas.style.height = cssHeight + 'px';
 
-    // Context scale to match DPR
-    const ctx = canvas.getContext('2d');
-    // ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
-    // ctx.scale(dpr, dpr); // Apply DPR scaling
+        // Internal pixel size (actual resolution)
+        canvas.width = Math.floor(cssWidth * dpr);
+        canvas.height = Math.floor(cssHeight * dpr);
+
+        // Context scale to match DPR
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+        ctx.scale(dpr, dpr); // Apply DPR scaling
+    }
     
-    // Improve image quality
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-}
 
-
-
-function initLoading() {
+    function initLoading() {
         let progress = 0;
 
         function updateProgress() {
@@ -3189,9 +3185,8 @@ function generateMockResults() {
                 } else {
                     // For first reel (i === 0), exclude Wild from possible symbols
                     let availableSymbols = i === 0 
-                        ? SYMBOLS.filter(s => s.name !== 'Wild') 
-                        : SYMBOLS;
-
+                        ? SYMBOLS.filter(s => s.name !== 'Wild' && s.name !== 'Scatter')
+                        : SYMBOLS.filter(s => s.name !== 'Scatter');
                     
                     const randomIndex = Math.floor(Math.random() * availableSymbols.length);
                     reelSymbols.push({
@@ -3610,7 +3605,6 @@ async function spin() {
             
             // Fetch results from server
             apiResult = await fetchSpinResultsFromServer(payload);
-            console.log(apiResult);
             hideLoadingIndicator();
             
             // Update the spinning animation with the actual results
@@ -3993,7 +3987,7 @@ function handleSpinCompletion(apiResult) {
     }
 
     // Inside the spinAnimation callback, after all reels have stopped
-    if ((apiResult.winningPositions && apiResult.winningPositions.length > 0) || apiResult.triggerFreeSpins){
+    if (apiResult.winningPositions && apiResult.winningPositions.length > 0) {
         // Highlight winning symbols after a short delay
         setTimeout(() => {
             highlightWinningSymbols(apiResult.reels, apiResult.winningPositions);
