@@ -3173,7 +3173,7 @@ function highlightWinningSymbols(reelSymbols, winningPositions) {
                         case "Wild":
                             // Frame animation for Wild symbols
                             const wildNow = Date.now();
-                            if (wildNow - anim.lastUpdateTime >= 100) { // 100ms frame rate
+                            if (wildNow - anim.lastUpdateTime >= 75) { // 100ms frame rate
                                 anim.lastUpdateTime = wildNow;
                                 
                                 // Update frame
