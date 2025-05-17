@@ -4596,7 +4596,7 @@ async function spin() {
                     
                     // Deceleration effect - ease out as we approach the stop time
                     const progress = 1 - timeUntilStop / (symbolHeight * 3);
-                    const easeOutFactor = 1 - Math.pow(1 - progress, 33); // Cubic ease out
+                    const easeOutFactor = 1 - Math.pow(1 - progress, 44); // Cubic ease out
                     
                     // Calculate distance with deceleration
                     const totalSpinDistance = symbolHeight * SYMBOLS_PER_REEL * 5; // 5 full rotations during deceleration
