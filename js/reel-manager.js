@@ -213,6 +213,30 @@ class ReelManager {
     }, 100)
   }
 
+  // Group winning symbols by ways
+  groupWinValuesDisplay(winningPositions) {
+    if (!winningPositions || winningPositions.length === 0) return [];
+    
+    // Group winning positions by symbol and ways
+    const groupedWins = {};
+    
+    winningPositions.forEach(pos => {
+      const key = `${pos.symbol}-${pos.ways}-${pos.count}`;
+      if (!groupedWins[key]) {
+        groupedWins[key] = {
+          symbol: pos.symbol,
+          ways: pos.ways,
+          count: pos.count,
+          win_value: pos.win_value,
+          positions: []
+        };
+      }
+      groupedWins[key].positions.push({ reel: pos.reel, row: pos.row });
+    });
+    
+    return Object.values(groupedWins);
+  }
+
   // Highlight winning symbols
   highlightWinningSymbols(apiReels, winningPositions) {
     // If no winning positions are passed, initialize it as an empty array
@@ -235,129 +259,155 @@ class ReelManager {
       J: 50,
     }
 
-    // Loop through each reel
+    // Group winning positions by ways
+    const groupedWins = this.groupWinValuesDisplay(winningPositions);
+    console.log("Grouped wins:", groupedWins);
+    
+    // Highlight each group sequentially
+    this.animateWinGroups(apiReels, groupedWins, symbolZIndexMap, 0);
+  }
+  
+  // Animate win groups sequentially
+  animateWinGroups(apiReels, groupedWins, symbolZIndexMap, groupIndex) {
+    if (groupIndex >= groupedWins.length) return;
+    
+    const currentGroup = groupedWins[groupIndex];
+    console.log(`Highlighting group ${groupIndex + 1}/${groupedWins.length}: ${currentGroup.symbol} x${currentGroup.count}`);
+    
+    // Highlight all positions in this group
     for (let i = 0; i < this.numReels; i++) {
-      const symbolContainer = this.reelSymbols[i] // Container for current reel symbols
+      const symbolContainer = this.reelSymbols[i]; // Container for current reel symbols
 
-      // Loop through each symbol (child sprite) in this reel
+      // Loop through each symbol in this reel
       for (let j = 0; j < symbolContainer.children.length; j++) {
-        const sprite = symbolContainer.children[j] // Visual representation (sprite)
-        const currentSymbolName = apiReels[i][j] // Symbol name from API
+        const sprite = symbolContainer.children[j]; // Visual representation (sprite)
+        const currentSymbolName = apiReels[i][j]; // Symbol name from API
 
-        // Check if this symbol is in the list of winning positions
-        const isWinning = winningPositions.some(
-          (pos) => pos.symbol === currentSymbolName && pos.reel === i && pos.row === j,
-        )
+        // Check if this symbol is in the current group
+        const isInCurrentGroup = currentGroup.positions.some(
+          pos => pos.reel === i && pos.row === j
+        );
 
-        console.log("------------nice--------------------")
-        console.log(isWinning)
-
-        if (isWinning) {
-          // Reset visual styles
-          sprite.filters = []
-          sprite.visible = true
-          sprite.alpha = 1
-          sprite.tint = 0xffffff
-          sprite.rotation = 0
-
-          // Assign zIndex based on the symbol name from the mapping
-          sprite.zIndex = symbolZIndexMap[currentSymbolName] || 0 // Default to 0 if not found in map
-
-          // Store original values for later reset
-          const originalX = sprite.x
-          const originalY = sprite.y
-          const originalScale = { x: sprite.scale.x, y: sprite.scale.y }
-          const originalTexture = sprite.texture
-
-          // Define the maximum scale increase (20%)
-          const maxScaleX = originalScale.x * 1.0
-          const maxScaleY = originalScale.y * 1.0
-
-          let animationTicker
-
-          switch (currentSymbolName) {
-            case "Treasure Chest":
-              animationTicker = () => {
-                sprite.visible = Math.floor(Date.now() / 100) % 2 === 0
-                sprite.scale.set(maxScaleX, maxScaleY)
-              }
-              break
-
-            case "Wild":
-              const blinkTexture = PIXI.Texture.from("wild3.gif")
-              animationTicker = () => {
-                sprite.texture = Math.floor(Date.now() / 850) % 2 === 0 ? blinkTexture : originalTexture
-                sprite.scale.set(originalScale.x, originalScale.y)
-              }
-              break
-
-            case "Scatter":
-              animationTicker = () => {
-                sprite.alpha = 0.5 + 0.5 * Math.sin(Date.now() / 200)
-                sprite.scale.set(maxScaleX, maxScaleY)
-              }
-              break
-
-            case "Explorer":
-              animationTicker = () => {
-                sprite.visible = Math.floor(Date.now() / 450) % 2 === 0
-                sprite.scale.set(maxScaleX, maxScaleY)
-              }
-              break
-
-            case "Compass":
-            case "Binoculars":
-              animationTicker = () => {
-                sprite.x = originalX + Math.sin(Date.now() / 80) * 4
-                sprite.scale.set(maxScaleX, maxScaleY)
-              }
-              break
-
-            case "A":
-            case "K":
-            case "Q":
-            case "J":
-              animationTicker = () => {
-                sprite.visible = Math.floor(Date.now() / 450) % 2 === 0
-                sprite.scale.set(maxScaleX, maxScaleY)
-              }
-              break
-
-            default:
-              const blinkTexture2 = PIXI.Texture.from("explorer_blink.gif")
-              animationTicker = () => {
-                sprite.texture = Math.floor(Date.now() / 300) % 2 === 0 ? blinkTexture2 : originalTexture
-                sprite.scale.set(originalScale.x, originalScale.y)
-              }
-          }
-
-          // Start the animation
-          const tickerRef = this.app.ticker.add(animationTicker)
-          sprite._tickerRef = tickerRef
-
-          // Stop animation after 3 seconds and reset everything
-          setTimeout(() => {
-            if (this.app.ticker && sprite._tickerRef) {
-              this.app.ticker.remove(sprite._tickerRef)
-            }
-
-            sprite.visible = true
-            sprite.alpha = 1
-            sprite.tint = 0xffffff
-            sprite.scale.set(originalScale.x, originalScale.y)
-            sprite.rotation = 0
-            sprite.texture = originalTexture
-            sprite.x = originalX
-            sprite.y = originalY
-
-            // Reset zIndex to ensure it doesn't affect other symbols
-            sprite.zIndex = 0
-
-            delete sprite._tickerRef
-          }, 3000)
+        if (isInCurrentGroup) {
+          this.animateSymbol(sprite, currentSymbolName, symbolZIndexMap);
         }
       }
     }
+    
+    // Show win value for this group
+    // You could create an overlay here to display the win amount for this group
+    console.log(`Win amount for group: $${currentGroup.win_value}`);
+    
+    // Move to the next group after a delay
+    setTimeout(() => {
+      this.animateWinGroups(apiReels, groupedWins, symbolZIndexMap, groupIndex + 1);
+    }, 1500); // Wait 1.5 seconds before showing the next win group
+  }
+  
+  // Animate a single symbol
+  animateSymbol(sprite, symbolName, symbolZIndexMap) {
+    // Reset visual styles
+    sprite.filters = [];
+    sprite.visible = true;
+    sprite.alpha = 1;
+    sprite.tint = 0xffffff;
+    sprite.rotation = 0;
+
+    // Assign zIndex based on the symbol name from the mapping
+    sprite.zIndex = symbolZIndexMap[symbolName] || 0; // Default to 0 if not found in map
+
+    // Store original values for later reset
+    const originalX = sprite.x;
+    const originalY = sprite.y;
+    const originalScale = { x: sprite.scale.x, y: sprite.scale.y };
+    const originalTexture = sprite.texture;
+
+    // Define the maximum scale increase
+    const maxScaleX = originalScale.x * 1.2;
+    const maxScaleY = originalScale.y * 1.2;
+
+    let animationTicker;
+
+    switch (symbolName) {
+      case "Treasure Chest":
+        animationTicker = () => {
+          sprite.visible = Math.floor(Date.now() / 100) % 2 === 0;
+          sprite.scale.set(maxScaleX, maxScaleY);
+        };
+        break;
+
+      case "Wild":
+        const blinkTexture = PIXI.Texture.from("wild3.gif");
+        animationTicker = () => {
+          sprite.texture = Math.floor(Date.now() / 850) % 2 === 0 ? blinkTexture : originalTexture;
+          sprite.scale.set(maxScaleX, maxScaleY);
+        };
+        break;
+
+      case "Scatter":
+        animationTicker = () => {
+          sprite.alpha = 0.5 + 0.5 * Math.sin(Date.now() / 200);
+          sprite.scale.set(maxScaleX, maxScaleY);
+        };
+        break;
+
+      case "Explorer":
+        animationTicker = () => {
+          sprite.visible = Math.floor(Date.now() / 450) % 2 === 0;
+          sprite.scale.set(maxScaleX, maxScaleY);
+        };
+        break;
+
+      case "Compass":
+      case "Binoculars":
+        animationTicker = () => {
+          sprite.x = originalX + Math.sin(Date.now() / 80) * 4;
+          sprite.scale.set(maxScaleX, maxScaleY);
+        };
+        break;
+
+      case "A":
+      case "K":
+      case "Q":
+      case "J":
+        animationTicker = () => {
+          sprite.visible = Math.floor(Date.now() / 450) % 2 === 0;
+          sprite.scale.set(maxScaleX, maxScaleY);
+        };
+        break;
+
+      default:
+        const blinkTexture2 = PIXI.Texture.from("explorer_blink.gif");
+        animationTicker = () => {
+          sprite.texture = Math.floor(Date.now() / 300) % 2 === 0 ? blinkTexture2 : originalTexture;
+          sprite.scale.set(maxScaleX, maxScaleY);
+        };
+    }
+
+    // Start the animation
+    const tickerRef = this.app.ticker.add(animationTicker);
+    sprite._tickerRef = tickerRef;
+
+    // Stop animation after 1.2 seconds and reset everything
+    setTimeout(() => {
+      if (this.app.ticker && sprite._tickerRef) {
+        this.app.ticker.remove(sprite._tickerRef);
+      }
+
+      sprite.visible = true;
+      sprite.alpha = 1;
+      sprite.tint = 0xffffff;
+      sprite.scale.set(originalScale.x, originalScale.y);
+      sprite.rotation = 0;
+      sprite.texture = originalTexture;
+      sprite.x = originalX;
+      sprite.y = originalY;
+
+      // Reset zIndex to ensure it doesn't affect other symbols
+      sprite.zIndex = 0;
+
+      delete sprite._tickerRef;
+    }, 1200); // Reduced from 3000 to allow for sequential group animations
   }
 }
 

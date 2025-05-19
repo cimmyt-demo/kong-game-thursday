@@ -66,7 +66,7 @@ class GameAPI {
     let freeSpinCount = params.free_spin_count
 
     // Check for winning combinations
-    const hasWin = Math.random() < 0.3 // 30% chance of winning
+    const hasWin = Math.random() < 0.8 // Increased chance of winning for testing
 
     if (hasWin) {
       // Calculate a random win amount based on bet
@@ -98,14 +98,55 @@ class GameAPI {
       freeSpinCount = Math.max(0, params.free_spin_count - 1)
     }
 
-    // Generate winning positions (simplified)
+    // Generate winning positions with ways (improved for group highlighting)
     const winningPositions = []
     if (hasWin) {
-      // Add some random winning positions
-      const winSymbol = reels[0][0] // Just use the first symbol as an example
-      winningPositions.push({ symbol: winSymbol, reel: 0, row: 0 })
-      winningPositions.push({ symbol: winSymbol, reel: 1, row: 0 })
-      winningPositions.push({ symbol: winSymbol, reel: 2, row: 0 })
+      // Create multiple winning combinations
+      // First winning combination - Symbol A (3 of a kind)
+      const winSymbol1 = "A"
+      const count1 = 3
+      const ways1 = 2
+      const winValue1 = 0.2
+      
+      winningPositions.push({ symbol: winSymbol1, reel: 0, row: 0, count: count1, ways: ways1, win_value: winValue1 })
+      winningPositions.push({ symbol: winSymbol1, reel: 1, row: 0, count: count1, ways: ways1, win_value: winValue1 })
+      winningPositions.push({ symbol: winSymbol1, reel: 1, row: 1, count: count1, ways: ways1, win_value: winValue1 })
+      winningPositions.push({ symbol: winSymbol1, reel: 2, row: 1, count: count1, ways: ways1, win_value: winValue1 })
+      
+      // Second winning combination - Symbol K (4 of a kind)
+      if (Math.random() > 0.3) {
+        const winSymbol2 = "K"
+        const count2 = 4
+        const ways2 = 1
+        const winValue2 = 0.5
+        
+        winningPositions.push({ symbol: winSymbol2, reel: 0, row: 2, count: count2, ways: ways2, win_value: winValue2 })
+        winningPositions.push({ symbol: winSymbol2, reel: 1, row: 2, count: count2, ways: ways2, win_value: winValue2 })
+        winningPositions.push({ symbol: winSymbol2, reel: 2, row: 2, count: count2, ways: ways2, win_value: winValue2 })
+        winningPositions.push({ symbol: winSymbol2, reel: 3, row: 2, count: count2, ways: ways2, win_value: winValue2 })
+      }
+      
+      // Third winning combination - Wild (3 of a kind)
+      if (Math.random() > 0.6) {
+        const winSymbol3 = "Wild"
+        const count3 = 3
+        const ways3 = 3
+        const winValue3 = 1.5
+        
+        winningPositions.push({ symbol: winSymbol3, reel: 2, row: 0, count: count3, ways: ways3, win_value: winValue3 })
+        winningPositions.push({ symbol: winSymbol3, reel: 3, row: 0, count: count3, ways: ways3, win_value: winValue3 })
+        winningPositions.push({ symbol: winSymbol3, reel: 4, row: 0, count: count3, ways: ways3, win_value: winValue3 })
+      }
+      
+      // Update win amount based on all winning combinations
+      winAmount = winningPositions.reduce((total, pos) => {
+        // Only count each win combination once by checking if it's the first position of that combo
+        const isFirstPosition = winningPositions.findIndex(
+          p => p.symbol === pos.symbol && p.count === pos.count && p.ways === pos.ways
+        ) === winningPositions.indexOf(pos);
+        
+        return total + (isFirstPosition ? pos.win_value : 0);
+      }, 0);
     }
 
     return {
