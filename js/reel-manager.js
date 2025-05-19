@@ -274,12 +274,16 @@ class ReelManager {
       const winAmountDisplay = document.getElementById("win-amount2");
       const displayWinAmount = document.getElementById("display_win_amount");
       
+      console.log("All win groups finished, hiding win amount display");
+      
       if (winAmountDisplay) {
         winAmountDisplay.textContent = "";
+        console.log("Cleared win amount text");
       }
       
       if (displayWinAmount) {
         displayWinAmount.style.display = "none";
+        console.log("Set display_win_amount to hide");
       }
       return;
     }
@@ -292,21 +296,30 @@ class ReelManager {
     let dominantRow = 1; // Default to middle row
     
     // Count symbols in each row
+    console.log(`Analyzing winning positions for group: ${currentGroup.symbol}`);
+    console.log(`Positions:`, currentGroup.positions);
+    
     currentGroup.positions.forEach(pos => {
       if (pos.row >= 0 && pos.row < 3) {
         rowCounts[pos.row]++;
+        console.log(`Symbol at reel ${pos.reel}, row ${pos.row} - increasing count for row ${pos.row} to ${rowCounts[pos.row]}`);
       }
     });
     
     // Find the row with the most symbols
     let maxCount = rowCounts[0];
     dominantRow = 0;
+    console.log(`Initial row counts: Top=${rowCounts[0]}, Middle=${rowCounts[1]}, Bottom=${rowCounts[2]}`);
+    
     for (let i = 1; i < rowCounts.length; i++) {
       if (rowCounts[i] > maxCount) {
         maxCount = rowCounts[i];
         dominantRow = i;
+        console.log(`New dominant row: ${dominantRow} with ${maxCount} symbols`);
       }
     }
+    
+    console.log(`Final dominant row: ${dominantRow} (${dominantRow === 0 ? "Top" : dominantRow === 1 ? "Middle" : "Bottom"})`)
     
     // Highlight all positions in this group
     for (let i = 0; i < this.numReels; i++) {
@@ -331,34 +344,59 @@ class ReelManager {
     // Show win value for this group in the overlay
     const winAmountDisplay = document.getElementById("win-amount2");
     const displayWinAmount = document.getElementById("display_win_amount");
-    const winDisplayContainer = document.getElementById("win-display-container");
+    
+    console.log(`Setting up win display - Display elements found:`, 
+                `winAmountDisplay=${!!winAmountDisplay}`, 
+                `displayWinAmount=${!!displayWinAmount}`);
     
     if (winAmountDisplay && displayWinAmount) {
       // Show the win amount overlay
       displayWinAmount.style.display = "block";
       
+      // Position the win text absolutely based on dominant row
+      console.log(`Positioning win display for row ${dominantRow}`);
+      
+      // Clear any previous styles
+      winAmountDisplay.style.position = "absolute";
+      winAmountDisplay.style.left = "50%";
+      winAmountDisplay.style.transform = "translateX(-50%)";
+      
       // Set vertical position based on dominant row
-      if (winDisplayContainer && winAmountDisplay) {
-        if (dominantRow === 0) {
-          // Top row - 20% from top
-          winAmountDisplay.style.top = "20%";
-        } else if (dominantRow === 1) {
-          // Middle row - center
-          winAmountDisplay.style.top = "50%";
-        } else {
-          // Bottom row - 80% from top
-          winAmountDisplay.style.top = "80%";
-        }
+      let topPosition;
+      if (dominantRow === 0) {
+        // Top row
+        topPosition = "15%";
+        console.log(`Setting top position to ${topPosition} for top row`);
+      } else if (dominantRow === 1) {
+        // Middle row
+        topPosition = "45%";
+        console.log(`Setting top position to ${topPosition} for middle row`);
+      } else {
+        // Bottom row
+        topPosition = "75%";
+        console.log(`Setting top position to ${topPosition} for bottom row`);
       }
       
+      // Apply the position directly to the element
+      winAmountDisplay.style.top = topPosition;
+      
       // Display win amount and symbol information
-      winAmountDisplay.textContent = `${currentGroup.symbol} x${currentGroup.count} = $${currentGroup.win_value.toFixed(2)}`;
+      const displayText = `${currentGroup.symbol} x${currentGroup.count} = $${currentGroup.win_value.toFixed(2)}`;
+      winAmountDisplay.textContent = displayText;
+      console.log(`Setting win text to: "${displayText}"`);
       
       // Add some visual effects
       winAmountDisplay.classList.add("win-flash");
       setTimeout(() => {
         winAmountDisplay.classList.remove("win-flash");
       }, 1000);
+      
+      // Verify the element is visible and positioned correctly
+      console.log(`Win display element styles:`, 
+                  `display=${displayWinAmount.style.display}`,
+                  `position=${winAmountDisplay.style.position}`,
+                  `top=${winAmountDisplay.style.top}`,
+                  `left=${winAmountDisplay.style.left}`);
     }
     
     console.log(`Win amount for group: $${currentGroup.win_value} (Row: ${dominantRow})`);
