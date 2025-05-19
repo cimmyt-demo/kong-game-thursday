@@ -338,16 +338,16 @@ class ReelManager {
       displayWinAmount.style.display = "block";
       
       // Set vertical position based on dominant row
-      if (winDisplayContainer) {
+      if (winDisplayContainer && winAmountDisplay) {
         if (dominantRow === 0) {
           // Top row - 20% from top
-          winDisplayContainer.style.paddingTop = "20%";
+          winAmountDisplay.style.top = "20%";
         } else if (dominantRow === 1) {
           // Middle row - center
-          winDisplayContainer.style.paddingTop = "50%";
+          winAmountDisplay.style.top = "50%";
         } else {
           // Bottom row - 80% from top
-          winDisplayContainer.style.paddingTop = "80%";
+          winAmountDisplay.style.top = "80%";
         }
       }
       
