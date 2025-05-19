@@ -269,10 +269,39 @@ class ReelManager {
   
   // Animate win groups sequentially
   animateWinGroups(apiReels, groupedWins, symbolZIndexMap, groupIndex) {
-    if (groupIndex >= groupedWins.length) return;
+    if (groupIndex >= groupedWins.length) {
+      // Clear win amount display when all groups are done
+      const winAmountDisplay = document.getElementById("win-amount2");
+      if (winAmountDisplay) {
+        winAmountDisplay.textContent = "";
+        winAmountDisplay.style.display = "none";
+      }
+      return;
+    }
     
     const currentGroup = groupedWins[groupIndex];
     console.log(`Highlighting group ${groupIndex + 1}/${groupedWins.length}: ${currentGroup.symbol} x${currentGroup.count}`);
+    
+    // Determine the dominant row for this winning group
+    const rowCounts = [0, 0, 0]; // Count of symbols in each row
+    let dominantRow = 1; // Default to middle row
+    
+    // Count symbols in each row
+    currentGroup.positions.forEach(pos => {
+      if (pos.row >= 0 && pos.row < 3) {
+        rowCounts[pos.row]++;
+      }
+    });
+    
+    // Find the row with the most symbols
+    let maxCount = rowCounts[0];
+    dominantRow = 0;
+    for (let i = 1; i < rowCounts.length; i++) {
+      if (rowCounts[i] > maxCount) {
+        maxCount = rowCounts[i];
+        dominantRow = i;
+      }
+    }
     
     // Highlight all positions in this group
     for (let i = 0; i < this.numReels; i++) {
@@ -294,9 +323,35 @@ class ReelManager {
       }
     }
     
-    // Show win value for this group
-    // You could create an overlay here to display the win amount for this group
-    console.log(`Win amount for group: $${currentGroup.win_value}`);
+    // Show win value for this group in the overlay
+    const winAmountDisplay = document.getElementById("win-amount2");
+    if (winAmountDisplay) {
+      // Set position based on dominant row
+      winAmountDisplay.style.display = "block";
+      
+      if (dominantRow === 0) {
+        // Top row
+        winAmountDisplay.style.top = "10%";
+      } else if (dominantRow === 1) {
+        // Middle row
+        winAmountDisplay.style.top = "50%";
+        winAmountDisplay.style.transform = "translateY(-50%)";
+      } else {
+        // Bottom row
+        winAmountDisplay.style.top = "80%";
+      }
+      
+      // Display win amount and symbol information
+      winAmountDisplay.textContent = `${currentGroup.symbol} x${currentGroup.count} - $${currentGroup.win_value.toFixed(2)}`;
+      
+      // Add some visual effects
+      winAmountDisplay.classList.add("win-flash");
+      setTimeout(() => {
+        winAmountDisplay.classList.remove("win-flash");
+      }, 1000);
+    }
+    
+    console.log(`Win amount for group: $${currentGroup.win_value} (Row: ${dominantRow})`);
     
     // Move to the next group after a delay
     setTimeout(() => {

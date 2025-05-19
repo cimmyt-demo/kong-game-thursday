@@ -432,6 +432,39 @@
             z-index: 100;
             display: none;
         }
+        
+        /* Win group overlay */
+        .win-group-display {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #ffc107;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.6);
+            text-shadow: 0 0 5px rgba(255, 193, 7, 0.6);
+        }
+        
+        .win-flash {
+            animation: flash-animation 1s;
+        }
+        
+        @keyframes flash-animation {
+            0%, 50%, 100% {
+                opacity: 1;
+                transform: scale(1) translateX(-50%);
+            }
+            25%, 75% {
+                opacity: 0.7;
+                transform: scale(1.1) translateX(-45%);
+            }
+        }
 
         .mobile-wrapper {
             max-width: 100vw;
@@ -1375,6 +1408,8 @@
                     
                     <!-- Canvas for the slot machine -->
                     <canvas id="slotMachine"></canvas>
+                    <!-- Win group display that shows based on row position -->
+                    <div id="win-amount2" class="russo-one-regular win-group-display"></div>
                 </div>
             </div>
 
@@ -1565,7 +1600,9 @@
 <script>
     // Game configuration
     const REEL_COUNT = 5;
-    const SYMBOLS_PER_REEL = 3;
+    // Different number of symbols per reel for progressive stopping
+    const SYMBOLS_PER_REEL_ARRAY = [40, 45, 50, 55, 60];
+    const SYMBOLS_PER_REEL = 3; // Keep this for consistency with UI calculations
     const SYMBOL_SIZE = 100;
     const REEL_WIDTH = SYMBOL_SIZE;
     const REEL_HEIGHT = SYMBOL_SIZE * SYMBOLS_PER_REEL;
@@ -1904,7 +1941,7 @@ function initLoading() {
             };
             
             // Generate initial symbols (visible + extra for scrolling)
-            const totalSymbols = SYMBOLS_PER_REEL + EXTRA_SYMBOLS * 2;
+            const totalSymbols = SYMBOLS_PER_REEL_ARRAY[i] + EXTRA_SYMBOLS * 2;
             for (let j = 0; j < totalSymbols; j++) {
                 // For first reel (i === 0), exclude Wild from possible symbols
                 let availableSymbols = i === 0 
@@ -2871,21 +2908,67 @@ function drawSpinningReels() {
         const reelX = WALL_THICKNESS.left + i * reelWidth;
         const reelY = WALL_THICKNESS.top;
         
-        // Draw symbols
-        for (let j = 0; j < reels[i].symbols.length; j++) {
-            const symbol = reels[i].symbols[j];
-            const symbolData = SYMBOLS.find(s => s.name === symbol.name);
+        // Get the total number of symbols for this reel
+        const totalSymbols = SYMBOLS_PER_REEL_ARRAY[i];
+        
+        // Calculate the current start position within the symbol array
+        const currentPosition = reels[i].position;
+        const startIndex = Math.floor(currentPosition / symbolHeight) % totalSymbols;
+        const offsetY = currentPosition % symbolHeight; // Fractional position for smooth movement
+        
+        // Draw enough symbols to fill the view (including partially visible ones at top and bottom)
+        const symbolsToShow = SYMBOLS_PER_REEL + 3; // Visible + partial at top and bottom
+        
+        // Make sure all symbols exist in the array
+        if (!reels[i].hasInitializedSymbols) {
+            // Initialize reel symbols array once
+            reels[i].hasInitializedSymbols = true;
             
-            // Calculate position with scrolling offset
-            const symbolX = reelX;
-            const symbolY = reelY - symbolHeight * EXTRA_SYMBOLS + j * symbolHeight + reels[i].position;
-            
-            // Only draw if near the visible area
-            if (symbolY > reelY - symbolHeight && symbolY < reelY + reelHeight + symbolHeight) {
-                // Draw symbol
-                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, symbol.isSpecial, symbol.scale);
+            // Create a full array of symbols that will act as our conveyor belt
+            for (let j = 0; j < totalSymbols; j++) {
+                if (!reels[i].symbols[j]) {
+                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                    reels[i].symbols[j] = {
+                        name: SYMBOLS[randomIndex].name,
+                        isSpecial: Math.random() < 0.3,
+                        scale: Math.random() * 0.5 + 1.1
+                    };
+                }
             }
         }
+        
+        // Draw the conveyor belt of symbols
+        for (let j = -1; j < symbolsToShow; j++) {
+            // Calculate the actual symbol index with wrapping for continuous flow
+            const symbolIndex = (startIndex + j + totalSymbols) % totalSymbols;
+            
+            // Get the symbol from our existing array - we always show the same symbols in the same order
+            const symbol = reels[i].symbols[symbolIndex];
+            const symbolData = SYMBOLS.find(s => s.name === symbol.name);
+            
+            // Calculate the position for drawing the symbol with downward flow
+            const symbolX = reelX;
+            const symbolY = reelY + j * symbolHeight + offsetY;
+            
+            // Draw symbol, including partially visible ones at top and bottom
+            drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, symbol.isSpecial, symbol.scale);
+        }
+        
+        // Add a new symbol at the top of the conveyor during spinning
+        // but only when we cross a symbol boundary, maintaining the conveyor belt effect
+        if (Math.floor(reels[i].position / symbolHeight) !== Math.floor(reels[i].lastPosition / symbolHeight)) {
+            // For downward flow, replace the symbol that's about to enter from the top
+            const newSymbolIndex = (startIndex - 2 + totalSymbols) % totalSymbols;
+            const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+            reels[i].symbols[newSymbolIndex] = {
+                name: SYMBOLS[randomIndex].name,
+                isSpecial: Math.random() < 0.3,
+                scale: Math.random() * 0.5 + 1.1
+            };
+        }
+        
+        // Store position for next frame
+        reels[i].lastPosition = reels[i].position;
     }
     
     ctx.restore();
@@ -3657,12 +3740,13 @@ async function spin() {
         
         // Set spinning state
         reels[i].isSpinning = true;
+        reels[i].lastPosition = 0;
         
-        // Generate new symbols for spinning
-        const totalSymbols = SYMBOLS_PER_REEL + EXTRA_SYMBOLS * 2;
+        // Generate a full conveyor belt of symbols for smooth scrolling
+        const totalSymbols = SYMBOLS_PER_REEL_ARRAY[i];
         reels[i].symbols = [];
         
-        // Add random symbols for the spinning effect
+        // Create a continuous belt of random symbols
         for (let j = 0; j < totalSymbols; j++) {
             const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
             reels[i].symbols.push({
@@ -4445,12 +4529,13 @@ async function spin() {
         
         // Set spinning state
         reels[i].isSpinning = true;
+        reels[i].lastPosition = 0;
         
-        // Generate new symbols for spinning
-        const totalSymbols = SYMBOLS_PER_REEL + EXTRA_SYMBOLS * 2;
+        // Generate a full conveyor belt of symbols for smooth scrolling
+        const totalSymbols = SYMBOLS_PER_REEL_ARRAY[i];
         reels[i].symbols = [];
         
-        // Add random symbols for the spinning effect
+        // Create a continuous belt of random symbols
         for (let j = 0; j < totalSymbols; j++) {
             const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
             reels[i].symbols.push({
@@ -4647,9 +4732,10 @@ async function spin() {
                     distance = totalSpinDistance * (1 - easeOutFactor);
                     
                     // Add an extremely subtle oscillation effect when nearly stopped
+                    // for a more natural conveyor belt-like deceleration
                     if (progress > 0.85) {
-                        // Further reduced amplitude and frequency
-                        const oscillation = Math.sin(progress * 3) * 0.5 * (1 - progress);
+                        // Very subtle oscillation with reduced amplitude for smooth stopping
+                        const oscillation = Math.sin(progress * 2) * 0.3 * (1 - progress);
                         distance += oscillation;
                     }
 
@@ -4660,9 +4746,47 @@ async function spin() {
                 }
 
                 
+                // Smooth conveyor belt-like motion for the reels with downward flow
+                const previousPosition = reels[i].position || 0;
+                const totalHeight = symbolHeight * SYMBOLS_PER_REEL_ARRAY[i];
+                // For downward flow, we need to make distance positive
+                const newPosition = distance % totalHeight;
                 
-                // Update reel position
-                reels[i].position = distance % (symbolHeight * SYMBOLS_PER_REEL);
+                // Generate new random symbols continuously as the reel spins
+                // Check if we've passed a full symbol boundary
+                const prevSymbolIndex = Math.floor(previousPosition / symbolHeight);
+                const newSymbolIndex = Math.floor(newPosition / symbolHeight);
+                
+                // Always generate new symbols at the top for each frame
+                // This ensures symbols always appear to originate from the top
+                const totalSymbols = SYMBOLS_PER_REEL_ARRAY[i];
+                
+                // Always replace the top 3 symbols (those about to enter the view)
+                // to create a continuous stream of new symbols from the top
+                for (let k = 0; k < 3; k++) {
+                    // Calculate indices for symbols at the top of the reel
+                    const topSymbolIndex = (newSymbolIndex - SYMBOLS_PER_REEL - k + totalSymbols) % totalSymbols;
+                    
+                    // Generate a new random symbol
+                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                    reels[i].symbols[topSymbolIndex] = {
+                        name: SYMBOLS[randomIndex].name,
+                        isSpecial: Math.random() < 0.3,
+                        scale: Math.random() * 0.5 + 1.1
+                    };
+                }
+                
+                // Update reel position with speed variation based on index
+                // This creates a more natural conveyor belt effect with variable speed
+                reels[i].position = newPosition;
+                
+                // Store the final symbols that should appear when the reel stops
+                if (animationController.results && 
+                    animationController.results.reels && 
+                    animationController.results.reels[i] && 
+                    !reels[i].finalSymbols) {
+                    reels[i].finalSymbols = animationController.results.reels[i];
+                }
             }
             
             // Draw the current state
