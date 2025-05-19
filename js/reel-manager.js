@@ -299,6 +299,14 @@ class ReelManager {
     console.log(`Analyzing winning positions for group: ${currentGroup.symbol}`);
     console.log(`Positions:`, currentGroup.positions);
     
+    // Track the position of the first symbol in this group
+    let firstSymbolRow = -1;
+    
+    if (currentGroup.positions && currentGroup.positions.length > 0) {
+      firstSymbolRow = currentGroup.positions[0].row;
+      console.log(`First symbol in group is in row ${firstSymbolRow}`);
+    }
+    
     currentGroup.positions.forEach(pos => {
       if (pos.row >= 0 && pos.row < 3) {
         rowCounts[pos.row]++;
@@ -316,6 +324,16 @@ class ReelManager {
         maxCount = rowCounts[i];
         dominantRow = i;
         console.log(`New dominant row: ${dominantRow} with ${maxCount} symbols`);
+      }
+    }
+    
+    // Check if symbols are evenly distributed across rows
+    const areRowsEqual = rowCounts.every(count => count === maxCount);
+    if (areRowsEqual && maxCount > 0) {
+      console.log(`Symbols are evenly distributed. Using first symbol's row: ${firstSymbolRow}`);
+      // If distribution is equal, use the row of the first symbol
+      if (firstSymbolRow >= 0 && firstSymbolRow < 3) {
+        dominantRow = firstSymbolRow;
       }
     }
     
