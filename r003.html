@@ -1377,11 +1377,9 @@
 
 
                 <div id="display_win_amount" style="display:none;position: absolute; top: 0; left: 0; height: 100%; width: 100%; z-index: 999;background-color: rgb(0,0,0,0.3);">
-                    <div class="d-flex justify-content-center align-items-center" style="height: 40%; width: 100%;">
-                        <div id="win-amount2" class="russo-one-regular text-container gradient-text" >
-
+                    <div id="win-display-container" class="d-flex justify-content-center align-items-center" style="height: 100%; width: 100%;">
+                        <div id="win-amount2" class="russo-one-regular text-container gradient-text">
                         </div>
-
                     </div>
                 </div>
 
@@ -1408,8 +1406,7 @@
                     
                     <!-- Canvas for the slot machine -->
                     <canvas id="slotMachine"></canvas>
-                    <!-- Win group display that shows based on row position -->
-                    <div id="win-amount2" class="russo-one-regular win-group-display"></div>
+                    <!-- Removed duplicate win-amount2 display -->
                 </div>
             </div>
 

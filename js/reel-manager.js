@@ -272,9 +272,14 @@ class ReelManager {
     if (groupIndex >= groupedWins.length) {
       // Clear win amount display when all groups are done
       const winAmountDisplay = document.getElementById("win-amount2");
+      const displayWinAmount = document.getElementById("display_win_amount");
+      
       if (winAmountDisplay) {
         winAmountDisplay.textContent = "";
-        winAmountDisplay.style.display = "none";
+      }
+      
+      if (displayWinAmount) {
+        displayWinAmount.style.display = "none";
       }
       return;
     }
@@ -325,24 +330,29 @@ class ReelManager {
     
     // Show win value for this group in the overlay
     const winAmountDisplay = document.getElementById("win-amount2");
-    if (winAmountDisplay) {
-      // Set position based on dominant row
-      winAmountDisplay.style.display = "block";
+    const displayWinAmount = document.getElementById("display_win_amount");
+    const winDisplayContainer = document.getElementById("win-display-container");
+    
+    if (winAmountDisplay && displayWinAmount) {
+      // Show the win amount overlay
+      displayWinAmount.style.display = "block";
       
-      if (dominantRow === 0) {
-        // Top row
-        winAmountDisplay.style.top = "10%";
-      } else if (dominantRow === 1) {
-        // Middle row
-        winAmountDisplay.style.top = "50%";
-        winAmountDisplay.style.transform = "translateY(-50%)";
-      } else {
-        // Bottom row
-        winAmountDisplay.style.top = "80%";
+      // Set vertical position based on dominant row
+      if (winDisplayContainer) {
+        if (dominantRow === 0) {
+          // Top row - 20% from top
+          winDisplayContainer.style.paddingTop = "20%";
+        } else if (dominantRow === 1) {
+          // Middle row - center
+          winDisplayContainer.style.paddingTop = "50%";
+        } else {
+          // Bottom row - 80% from top
+          winDisplayContainer.style.paddingTop = "80%";
+        }
       }
       
       // Display win amount and symbol information
-      winAmountDisplay.textContent = `${currentGroup.symbol} x${currentGroup.count} - $${currentGroup.win_value.toFixed(2)}`;
+      winAmountDisplay.textContent = `${currentGroup.symbol} x${currentGroup.count} = $${currentGroup.win_value.toFixed(2)}`;
       
       // Add some visual effects
       winAmountDisplay.classList.add("win-flash");
