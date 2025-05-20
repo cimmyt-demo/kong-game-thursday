@@ -1336,7 +1336,7 @@
             </div>
         </div>
         
-        <div id="jdb_overlay">
+        <div id="jdb_overlay" >
             <div style="height: 100%; width: 100%;" class="d-flex justify-content-center align-items-center">
                 <div class="row">
                     <div class="d-flex justify-content-center align-items-center mx-auto">
@@ -1376,8 +1376,8 @@
                 </div>
 
 
-                <div id="display_win_amount" style="display:none; position: absolute; top: 0; left: 0; height: 100%; width: 100%; z-index: 999; background-color: rgba(0,0,0,0.3);">
-                    <div id="win-amount2" class="russo-one-regular text-container gradient-text" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center; padding: 10px 20px; background-color: rgba(0,0,0,0.7); border-radius: 10px; box-shadow: 0 0 15px rgba(255, 193, 7, 0.6); font-size: 1.5rem; min-width: 250px;">
+                <div id="display_win_amount" style="display:none; position: absolute; top: 0; left: 0; height: 100%; width: 100%; z-index: 999; background-color: rgba(0,0,0,0.7);">
+                    <div id="win-amount2" class="russo-one-regular  gradient-text" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;border-radius: 10px; font-size: 1.8rem; ">
                     </div>
                 </div>
 
@@ -1596,7 +1596,7 @@
     // Game configuration
     const REEL_COUNT = 5;
     // Different number of symbols per reel for progressive stopping
-    const SYMBOLS_PER_REEL_ARRAY = [40, 45, 50, 55, 60];
+    const SYMBOLS_PER_REEL_ARRAY = [30, 33, 36, 39, 42];
     const SYMBOLS_PER_REEL = 3; // Keep this for consistency with UI calculations
     const SYMBOL_SIZE = 100;
     const REEL_WIDTH = SYMBOL_SIZE;
@@ -1751,36 +1751,177 @@
 
     
     
-    // Audio elements
-    const backgroundMusic = new Audio();
-    backgroundMusic.src = 'gameaudio.mp3';
-    backgroundMusic.loop = true;
-    backgroundMusic.volume = 0.5;
-    backgroundMusic.preload = 'auto';
+    // Audio System - Creates a centralized audio manager
+    class AudioManager {
+        constructor() {
+            // Sound effects collection
+            this.sounds = {};
+            
+            // Initialize audio objects with better handling
+            this.sounds.background = this.createSound('sounds/SE_Base_BG.mp3', true, 0.5);
+            this.sounds.bigWin = this.createSound('sounds/SE_BigWin.mp3', false, 0.8);
+            this.sounds.reelSpeedUp = this.createSound('sounds/SE_ReelSpeedUp.mp3', false, 0.9);
+            this.sounds.freeSpin = this.createSound('sounds/SE_Free_BG.mp3', true, 0.9);
+            this.sounds.spin = this.createSound('sounds/SE_ButtonPress.mp3', false, 1.0);
+            this.sounds.spinStop = this.createSound('sounds/SE_Spinstop.mp3', false, 0.9);
+            this.sounds.win = this.createSound('sounds/SE_Scoring_01.mp3', false, 1.0);
+            this.sounds.jackpot = this.createSound('sounds/SE_Jackpot.mp3', false, 1.0);
+            this.sounds.megaWin = this.createSound('sounds/SE_MegaWin.mp3', false, 1.0);
+            this.sounds.ultraWin = this.createSound('sounds/SE_UltraWin.mp3', false, 1.0);
+            
+            // Control flags
+            this.soundEffectsEnabled = soundEffectsEnabled;
+            this.backgroundMusicEnabled = backgroundMusicEnabled;
+            
+            // Preload all sounds
+            this.preloadAll();
+            
+            // Flag to track if user interaction is needed
+            this._needsUserInteraction = false;
+            
+            // Add global click handler to handle autoplay policy
+            document.addEventListener('click', this.handleUserInteraction.bind(this), {once: true});
+        }
+        
+        // Helper to create a sound with proper settings
+        createSound(src, loop = false, volume = 1.0) {
+            const sound = new Audio();
+            sound.src = src;
+            sound.loop = loop;
+            sound.volume = volume;
+            sound.preload = 'auto';
+            
+            // Add event listener to track loading
+            sound.addEventListener('canplaythrough', () => {
+                console.log(`Sound loaded: ${src}`);
+            });
+            
+            return sound;
+        }
+        
+        // Preload all sounds
+        preloadAll() {
+            Object.values(this.sounds).forEach(sound => {
+                try {
+                    sound.load();
+                } catch(e) {
+                    console.log(`Error preloading sound: ${e}`);
+                }
+            });
+        }
+        
+        // Play a sound with proper resets and error handling
+        playSound(sound) {
+            if (!this.soundEffectsEnabled || !sound) return;
+            
+            // Reset the sound to start
+            try {
+                sound.currentTime = 0;
+                
+                // Play with error handling
+                const playPromise = sound.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log(`Audio play failed: ${error}`);
+                        if (error.name === 'NotAllowedError') {
+                            this._needsUserInteraction = true;
+                        }
+                    });
+                }
+            } catch(e) {
+                console.log(`Error playing sound: ${e}`);
+            }
+        }
+        
+        // Handle user interaction for autoplay policy
+        handleUserInteraction() {
+            if (this._needsUserInteraction) {
+                console.log("User interacted, attempting to play audio");
+                if (this.backgroundMusicEnabled) {
+                    this.sounds.background.play().catch(e => console.log("Still can't play background:", e));
+                }
+                this._needsUserInteraction = false;
+            }
+        }
+        
+        // Play background music
+        playBackgroundMusic() {
+            if (!this.backgroundMusicEnabled) return;
+            this.playSound(this.sounds.background);
+        }
+        
+        // Play spin sound
+        playSpinSound() {
+            this.playSound(this.sounds.spin);
+            // Also play the reel speed up sound with a slight delay
+            setTimeout(() => {
+                this.playSound(this.sounds.reelSpeedUp);
+            }, 100);
+        }
+        
+        // Play spin stop sound
+        playSpinStopSound() {
+            this.stopSound(this.sounds.reelSpeedUp);
+            this.playSound(this.sounds.spinStop);
+        }
+        
+        // Play win sound based on amount
+        playWinSound(amount = 0) {
+            if (amount >= 50) {
+                this.playSound(this.sounds.ultraWin);
+            } else if (amount >= 20) {
+                this.playSound(this.sounds.megaWin);
+            } else if (amount >= 10) {
+                this.playSound(this.sounds.bigWin);
+            } else {
+                this.playSound(this.sounds.win);
+            }
+        }
+        
+        // Stop a specific sound
+        stopSound(sound) {
+            if (sound) {
+                sound.pause();
+                sound.currentTime = 0;
+            }
+        }
+        
+        // Stop all sounds
+        stopAllSounds() {
+            Object.values(this.sounds).forEach(sound => {
+                sound.pause();
+                sound.currentTime = 0;
+            });
+        }
+        
+        // Toggle sound effects on/off
+        toggleSoundEffects() {
+            this.soundEffectsEnabled = !this.soundEffectsEnabled;
+            soundEffectsEnabled = this.soundEffectsEnabled;
+            return this.soundEffectsEnabled;
+        }
+        
+        // Toggle background music on/off
+        toggleBackgroundMusic() {
+            this.backgroundMusicEnabled = !this.backgroundMusicEnabled;
+            backgroundMusicEnabled = this.backgroundMusicEnabled;
+            
+            if (!this.backgroundMusicEnabled) {
+                this.stopSound(this.sounds.background);
+            } else {
+                this.playBackgroundMusic();
+            }
+            
+            return this.backgroundMusicEnabled;
+        }
+    }
 
-    const bigWinSound = new Audio();
-    bigWinSound.src = 'sounds/SE_BigWin.mp3';
-    bigWinSound.loop = true;
-    bigWinSound.volume = 0.8;
-
-    const reelSpeedUpSound = new Audio();
-    reelSpeedUpSound.src = 'sounds/SE_ReelSpeedUp.mp3';
-    reelSpeedUpSound.loop = true;
-    reelSpeedUpSound.volume = 0.9;
-
-    const freeSpinSound = new Audio();
-    freeSpinSound.src = 'sounds/SE_Free_BG.mp3';
-    freeSpinSound.loop = true;
-    freeSpinSound.volume = 0.9;
-
-    const spinSound = new Audio();
-    spinSound.src = 'sounds/spin.mp3';
-    spinSound.preload = 'auto';
+    // Create the audio manager instance
+    const audioManager = new AudioManager();
     
-    const spinStopSound = new Audio();
-    reelSpeedUpSound.src = 'sounds/SE_Spinstop.mp3';
-    reelSpeedUpSound.loop = false;
-    reelSpeedUpSound.volume = 0.9;
+    // Start background music (will play when user interacts if autoplay is blocked)
+    
 
     // Coin images for win animation
     coinImages = [
@@ -1878,8 +2019,9 @@ function initLoading() {
     // Hide Kong overlay
     function hideKongOverlay() {
         kongOverlay.style.display = "none";
+        audioManager.playBackgroundMusic();
         // Try to play background music (will be blocked by browsers until user interaction)
-        backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+        // backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
     }
 
     // Preload all symbol images
@@ -2666,14 +2808,12 @@ function addBonusFrameToLastReel(){
 
     // Toggle background music
     function toggleBackgroundMusic() {
-        backgroundMusicEnabled = !backgroundMusicEnabled;
+        const isEnabled = audioManager.toggleBackgroundMusic();
         
-        if (backgroundMusicEnabled) {
+        if (isEnabled) {
             backgroundMusicIcon.innerHTML = `<i class="fa fa-volume-up" style="color: #e4d594; font-size: 1.4rem;"></i>`;
-            backgroundMusic.play();
         } else {
             backgroundMusicIcon.innerHTML = `<i class="fas fa-volume-mute" style="color: #e4d594; font-size: 1.4rem;"></i>`;
-            backgroundMusic.pause();
         }
         
         settingsOverlay.style.display = 'none';
@@ -4060,55 +4200,111 @@ function updateSpinningReelsWithResults(results) {
 let winValueDisplayInterval = null; // holds the interval ID globally
 
 function groupWinValuesDisplay(spinResults) {
-    if (spinResults.length > 0){
+    console.log('Entered ----------------------------------------');
+
+    if (spinResults.length > 0) {
         document.getElementById('display_win_amount').style.display = 'block';
     }
-    // Clear any previous interval to stop the old loop
+
+    // Clear previous interval
     if (winValueDisplayInterval !== null) {
         clearInterval(winValueDisplayInterval);
         winValueDisplayInterval = null;
     }
 
-    let winValuesGroupedByWay = {};
-    let uniqueWinValues = [];
+    const winValuesGroupedByWay = {};
+    const displayItems = [];
 
-    // Group win_value by 'ways' and ensure uniqueness
+    // Group results by 'ways'
     for (let i = 0; i < spinResults.length; i++) {
-        let currentWay = spinResults[i].ways;
-        let currentWinValue = spinResults[i].win_value;
+        const result = spinResults[i];
+        const way = result.ways;
 
-        if (!winValuesGroupedByWay[currentWay]) {
-            winValuesGroupedByWay[currentWay] = new Set();
+        if (!winValuesGroupedByWay[way]) {
+            winValuesGroupedByWay[way] = [];
         }
 
-        winValuesGroupedByWay[currentWay].add(currentWinValue);
+        winValuesGroupedByWay[way].push(result);
     }
 
-    // Flatten all unique win_values into one array
-    for (let wayKey in winValuesGroupedByWay) {
-        uniqueWinValues = uniqueWinValues.concat(Array.from(winValuesGroupedByWay[wayKey]));
+    // For each group (way), find best row and unique win_values
+    for (const way in winValuesGroupedByWay) {
+        const results = winValuesGroupedByWay[way];
+
+        // Count symbols per row
+        const rowCounts = {};
+        for (const res of results) {
+            if (!rowCounts[res.row]) {
+                rowCounts[res.row] = 0;
+            }
+            rowCounts[res.row]++;
+        }
+
+        // Determine best row: most symbols, or first row in case of tie
+        let bestRow = null;
+        let maxCount = 0;
+
+        for (const row in rowCounts) {
+            const count = rowCounts[row];
+            const numericRow = parseInt(row);
+
+            if (count > maxCount || (count === maxCount && (bestRow === null || numericRow < bestRow))) {
+                maxCount = count;
+                bestRow = numericRow;
+            }
+        }
+
+        // Get unique win values for this group and pair with bestRow
+        const seen = new Set();
+        for (const res of results) {
+            if (!seen.has(res.win_value)) {
+                seen.add(res.win_value);
+                displayItems.push({
+                    win_value: res.win_value,
+                    row: bestRow
+                });
+            }
+        }
     }
 
-    // If no values, clear display and return
-    if (uniqueWinValues.length === 0) {
-        document.getElementById('win-amount2').innerHTML = '';
+    // If nothing to display
+    if (displayItems.length === 1) {
+        if (displayItems[0].row == 1){
+            document.getElementById('win-amount2').style.marginTop = '22%';
+        }else if (displayItems[0].row == 2){
+            document.getElementById('win-amount2').style.marginTop = '45%';
+        } else {
+            document.getElementById('win-amount2').style.marginTop = '0%';
+        }
+        document.getElementById('win-amount2').innerHTML = parseFloat(displayItems[0].win_value).toFixed(2);
         return;
     }
 
-    // Display the first value
-    document.getElementById('win-amount2').innerHTML = parseFloat(uniqueWinValues[0]).toFixed(2);
+    // Display the first win_value
+    
 
-    // If only one value, no need to loop
-    if (uniqueWinValues.length === 1) {
-        return;
-    }
+    // Optional: Use displayItems[0].row here if you want to trigger any visual for the first row
+    // Example: highlightRow(displayItems[0].row);
 
-    let currentIndex = 1; // already showed index 0
+   
+    let currentIndex = 0;
 
-    // Start interval to loop through values every 2 seconds
     winValueDisplayInterval = setInterval(() => {
-        document.getElementById('win-amount2').innerHTML = parseFloat(uniqueWinValues[currentIndex]).toFixed(2);
-        currentIndex = (currentIndex + 1) % uniqueWinValues.length;
+        const currentItem = displayItems[currentIndex];
+        console.log('---------gooooooooooooooood------------')
+        console.log(currentItem.row)
+        document.getElementById('win-amount2').style.marginTop = '0%';
+        if (currentItem.row == 1){
+            document.getElementById('win-amount2').style.marginTop = '22%';
+        }else if (currentItem.row == 2){
+            document.getElementById('win-amount2').style.marginTop = '45%';
+        }
+        document.getElementById('win-amount2').innerHTML = parseFloat(currentItem.win_value).toFixed(2);
+        // 🔁 Use currentItem.row for positioning/animation
+        // Example usage:
+        // highlightRow(currentItem.row);
+
+        currentIndex = (currentIndex + 1) % displayItems.length;
     }, 2000);
 }
 
@@ -4233,14 +4429,8 @@ function handleSpinCompletion(apiResult) {
         // Update balance with winnings
         balance += apiResult.win;
 
-        // Play win sound
-        if (soundEffectsEnabled) {
-            // const winningSound2 = new Audio("sounds/SE_Scoring_01.mp3");
-            // winningSound2.volume = 0.9;
-            // winningSound2.currentTime = 0; // Start from the 4th second
-            // winningSound2.play().catch(e => console.log("Audio play failed:", e));
-            console.log('')
-        }
+        // Play win sound using audio manager
+        audioManager.playWinSound(apiResult.win);
         
         // Show big win animation for large wins
         if (apiResult.win >= 100 && !isFreeSpinMode && autoSpins === 0) {
@@ -4268,8 +4458,8 @@ function handleSpinCompletion(apiResult) {
 
             async function showImageTemporarily() {
                 freeSpinsOverlay.style.display = 'block';  
-                backgroundMusic.pause()
-                freeSpinSound.play()   // Show image
+                audioManager.stopSound(audioManager.sounds.background);
+                audioManager.playSound(audioManager.sounds.freeSpin);   // Show image
                 await delayMs(4000);               // Wait 4 seconds
                 freeSpinsOverlay.style.display = 'none';      // Hide image
             }
@@ -4377,11 +4567,9 @@ function handleSpinCompletion(apiResult) {
         
         // Check if free spins are over
         if (remainingFreeSpinCount >= freeSpinCount) {
-            // End free spins
-            if (soundEffectsEnabled) {
-                freeSpinSound.pause();
-                backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
-            }
+            // End free spins - transition from free spin to background music
+            audioManager.stopSound(audioManager.sounds.freeSpin);
+            audioManager.playBackgroundMusic();
 
             displayBalance(balance)
 
@@ -4505,11 +4693,6 @@ async function spin() {
         await placeAndHandleBet(stake)
     }
 
-    // Play spin sound if enabled
-    if (soundEffectsEnabled) {
-        spinSound.play().catch(e => console.log("Audio play failed:", e));
-    }
-    
     spinning = true;
     featuresButton.disabled = true;
 
@@ -4693,13 +4876,10 @@ async function spin() {
 
                             reels[i].finalSymbols = animationController.results.reels[i];
 
-                            console.log('Final symbols')
                             console.log(reels[i].finalSymbols)
                             const hasScatterInFinal = reels[i].finalSymbols.some(symbol => symbol.name.toLowerCase() === "scatter");
-                            console.log('Has scatter in final')
                             console.log(hasScatterInFinal)
                             consecutiveScatterSymbols.push(hasScatterInFinal)
-                            console.log('---------------consecutive scatter----------------------')
                             console.log(consecutiveScatterSymbols)
                             const hasConsecutiveScatters = consecutiveScatterSymbols.every(item => item === true)
                             if (hasConsecutiveScatters){

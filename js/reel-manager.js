@@ -171,44 +171,66 @@ class ReelManager {
 
   // Spin animation
   spinAnimation(callback, apiResult) {
-    if (this.currentInterval) clearInterval(this.currentInterval)
+    if (this.currentInterval) clearInterval(this.currentInterval);
+    
+    // Play the spin sound at the start of animation
+    if (window.gameManager && window.gameManager.audioManager) {
+      window.gameManager.audioManager.playSpinSound();
+    }
 
-    const spinCounts = [15, 20, 25, 30, 35] // Different stop times for each reel
-    const remainingSpins = [...spinCounts]
+    const spinCounts = [15, 20, 25, 30, 35]; // Different stop times for each reel
+    const remainingSpins = [...spinCounts];
+    
+    // Track which reels have played their stop sound
+    const reelStopSoundPlayed = Array(this.numReels).fill(false);
 
     this.currentInterval = setInterval(() => {
-      let allStopped = true
+      let allStopped = true;
 
       for (let i = 0; i < this.numReels; i++) {
         if (remainingSpins[i] > 0) {
           // Continue spinning with random symbols until ready to stop
-          this.populateReel(i)
-          remainingSpins[i]--
-          allStopped = false
+          this.populateReel(i);
+          remainingSpins[i]--;
+          allStopped = false;
         } else if (remainingSpins[i] === 0) {
-          // When a reel is ready to stop, immediately display the final symbols
-          if (apiResult && apiResult.reels && apiResult.reels[i]) {
-            this.displayFinalSymbolsForReel(i, apiResult.reels[i])
+          // When a reel is ready to stop, play the stop sound once per reel
+          if (!reelStopSoundPlayed[i] && window.gameManager && window.gameManager.audioManager) {
+            window.gameManager.audioManager.playSpinStopSound();
+            reelStopSoundPlayed[i] = true;
           }
-          remainingSpins[i] = -1 // Mark as completely stopped
+          
+          // Display the final symbols
+          if (apiResult && apiResult.reels && apiResult.reels[i]) {
+            this.displayFinalSymbolsForReel(i, apiResult.reels[i]);
+          }
+          remainingSpins[i] = -1; // Mark as completely stopped
         }
       }
 
       if (allStopped) {
-        clearInterval(this.currentInterval)
-        this.currentInterval = null
+        clearInterval(this.currentInterval);
+        this.currentInterval = null;
 
         // Ensure the final display matches exactly what the API returned
         if (apiResult && apiResult.reels) {
-          this.displayAPISymbols(apiResult.reels)
+          this.displayAPISymbols(apiResult.reels);
 
-          // Highlight winning symbols if there's a win
-          if (apiResult.win_amount > 0) {
-            this.highlightWinningSymbols(apiResult.reels, apiResult.winning_positions)
-          }
+          // Play win sound if there's a win, with a slight delay to ensure timing
+          setTimeout(() => {
+            if (apiResult.win_amount > 0 && window.gameManager && window.gameManager.audioManager) {
+              window.gameManager.audioManager.playWinSound(apiResult.win_amount);
+              
+              // Highlight winning symbols after win sound starts
+              this.highlightWinningSymbols(apiResult.reels, apiResult.winning_positions);
+            }
+            
+            // Call the callback after all audio and animations are properly timed
+            callback();
+          }, 300);
+        } else {
+          callback();
         }
-
-        callback()
       }
     }, 100)
   }
