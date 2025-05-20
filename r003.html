@@ -1868,15 +1868,16 @@
         
         // Play win sound based on amount
         playWinSound(amount = 0) {
-            if (amount >= 50) {
+            if (amount >= 300) {
                 this.playSound(this.sounds.ultraWin);
-            } else if (amount >= 20) {
+            } else if (amount >= 200) {
                 this.playSound(this.sounds.megaWin);
-            } else if (amount >= 10) {
+            } else if (amount >= 100) {
                 this.playSound(this.sounds.bigWin);
-            } else {
-                this.playSound(this.sounds.win);
-            }
+            } 
+            // else {
+            //     this.playSound(this.sounds.win);
+            // }
         }
         
         // Stop a specific sound
@@ -4747,7 +4748,7 @@ async function spin() {
         const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
         
         // Animation configuration
-        const spinSpeed = isQuickSpinMode ? 40 : 25; // Pixels per frame
+        const spinSpeed = isQuickSpinMode ? 40 : 30; // Pixels per frame
         const stopDelayBetweenReels = isQuickSpinMode ? 300 : 600; // ms between reel stops
         const minSpinTime = isQuickSpinMode ? 1000 : 2000; // Minimum spin time before any reel stops
         
