@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot Machine Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #test-output {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .pass {
+            color: green;
+        }
+        .fail {
+            color: red;
+            font-weight: bold;
+        }
+        .test-summary {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kong Slot Machine Tests</h1>
+    
+    <button id="run-tests">Run Tests</button>
+    
+    <div id="test-output">Click "Run Tests" to begin testing...</div>
+    
+    <script>
+        // Override console.log to capture output
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const testOutput = document.getElementById('test-output');
+        
+        function runTests() {
+            testOutput.innerHTML = 'Running tests...\n\n';
+            
+            // Override console methods to capture output
+            console.log = function() {
+                const args = Array.from(arguments);
+                const message = args.join(' ');
+                
+                // Apply styling
+                let styledMessage = message;
+                if (message.includes('PASS')) {
+                    styledMessage = message.replace('PASS', '<span class="pass">PASS</span>');
+                } else if (message.includes('FAIL')) {
+                    styledMessage = message.replace('FAIL', '<span class="fail">FAIL</span>');
+                }
+                
+                testOutput.innerHTML += styledMessage + '\n';
+                testOutput.scrollTop = testOutput.scrollHeight;
+            };
+            
+            console.error = function() {
+                const args = Array.from(arguments);
+                const message = args.join(' ');
+                testOutput.innerHTML += '<span class="fail">' + message + '</span>\n';
+                testOutput.scrollTop = testOutput.scrollHeight;
+            };
+            
+            // Load and run the test script
+            try {
+                const script = document.createElement('script');
+                script.src = 'slot-machine-tests.js';
+                script.onload = function() {
+                    // Count results
+                    const output = testOutput.textContent;
+                    const passCount = (output.match(/PASS/g) || []).length;
+                    const failCount = (output.match(/FAIL/g) || []).length;
+                    const totalCount = passCount + failCount;
+                    
+                    // Add summary
+                    testOutput.innerHTML += '\n<div class="test-summary">Test Summary: ' + 
+                        passCount + ' passed, ' + 
+                        failCount + ' failed, ' + 
+                        totalCount + ' total</div>';
+                    
+                    // Restore console methods
+                    console.log = originalConsoleLog;
+                    console.error = originalConsoleError;
+                };
+                script.onerror = function() {
+                    testOutput.innerHTML += '<span class="fail">Error loading test script!</span>\n';
+                    console.log = originalConsoleLog;
+                    console.error = originalConsoleError;
+                };
+                document.body.appendChild(script);
+            } catch (error) {
+                testOutput.innerHTML += '<span class="fail">Error: ' + error.message + '</span>\n';
+                console.log = originalConsoleLog;
+                console.error = originalConsoleError;
+            }
+        }
+        
+        // Add event listener to the button
+        document.getElementById('run-tests').addEventListener('click', runTests);
+    </script>
+</body>
+</html>
