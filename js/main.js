@@ -1,37 +1,117 @@
-// Import necessary modules
-import { preloadImages } from "./utils.js"
-import { COIN_IMAGES } from "./constants.js"
-import GameManager from "./game-manager.js"
-import { updateLoaderProgress } from "./utils.js"
+// Main entry point for Kong Game
+import gameManager from './game-manager.js';
+import audioManager from './audio-manager.js';
 
-// Main entry point for the game
-document.addEventListener("DOMContentLoaded", () => {
-  // Check device width for overlay
-  if (window.innerWidth <= 900) {
-    document.getElementById("device_overlay").style.display = "none"
-  }
+// Initialize game when document is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    initGame();
+});
 
-  // Preload coin images
-  preloadImages(COIN_IMAGES)
+function initGame() {
+    // Set up UI event listeners
+    setupEventListeners();
+    
+    // Check if browser supports audio
+    checkAudioSupport();
+    
+    console.log('Kong Game initialized successfully');
+}
 
-  // Initialize the game manager
-  const gameManager = new GameManager()
-  window.gameManager = gameManager
+function setupEventListeners() {
+    // Sound toggle button
+    const soundButton = document.getElementById('sound_toggle');
+    if (soundButton) {
+        soundButton.addEventListener('click', () => {
+            const isMuted = gameManager.toggleSound();
+            updateSoundButton(isMuted);
+        });
+    }
+    
+    // Spin button
+    const spinButton = document.getElementById('spin_button');
+    if (spinButton) {
+        spinButton.addEventListener('click', () => {
+            gameManager.spin();
+        });
+    }
+    
+    // Auto spin button
+    const autoSpinButton = document.getElementById('auto_spin_button');
+    if (autoSpinButton) {
+        autoSpinButton.addEventListener('click', () => {
+            openAutoSpinMenu();
+        });
+    }
+    
+    // Close auto spin menu button
+    const closeAutoSpinButton = document.getElementById('close_auto_spin');
+    if (closeAutoSpinButton) {
+        closeAutoSpinButton.addEventListener('click', () => {
+            closeAutoSpinMenu();
+        });
+    }
+    
+    // Auto spin option buttons
+    const autoSpinOptions = document.querySelectorAll('.auto_spin_option');
+    autoSpinOptions.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const spins = parseInt(e.target.dataset.spins, 10);
+            gameManager.startAutoSpin(spins);
+            closeAutoSpinMenu();
+        });
+    });
+    
+    // Bet buttons
+    const betButtons = document.querySelectorAll('.bet_button');
+    betButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const betAmount = parseFloat(e.target.dataset.bet);
+            gameManager.changeBet(betAmount);
+            updateBetDisplay(betAmount);
+        });
+    });
+}
 
-  // Start the loader animation
-  updateLoaderProgress()
+function updateSoundButton(isMuted) {
+    const soundButton = document.getElementById('sound_toggle');
+    if (soundButton) {
+        if (isMuted) {
+            soundButton.classList.add('muted');
+        } else {
+            soundButton.classList.remove('muted');
+        }
+    }
+}
 
-  // Set up win animation global access
-  window.showWinAnimation = (amount) => {
-    gameManager.winAnimationManager.showWinAnimation(amount)
-  }
+function updateBetDisplay(betAmount) {
+    const betDisplay = document.getElementById('bet_amount');
+    if (betDisplay) {
+        betDisplay.textContent = betAmount.toFixed(2);
+    }
+}
 
-  window.closeWinAnimation = () => {
-    gameManager.winAnimationManager.closeWinAnimation()
-  }
+function openAutoSpinMenu() {
+    const autoSpinMenu = document.getElementById('auto_spin_menu');
+    if (autoSpinMenu) {
+        autoSpinMenu.style.display = 'block';
+    }
+}
 
-  // Set up Kong overlay global access
-  window.hideKongOverlay = () => {
-    gameManager.hideKongOverlay()
-  }
-})
+function closeAutoSpinMenu() {
+    const autoSpinMenu = document.getElementById('auto_spin_menu');
+    if (autoSpinMenu) {
+        autoSpinMenu.style.display = 'none';
+    }
+}
+
+function checkAudioSupport() {
+    // Check if browser supports Audio API
+    try {
+        const audio = new Audio();
+        if (typeof audio.play !== 'function') {
+            console.warn('Audio playback not supported in this browser');
+        }
+    } catch (e) {
+        console.error('Error checking audio support:', e);
+    }
+}

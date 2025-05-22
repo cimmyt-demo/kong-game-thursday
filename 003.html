@@ -1204,12 +1204,12 @@
                 // Set spinning state
                 reels[i].isSpinning = true;
                 
-                // Generate new symbols for spinning
-                const totalSymbols = SYMBOLS_PER_REEL + EXTRA_SYMBOLS * 2;
+                // Generate symbols for spinning - create a long sequence with final results naturally at the end
+                const spinningSymbolsCount = 30; // A good number of spinning symbols for smooth animation
                 reels[i].symbols = [];
                 
                 // Add random symbols for the spinning effect
-                for (let j = 0; j < totalSymbols - SYMBOLS_PER_REEL; j++) {
+                for (let j = 0; j < spinningSymbolsCount; j++) {
                     const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
                     reels[i].symbols.push({
                         name: SYMBOLS[randomIndex].name,
@@ -1226,10 +1226,12 @@
             for (let i = 0; i < REEL_COUNT; i++) {
                 // Set up animation for this reel
                 const duration = 2000 + i * 500; // Longer duration for more scrolling
-                const startTime = Date.now();
                 
-                // Animate this reel
-                animateReel(i, duration, startTime);
+                // Add a small delay to each reel to create a sequential start effect
+                setTimeout(() => {
+                    // Animate this reel with current time as start time
+                    animateReel(i, duration, Date.now());
+                }, i * 150); // 150ms staggered start
             }
             
             // Update the button state
@@ -1242,10 +1244,10 @@
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
             
-            // Easing function (ease-out)
-            const easedProgress = progress < 0.7 
-                ? progress * 1.42857 // Linear for first 70%
-                : 1 - Math.pow(1 - (progress - 0.7) * 3.33333, 3); // Ease out for last 30%
+            // Improved easing function for smoother deceleration
+            const easedProgress = progress < 0.6 
+                ? progress * 1.66667 // Linear for first 60%
+                : 1 - Math.pow(1 - (progress - 0.6) * 2.5, 2); // Gradual ease out for last 40%
             
             // Calculate total distance to scroll
             const totalSymbols = reels[reelIndex].symbols.length;
@@ -1263,14 +1265,22 @@
                     animateReel(reelIndex, duration, startTime);
                 });
             } else {
-                // Animation complete for this reel
-                // Update the final symbols
-                reels[reelIndex].finalSymbols = finalResults[reelIndex];
+                // Animation complete for this reel - now let's extract the final visible symbols
+                // The final symbols are naturally the last ones that come into view
+                // We need to figure out which symbols are visible at the current position
                 
-                // Reset the reel for next spin
-                reels[reelIndex].position = 0;
+                // Calculate the index of the first visible symbol
+                const totalSymbols = reels[reelIndex].symbols.length;
+                const visibleSymbolsStartIndex = totalSymbols - SYMBOLS_PER_REEL;
                 
-                // Mark this reel as stopped
+                // Extract the final visible symbols
+                reels[reelIndex].finalSymbols = reels[reelIndex].symbols.slice(
+                    visibleSymbolsStartIndex,
+                    visibleSymbolsStartIndex + SYMBOLS_PER_REEL
+                );
+                
+                // Keep the final position as is - we're already showing the final symbols
+                // Just mark this reel as stopped
                 reels[reelIndex].isSpinning = false;
                 
                 // Check if all reels have stopped

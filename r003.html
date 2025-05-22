@@ -509,6 +509,7 @@
             font-weight: bold;
         }
 
+
         @media screen and (min-width: 900px) {
             .sunburst-container {
                 position: absolute;
@@ -1336,7 +1337,7 @@
             </div>
         </div>
         
-        <div id="jdb_overlay" >
+        <div id="jdb_overlay" style="display: none;">
             <div style="height: 100%; width: 100%;" class="d-flex justify-content-center align-items-center">
                 <div class="row">
                     <div class="d-flex justify-content-center align-items-center mx-auto">
@@ -1353,7 +1354,7 @@
             </div>
         </div>
     
-        <div id="kong_overlay">
+        <div id="kong_overlay" style="display: none;">
             <div class="d-flex justify-content-center">
                 <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
             </div>
@@ -1593,10 +1594,12 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    // Removed module import - using direct script inclusion
+    
     // Game configuration
     const REEL_COUNT = 5;
     // Different number of symbols per reel for progressive stopping
-    const SYMBOLS_PER_REEL_ARRAY = [30, 33, 36, 39, 42];
+    const SYMBOLS_PER_REEL_ARRAY = [20, 23, 26, 29, 32];
     const SYMBOLS_PER_REEL = 3; // Keep this for consistency with UI calculations
     const SYMBOL_SIZE = 100;
     const REEL_WIDTH = SYMBOL_SIZE;
@@ -1749,181 +1752,455 @@
         "feature": "normal spin"
     };
 
-    
-    
-    // Audio System - Creates a centralized audio manager
-    class AudioManager {
-        constructor() {
-            // Sound effects collection
-            this.sounds = {};
-            
-            // Initialize audio objects with better handling
-            this.sounds.background = this.createSound('sounds/SE_Base_BG.mp3', true, 0.5);
-            this.sounds.bigWin = this.createSound('sounds/SE_BigWin.mp3', false, 0.8);
-            this.sounds.reelSpeedUp = this.createSound('sounds/SE_ReelSpeedUp.mp3', false, 0.9);
-            this.sounds.freeSpin = this.createSound('sounds/SE_Free_BG.mp3', true, 0.9);
-            this.sounds.spin = this.createSound('sounds/SE_ButtonPress.mp3', false, 1.0);
-            this.sounds.spinStop = this.createSound('sounds/SE_Spinstop.mp3', false, 0.9);
-            this.sounds.win = this.createSound('sounds/SE_Scoring_01.mp3', false, 1.0);
-            this.sounds.jackpot = this.createSound('sounds/SE_Jackpot.mp3', false, 1.0);
-            this.sounds.megaWin = this.createSound('sounds/SE_MegaWin.mp3', false, 1.0);
-            this.sounds.ultraWin = this.createSound('sounds/SE_UltraWin.mp3', false, 1.0);
-            
-            // Control flags
-            this.soundEffectsEnabled = soundEffectsEnabled;
-            this.backgroundMusicEnabled = backgroundMusicEnabled;
-            
-            // Preload all sounds
-            this.preloadAll();
-            
-            // Flag to track if user interaction is needed
-            this._needsUserInteraction = false;
-            
-            // Add global click handler to handle autoplay policy
-            document.addEventListener('click', this.handleUserInteraction.bind(this), {once: true});
-        }
+
+    const audioManager = {
+        // Sound collection
+        sounds: {
+            spinButton: new Audio('sounds/SE_ButtonPress.mp3'),
+            reelSpin: new Audio('sounds/SE_ReelSpeedUp.mp3'),
+            reelStop: new Audio('sounds/SE_Spinstop.mp3'),
+            background: new Audio('sounds/SE_Base_BG.mp3'),
+            freeSpin: new Audio('sounds/SE_Free_BG.mp3'),
+            win: new Audio('sounds/SE_Scoring_01.mp3'),
+            bigWin: new Audio('sounds/SE_BigWin.mp3'),
+            megaWin: new Audio('sounds/SE_MegaWin.mp3'),
+            ultraWin: new Audio('sounds/SE_UltraWin.mp3'),
+            jackpot: new Audio('sounds/SE_Jackpot.mp3')
+        },
         
-        // Helper to create a sound with proper settings
-        createSound(src, loop = false, volume = 1.0) {
-            const sound = new Audio();
-            sound.src = src;
-            sound.loop = loop;
-            sound.volume = volume;
-            sound.preload = 'auto';
-            
-            // Add event listener to track loading
-            sound.addEventListener('canplaythrough', () => {
-                console.log(`Sound loaded: ${src}`);
-            });
-            
-            return sound;
-        }
+        // Configuration
+        soundEffectsEnabled: true,
+        backgroundMusicEnabled: true,
         
-        // Preload all sounds
-        preloadAll() {
-            Object.values(this.sounds).forEach(sound => {
-                try {
-                    sound.load();
-                } catch(e) {
-                    console.log(`Error preloading sound: ${e}`);
+        // Initialize audio
+        init: function() {
+            console.log("Initializing audio manager");
+            
+            // Set crossOrigin for all sounds
+            for (const key in this.sounds) {
+                if (this.sounds.hasOwnProperty(key)) {
+                    this.sounds[key].crossOrigin = "anonymous";
                 }
-            });
-        }
-        
-        // Play a sound with proper resets and error handling
-        playSound(sound) {
-            if (!this.soundEffectsEnabled || !sound) return;
+            }
             
-            // Reset the sound to start
+            // Set loop for background tracks
+            this.sounds.background.loop = true;
+            this.sounds.freeSpin.loop = true;
+            
+            // Set volume
+            this.setVolume(0.7);
+        },
+        
+        // Set volume for all sounds
+        setVolume: function(volume) {
+            for (const key in this.sounds) {
+                if (this.sounds.hasOwnProperty(key)) {
+                    this.sounds[key].volume = volume;
+                }
+            }
+        },
+        
+        // Play a sound
+        play: function(soundName) {
+            if (!this.soundEffectsEnabled) {
+                console.log(`Sound effects disabled, not playing: ${soundName}`);
+                return;
+            }
+            
+            const sound = this.sounds[soundName];
+            if (!sound) {
+                console.warn(`Sound not found: ${soundName}`);
+                return;
+            }
+            
             try {
-                sound.currentTime = 0;
+                console.log(`Playing sound: ${soundName}`);
+                // Reset the sound to beginning
+                if (sound.currentTime > 0) {
+                    sound.currentTime = 0;
+                }
                 
-                // Play with error handling
-                const playPromise = sound.play();
-                
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log(`Audio play failed: ${error}`);
-                        if (error.name === 'NotAllowedError') {
-                            this._needsUserInteraction = true;
-                        }
+                // Ensure sound is not paused
+                if (sound.paused) {
+                    sound.play().catch(err => {
+                        console.error(`Error playing ${soundName}:`, err);
+                        // Try once more with load() before play
+                        sound.load();
+                        setTimeout(() => {
+                            sound.play().catch(e => console.error(`Second attempt to play ${soundName} failed:`, e));
+                        }, 100);
                     });
+                } else {
+                    // If it's already playing, restart it
+                    sound.currentTime = 0;
                 }
-            } catch(e) {
-                console.log(`Error playing sound: ${e}`);
+            } catch (e) {
+                console.error(`Sound error for ${soundName}:`, e);
             }
-        }
-        
-        // Handle user interaction for autoplay policy
-        handleUserInteraction() {
-            if (this._needsUserInteraction) {
-                console.log("User interacted, attempting to play audio");
-                if (this.backgroundMusicEnabled) {
-                    this.sounds.background.play().catch(e => console.log("Still can't play background:", e));
-                }
-                this._needsUserInteraction = false;
+        },
+
+        // Stop a specific sound
+        stop: function(soundName) {
+            const sound = this.sounds[soundName];
+            if (!sound) {
+                console.warn(`Sound not found: ${soundName}`);
+                return;
             }
-        }
+            sound.pause();
+            sound.currentTime = 0;
+        },
         
         // Play background music
-        playBackgroundMusic() {
+        playBackgroundMusic: function(isFreeMode = false) {
             if (!this.backgroundMusicEnabled) return;
-            this.playSound(this.sounds.background);
-        }
+            
+            // Stop any currently playing background music
+            this.sounds.background.pause();
+            this.sounds.background.currentTime = 0;
+            this.sounds.freeSpin.pause();
+            this.sounds.freeSpin.currentTime = 0;
+            
+            // Play the appropriate track
+            const track = isFreeMode ? this.sounds.freeSpin : this.sounds.background;
+            try {
+                track.play().catch(err => {
+                    console.error("Background music error:", err);
+                });
+            } catch (e) {
+                console.error("Background music error:", e);
+            }
+        },
         
         // Play spin sound
-        playSpinSound() {
-            this.playSound(this.sounds.spin);
-            // Also play the reel speed up sound with a slight delay
+        playSpinSound: function() {
+            this.play('spinButton');
             setTimeout(() => {
-                this.playSound(this.sounds.reelSpeedUp);
+                this.play('reelSpin');
             }, 100);
-        }
+        },
         
         // Play spin stop sound
-        playSpinStopSound() {
-            this.stopSound(this.sounds.reelSpeedUp);
-            this.playSound(this.sounds.spinStop);
-        }
+        playSpinStopSound: function() {
+            this.play('reelStop');
+        },
         
         // Play win sound based on amount
-        playWinSound(amount = 0) {
+        playWinSound: function(amount = 0) {
             if (amount >= 300) {
-                this.playSound(this.sounds.ultraWin);
+                this.play('ultraWin');
             } else if (amount >= 200) {
-                this.playSound(this.sounds.megaWin);
+                this.play('megaWin');
             } else if (amount >= 100) {
-                this.playSound(this.sounds.bigWin);
-            } 
-            // else {
-            //     this.playSound(this.sounds.win);
-            // }
-        }
-        
-        // Stop a specific sound
-        stopSound(sound) {
-            if (sound) {
-                sound.pause();
-                sound.currentTime = 0;
+                this.play('bigWin');
+            } else {
+                this.play('win');
             }
-        }
+        },
         
-        // Stop all sounds
-        stopAllSounds() {
-            Object.values(this.sounds).forEach(sound => {
-                sound.pause();
-                sound.currentTime = 0;
-            });
-        }
-        
-        // Toggle sound effects on/off
-        toggleSoundEffects() {
+        // Toggle sound effects
+        toggleSoundEffects: function() {
             this.soundEffectsEnabled = !this.soundEffectsEnabled;
-            soundEffectsEnabled = this.soundEffectsEnabled;
             return this.soundEffectsEnabled;
-        }
+        },
         
-        // Toggle background music on/off
-        toggleBackgroundMusic() {
+        // Toggle background music
+        toggleBackgroundMusic: function() {
             this.backgroundMusicEnabled = !this.backgroundMusicEnabled;
-            backgroundMusicEnabled = this.backgroundMusicEnabled;
             
             if (!this.backgroundMusicEnabled) {
-                this.stopSound(this.sounds.background);
+                this.sounds.background.pause();
+                this.sounds.freeSpin.pause();
             } else {
-                this.playBackgroundMusic();
+                this.playBackgroundMusic(false);
             }
             
             return this.backgroundMusicEnabled;
         }
+    };
+
+    // Add audio testing functions
+    function testAllAudioFunctions() {
+        // Create a testing panel to test all audio functions
+        const testPanel = document.createElement('div');
+        testPanel.style.position = 'fixed';
+        testPanel.style.bottom = '10px';
+        testPanel.style.right = '10px';
+        testPanel.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+        testPanel.style.color = 'white';
+        testPanel.style.padding = '10px';
+        testPanel.style.borderRadius = '5px';
+        testPanel.style.zIndex = '9999';
+        testPanel.style.maxWidth = '350px';
+        testPanel.innerHTML = `
+            <h4 style="margin-top: 0; text-align: center;">Audio Test Panel</h4>
+            <div style="margin-bottom: 10px;">
+                <button id="test-init" style="width: 100%; margin-bottom: 5px;">Initialize Audio</button>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <button id="test-toggle-sfx" style="width: 48%;">Toggle SFX</button>
+                    <button id="test-toggle-music" style="width: 48%;">Toggle Music</button>
+                </div>
+                <button id="test-verify-audio" style="width: 100%; background-color: #FFC107; color: black; margin-bottom: 5px;">Verify Audio Files</button>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <h5 style="margin: 5px 0;">Sound Effects</h5>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    <button id="test-spin-button">Spin Button</button>
+                    <button id="test-reel-spin">Reel Spin</button>
+                    <button id="test-reel-stop">Reel Stop</button>
+                    <button id="test-win">Win</button>
+                    <button id="test-big-win">Big Win</button>
+                    <button id="test-mega-win">Mega Win</button>
+                    <button id="test-ultra-win">Ultra Win</button>
+                    <button id="test-jackpot">Jackpot</button>
+                    <button id="test-base-hit-1">Base Hit 1</button>
+                    <button id="test-base-hit-2">Base Hit 2</button>
+                </div>
+            </div>
+            <div>
+                <h5 style="margin: 5px 0;">Music</h5>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    <button id="test-bg-music">Background Music</button>
+                    <button id="test-free-spin-music">Free Spin Music</button>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <h5 style="margin: 5px 0;">Functionality Tests</h5>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    <button id="test-spin-sequence">Spin Sequence</button>
+                    <button id="test-win-sequence">Win Sequence</button>
+                </div>
+            </div>
+            <div id="test-status" style="margin-top: 10px; font-size: 12px; min-height: 40px; overflow-y: auto; border-top: 1px solid gray; padding-top: 5px;"></div>
+            <div style="margin-top: 10px; text-align: right;">
+                <button id="close-test-panel" style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px;">Close</button>
+            </div>
+        `;
+        document.body.appendChild(testPanel);
+        
+        // Helper to log status
+        function logStatus(message) {
+            const statusDiv = document.getElementById('test-status');
+            const timestamp = new Date().toLocaleTimeString();
+            statusDiv.innerHTML = `${timestamp}: ${message}<br>` + statusDiv.innerHTML;
+            console.log(`[AUDIO TEST] ${message}`);
+        }
+        
+        // Set up event listeners for test buttons
+        document.getElementById('test-init').addEventListener('click', () => {
+            audioManager.init();
+            logStatus('Audio system initialized');
+        });
+        
+        document.getElementById('test-toggle-sfx').addEventListener('click', () => {
+            const enabled = audioManager.toggleSoundEffects();
+            logStatus(`Sound effects ${enabled ? 'enabled' : 'disabled'}`);
+        });
+        
+        document.getElementById('test-toggle-music').addEventListener('click', () => {
+            const enabled = audioManager.toggleBackgroundMusic();
+            logStatus(`Background music ${enabled ? 'enabled' : 'disabled'}`);
+        });
+        
+        // Add verify audio files button handler
+        document.getElementById('test-verify-audio').addEventListener('click', () => {
+            logStatus('Verifying all audio files...');
+            const results = { success: 0, failed: 0, total: 0 };
+            const soundKeys = Object.keys(audioManager.sounds);
+            
+            // Function to verify a single audio file
+            function verifySoundFile(key) {
+                const sound = audioManager.sounds[key];
+                results.total++;
+                
+                // Create verification promise
+                return new Promise((resolve) => {
+                    // Handle successful load
+                    const loadHandler = () => {
+                        results.success++;
+                        logStatus(`✅ Sound verified: ${key}`);
+                        sound.removeEventListener('canplaythrough', loadHandler);
+                        sound.removeEventListener('error', errorHandler);
+                        resolve();
+                    };
+                    
+                    // Handle failed load
+                    const errorHandler = (e) => {
+                        results.failed++;
+                        logStatus(`❌ Sound failed: ${key} - ${e.message || 'Unknown error'}`);
+                        sound.removeEventListener('canplaythrough', loadHandler);
+                        sound.removeEventListener('error', errorHandler);
+                        resolve();
+                    };
+                    
+                    // Set timeout in case event never fires
+                    const timeout = setTimeout(() => {
+                        results.failed++;
+                        logStatus(`⚠️ Sound timeout: ${key}`);
+                        sound.removeEventListener('canplaythrough', loadHandler);
+                        sound.removeEventListener('error', errorHandler);
+                        resolve();
+                    }, 5000);
+                    
+                    // Add event listeners
+                    sound.addEventListener('canplaythrough', () => {
+                        clearTimeout(timeout);
+                        loadHandler();
+                    }, { once: true });
+                    
+                    sound.addEventListener('error', (e) => {
+                        clearTimeout(timeout);
+                        errorHandler(e);
+                    }, { once: true });
+                    
+                    // Try to load the sound
+                    sound.load();
+                });
+            }
+            
+            // Verify all sounds and show final results
+            Promise.all(soundKeys.map(verifySoundFile)).then(() => {
+                logStatus(`Verification complete: ${results.success}/${results.total} sounds OK (${results.failed} failed)`);
+            });
+        });
+        
+        // Sound effect tests
+        document.getElementById('test-spin-button').addEventListener('click', () => {
+            audioManager.play('spinButton');
+            logStatus('Playing: Spin Button');
+        });
+        
+        document.getElementById('test-reel-spin').addEventListener('click', () => {
+            audioManager.play('reelSpin');
+            logStatus('Playing: Reel Spin');
+        });
+        
+        document.getElementById('test-reel-stop').addEventListener('click', () => {
+            audioManager.play('reelStop');
+            logStatus('Playing: Reel Stop');
+        });
+        
+        document.getElementById('test-win').addEventListener('click', () => {
+            audioManager.play('win');
+            logStatus('Playing: Win');
+        });
+        
+        document.getElementById('test-big-win').addEventListener('click', () => {
+            audioManager.play('bigWin');
+            logStatus('Playing: Big Win');
+        });
+        
+        document.getElementById('test-mega-win').addEventListener('click', () => {
+            audioManager.play('megaWin');
+            logStatus('Playing: Mega Win');
+        });
+        
+        document.getElementById('test-ultra-win').addEventListener('click', () => {
+            audioManager.play('ultraWin');
+            logStatus('Playing: Ultra Win');
+        });
+        
+        document.getElementById('test-jackpot').addEventListener('click', () => {
+            audioManager.play('jackpot');
+            logStatus('Playing: Jackpot');
+        });
+        
+        document.getElementById('test-base-hit-1').addEventListener('click', () => {
+            audioManager.play('baseHit1');
+            logStatus('Playing: Base Hit 1');
+        });
+        
+        document.getElementById('test-base-hit-2').addEventListener('click', () => {
+            audioManager.play('baseHit2');
+            logStatus('Playing: Base Hit 2');
+        });
+        
+        // Music tests
+        document.getElementById('test-bg-music').addEventListener('click', () => {
+            audioManager.playBackgroundMusic(false);
+            logStatus('Playing: Background Music');
+        });
+        
+        document.getElementById('test-free-spin-music').addEventListener('click', () => {
+            audioManager.playBackgroundMusic(true);
+            logStatus('Playing: Free Spin Music');
+        });
+        
+        // Functionality tests
+        document.getElementById('test-spin-sequence').addEventListener('click', () => {
+            logStatus('Testing: Spin Sequence');
+            audioManager.playSpinSound();
+            setTimeout(() => {
+                audioManager.playSpinStopSound();
+                logStatus('Spin Sequence Complete');
+            }, 2000);
+        });
+        
+        document.getElementById('test-win-sequence').addEventListener('click', () => {
+            logStatus('Testing: Win Sequence');
+            const winAmounts = [50, 150, 250, 350];
+            let index = 0;
+            
+            const testNextWin = () => {
+                if (index < winAmounts.length) {
+                    const amount = winAmounts[index];
+                    logStatus(`Testing win amount: ${amount}`);
+                    audioManager.playWinSound(amount);
+                    index++;
+                    setTimeout(testNextWin, 2000);
+                } else {
+                    logStatus('Win Sequence Complete');
+                }
+            };
+            
+            testNextWin();
+        });
+        
+        // Close button
+        document.getElementById('close-test-panel').addEventListener('click', () => {
+            document.body.removeChild(testPanel);
+            logStatus('Test panel closed');
+        });
+        
+        logStatus('Audio test panel initialized');
     }
-
-    // Create the audio manager instance
-    const audioManager = new AudioManager();
-    
-    // Start background music (will play when user interacts if autoplay is blocked)
     
 
+    // testAllAudioFunctions()
+    // Add baseHit sounds to audio manager with crossOrigin set
+    function createAudioWithCrossOrigin(src) {
+        const audio = new Audio(src);
+        audio.crossOrigin = "anonymous";
+        return audio;
+    }
+    
+    audioManager.sounds.baseHit1 = createAudioWithCrossOrigin('sounds/SE_Base_Hit_01.mp3');
+    audioManager.sounds.baseHit2 = createAudioWithCrossOrigin('sounds/SE_Base_Hit_02.mp3');
+    audioManager.sounds.baseHit3 = createAudioWithCrossOrigin('sounds/SE_Base_Hit_03.mp3');
+    audioManager.sounds.baseHit4 = createAudioWithCrossOrigin('sounds/SE_Base_Hit_04.mp3');
+    audioManager.sounds.baseHit5 = createAudioWithCrossOrigin('sounds/SE_Base_Hit_05.mp3');
+    
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM loaded - initializing audio");
+        audioManager.init();
+        
+        // Create a small floating button to launch the test panel
+        const testButton = document.createElement('button');
+        testButton.innerText = 'Test Audio';
+        testButton.style.position = 'fixed';
+        testButton.style.bottom = '10px';
+        testButton.style.right = '10px';
+        testButton.style.zIndex = '9999';
+        testButton.style.padding = '8px 12px';
+        testButton.style.backgroundColor = '#4CAF50';
+        testButton.style.color = 'white';
+        testButton.style.border = 'none';
+        testButton.style.borderRadius = '4px';
+        testButton.style.cursor = 'pointer';
+        testButton.addEventListener('click', testAllAudioFunctions);
+        document.body.appendChild(testButton);
+    });
+    
     // Coin images for win animation
     coinImages = [
         "coins/0_BigWin_SS.png", "coins/1_BigWin_SS.png", "coins/2_BigWin_SS.png", "coins/3_BigWin_SS.png",
@@ -1944,14 +2221,14 @@
           textClass: 'big-win',
           sunburstClass: 'big-win-color',
           threshold: 100,
-          coinCount: 50
+          coinCount: 80
         },
         mega: {
           imgSrc: 'winlevels/megawin.png',
           text: 'MEGA WIN',
           textClass: 'mega-win',
           sunburstClass: 'mega-win-color',
-          threshold: 300,
+          threshold: 200,
           coinCount: 80
         },
         ultra: {
@@ -1960,7 +2237,7 @@
           textClass: 'ultra-win',
           sunburstClass: 'ultra-win-color',
           threshold: Infinity,
-          coinCount: 40
+          coinCount: 60
         }
       };
 
@@ -2020,9 +2297,8 @@ function initLoading() {
     // Hide Kong overlay
     function hideKongOverlay() {
         kongOverlay.style.display = "none";
-        audioManager.playBackgroundMusic();
-        // Try to play background music (will be blocked by browsers until user interaction)
-        // backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+        // Try to play background music when user interacts
+        audioManager.playBackgroundMusic(false);
     }
 
     // Preload all symbol images
@@ -2075,7 +2351,8 @@ function initLoading() {
                 symbols: [],
                 finalSymbols: [],
                 isSpinning: false, // Track if this reel is currently spinning
-                specialSymbols: {} // Track which symbols are special (larger with higher z-index)
+                specialSymbols: {}, // Track which symbols are special (larger with higher z-index)
+                finalSymbolsAppended: false // Track if final symbols have been appended for flowing effect
             };
             
             // Generate initial symbols (visible + extra for scrolling)
@@ -2253,6 +2530,10 @@ lossLimitOptions.addEventListener('click', (e) => {
         }
     }
 
+
+const BonusFrameInitialized = {
+    status: false
+};
     
     // Bonus Frame Animation Script
 function addBonusFrameToLastReel(){
@@ -2325,7 +2606,7 @@ function addBonusFrameToLastReel(){
                 // Only draw the frame if the reel is not spinning
                 if (!reels[lastReelIndex].isSpinning) {
                     // Draw the current frame of the bonus border
-                    ctx.drawImage(frameImages[currentFrame], reelX, reelY, reelWidth, reelHeight);
+                    ctx.drawImage(frameImages[currentFrame], reelX - 7, reelY -10, reelWidth + 23, reelHeight + 16);
                 }
             }
         };
@@ -2536,7 +2817,7 @@ function addBonusFrameToLastReel(){
         // Adjust sunburst size if needed
         const sunburstContainer = document.querySelector('.sunburst-container');
         if (sunburstContainer) {
-          const size = Math.min(window.innerWidth * 0.8, 400);
+          const size = Math.min(window.innerWidth * 0.99, 500);
           sunburstContainer.style.width = `${size}px`;
           sunburstContainer.style.height = `${size}px`;
         }
@@ -2545,6 +2826,8 @@ function addBonusFrameToLastReel(){
 
     // Function to update the win level visuals
       function updateWinLevel(level) {
+        console.log('--------------Entering win levels function ------------')
+        console.log(level)
         // const winText = document.getElementById('winText');
         const winImg = document.getElementById('winImg');
         const sunburst = document.getElementById('sunburst');
@@ -2576,8 +2859,7 @@ function addBonusFrameToLastReel(){
         
         // Stop big win sound and resume background music
         if (soundEffectsEnabled) {
-            bigWinSound.pause();
-            bigWinSound.currentTime = 0;
+            audioManager.stop('bigWin')
             
             if (backgroundMusicEnabled) {
                 if (isFreeSpinMode) {
@@ -3047,10 +3329,13 @@ function drawSpinningReels() {
         // Get the total number of symbols for this reel
         const totalSymbols = SYMBOLS_PER_REEL_ARRAY[i];
         
-        // Calculate the current start position within the symbol array
-        const currentPosition = reels[i].position;
-        const startIndex = Math.floor(currentPosition / symbolHeight) % totalSymbols;
-        const offsetY = currentPosition % symbolHeight; // Fractional position for smooth movement
+        // Calculate the current start position within the symbol array - allow fractional positions
+        // For downward flow, use the negative of the position
+        // This ensures symbols flow downward instead of upward
+        const currentPosition = -reels[i].position; // Negate for downward flow
+        const startIndexFloat = currentPosition / symbolHeight; // Keep as float for smoother movement
+        const startIndex = Math.floor(startIndexFloat) % totalSymbols;
+        const offsetY = (startIndexFloat - Math.floor(startIndexFloat)) * symbolHeight; // Fractional offset for pixel-perfect smoothness
         
         // Draw enough symbols to fill the view (including partially visible ones at top and bottom)
         const symbolsToShow = SYMBOLS_PER_REEL + 3; // Visible + partial at top and bottom
@@ -3073,34 +3358,23 @@ function drawSpinningReels() {
             }
         }
         
-        // Draw the conveyor belt of symbols
+        // Draw the conveyor belt of symbols with ultra-smooth continuous scrolling
         for (let j = -1; j < symbolsToShow; j++) {
             // Calculate the actual symbol index with wrapping for continuous flow
             const symbolIndex = (startIndex + j + totalSymbols) % totalSymbols;
             
-            // Get the symbol from our existing array - we always show the same symbols in the same order
+            // Get the symbol from our existing array
             const symbol = reels[i].symbols[symbolIndex];
             const symbolData = SYMBOLS.find(s => s.name === symbol.name);
             
-            // Calculate the position for drawing the symbol with downward flow
+            // Calculate the position for drawing the symbol with precise fractional positioning
+            // For downward flow, we need to invert the offsetY
             const symbolX = reelX;
-            const symbolY = reelY + j * symbolHeight + offsetY;
+            // Change sign of offsetY for downward flow (negative distance)
+            const symbolY = reelY + j * symbolHeight - offsetY;
             
-            // Draw symbol, including partially visible ones at top and bottom
+            // Draw symbol with exact pixel positioning for smoothest movement
             drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, symbol.isSpecial, symbol.scale);
-        }
-        
-        // Add a new symbol at the top of the conveyor during spinning
-        // but only when we cross a symbol boundary, maintaining the conveyor belt effect
-        if (Math.floor(reels[i].position / symbolHeight) !== Math.floor(reels[i].lastPosition / symbolHeight)) {
-            // For downward flow, replace the symbol that's about to enter from the top
-            const newSymbolIndex = (startIndex - 2 + totalSymbols) % totalSymbols;
-            const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
-            reels[i].symbols[newSymbolIndex] = {
-                name: SYMBOLS[randomIndex].name,
-                isSpecial: Math.random() < 0.3,
-                scale: Math.random() * 0.5 + 1.1
-            };
         }
         
         // Store position for next frame
@@ -3623,7 +3897,7 @@ function fetchSpinResultsFromServer(payload) {
         if (!transformedData) {
             throw new Error('Failed to transform server response');
         }
-        
+
         return transformedData;
     })
     .catch(error => {
@@ -3857,10 +4131,13 @@ async function spin() {
         await placeAndHandleBet(stake)
     }
 
-    // Play spin sound if enabled
-    if (soundEffectsEnabled) {
-        spinSound.play().catch(e => console.log("Audio play failed:", e));
-    }
+    // Play spin sound using the global audio manager
+    audioManager.play('spinButton');
+    
+    // Also play the reel spin sound with a slight delay
+    setTimeout(function() {
+        audioManager.play('reelSpin');
+    }, 100);
     
     spinning = true;
     featuresButton.disabled = true;
@@ -4017,13 +4294,15 @@ function handleSpinCompletion(apiResult) {
         // Highlight winning positions
         highlightWinningPositions(apiResult.winningPositions);
         
-        // Play win sound if enabled
-        if (soundEffectsEnabled) {
-            console.log('')
-            // const winningSound = new Audio("sounds/SE_Scoring_01.mp3");
-            // winningSound.volume = 0.9;
-            // stopsoundund.currentTime = 0; // Start from the 4th second
-            // stopsoundund.play().catch(e => console.log("Audio play failed:", e));
+        // Play win sound based on win amount using global audio manager
+        if (apiResult.win >= 300) {
+            audioManager.play('ultraWin');
+        } else if (apiResult.win >= 200) {
+            audioManager.play('megaWin');
+        } else if (apiResult.win >= 100) {
+            audioManager.play('bigWin');
+        } else {
+            audioManager.play('win');
         }
     }
     
@@ -4063,79 +4342,6 @@ function handleSpinCompletion(apiResult) {
     }
 }
 
-// Function to highlight winning positions on the reels
-function highlightWinningPositions(positions) {
-    if (!positions || positions.length === 0) return;
-    
-    // Store the original draw function if not already stored
-    if (!originalDrawStoppedReels) {
-        originalDrawStoppedReels = drawStoppedReels;
-    }
-    
-    // Override the draw function to add highlighting
-    drawStoppedReels = function(ctx) {
-        // Call the original function first
-        originalDrawStoppedReels(ctx);
-        
-        // Then add highlighting for winning positions
-        ctx.save();
-        
-        // Calculate symbol dimensions
-        const reelWidth = (canvas.width - WALL_THICKNESS.left - WALL_THICKNESS.right) / REEL_COUNT;
-        const reelHeight = (canvas.height - WALL_THICKNESS.top - WALL_THICKNESS.bottom);
-        const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
-        
-        // Draw highlight for each winning position
-        for (const pos of positions) {
-            const reelIndex = pos.reel;
-            const symbolIndex = pos.position;
-            
-            const x = WALL_THICKNESS.left + reelIndex * reelWidth;
-            const y = WALL_THICKNESS.top + symbolIndex * symbolHeight;
-            
-            // Create highlight effect
-            ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
-            ctx.fillRect(x, y, reelWidth, symbolHeight);
-            
-            // Add glowing border
-            ctx.strokeStyle = 'gold';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x + 2, y + 2, reelWidth - 4, symbolHeight - 4);
-            
-            // Add pulsing animation
-            const pulseTime = Date.now() % 1000 / 1000;
-            const pulseOpacity = 0.3 + Math.sin(pulseTime * Math.PI * 2) * 0.2;
-            
-            ctx.fillStyle = `rgba(255, 255, 0, ${pulseOpacity})`;
-            ctx.fillRect(x + 5, y + 5, reelWidth - 10, symbolHeight - 10);
-        }
-        
-        ctx.restore();
-    };
-    
-    // Create animation for the winning effect
-    const animationId = 'winHighlight';
-    activeAnimations[animationId] = {
-        duration: 5000, // 5 seconds of highlighting
-        startTime: Date.now(),
-        onUpdate: function() {
-            // Just trigger a redraw
-            drawGame();
-        },
-        onComplete: function() {
-            // Restore original draw function
-            drawStoppedReels = originalDrawStoppedReels;
-            drawGame();
-            delete activeAnimations[animationId];
-        }
-    };
-    
-    // Start animation loop if not already running
-    if (!animationLoopRunning) {
-        animationLoopRunning = true;
-        requestAnimationFrame(updateAnimations);
-    }
-}
 
 // Animation loop for effects
 function updateAnimations(timestamp) {
@@ -4291,16 +4497,18 @@ function groupWinValuesDisplay(spinResults) {
     let currentIndex = 0;
 
     winValueDisplayInterval = setInterval(() => {
-        const currentItem = displayItems[currentIndex];
-        console.log('---------gooooooooooooooood------------')
-        console.log(currentItem.row)
-        document.getElementById('win-amount2').style.marginTop = '0%';
-        if (currentItem.row == 1){
-            document.getElementById('win-amount2').style.marginTop = '22%';
-        }else if (currentItem.row == 2){
-            document.getElementById('win-amount2').style.marginTop = '45%';
+        if (!isFreeSpinMode){
+            const currentItem = displayItems[currentIndex];
+            console.log('---------gooooooooooooooood------------')
+            console.log(currentItem.row)
+            document.getElementById('win-amount2').style.marginTop = '0%';
+            if (currentItem.row == 1){
+                document.getElementById('win-amount2').style.marginTop = '22%';
+            }else if (currentItem.row == 2){
+                document.getElementById('win-amount2').style.marginTop = '45%';
+            }
+            document.getElementById('win-amount2').innerHTML = parseFloat(currentItem.win_value).toFixed(2);
         }
-        document.getElementById('win-amount2').innerHTML = parseFloat(currentItem.win_value).toFixed(2);
         // 🔁 Use currentItem.row for positioning/animation
         // Example usage:
         // highlightRow(currentItem.row);
@@ -4316,10 +4524,8 @@ function updateWinnings(targetAmount) {
     let currentAmount = parseFloat(element.innerHTML) || 0;
     let increment = (targetAmount - currentAmount) / 50; // Adjust speed
 
-    const winningSound = new Audio("sounds/SE_Scoring_01.mp3");
-    winningSound.volume = 0.9;
-    winningSoundcurrentTime = 0; // Start from the 4th second
-    winningSound.play().catch(e => console.log("Audio play failed:", e));
+    // Use the audioManager instead of direct Audio creation
+    audioManager.play('win');
 
     let counter = setInterval(() => {
         currentAmount += increment;
@@ -4328,9 +4534,17 @@ function updateWinnings(targetAmount) {
         if ((increment > 0 && currentAmount >= targetAmount) || (increment < 0 && currentAmount <= targetAmount)) {
             element.innerHTML = `${targetAmount.toFixed(2)}`;
             clearInterval(counter);
-            winningSound.pause()
+            audioManager.stop('win')
             if (!isFreeSpinMode){
-                displayBalance(balance)
+                function sleep(ms) {
+                    return new Promise(resolve => setTimeout(resolve, ms));
+                }
+                // Usage: delay for 500 milliseconds
+                sleep(500).then(() => {
+                    displayBalance(balance)
+                });
+
+                
             }
         }
     }, 20); // Update every 20ms
@@ -4363,8 +4577,6 @@ function updateWinnings(targetAmount) {
         // Show the overlay
         const winOverlay = document.getElementById('winOverlay');
         winOverlay.style.display = 'flex';
-
-        bigWinSound.play()
         
         // Start with $0
         let currentAmount = 0;
@@ -4459,8 +4671,11 @@ function handleSpinCompletion(apiResult) {
 
             async function showImageTemporarily() {
                 freeSpinsOverlay.style.display = 'block';  
-                audioManager.stopSound(audioManager.sounds.background);
-                audioManager.playSound(audioManager.sounds.freeSpin);   // Show image
+                console.log('Hiiiiiiiiiiiiiiiiiiiiiiiiiii')
+                audioManager.stop('background');
+                console.log('Haaaaaaaaaaaaaaaaa')
+                audioManager.play('freeSpin');   // Show image
+                console.log('Niiiiiiiiiiiiiiiiiiiiiiiiiiiice')
                 await delayMs(4000);               // Wait 4 seconds
                 freeSpinsOverlay.style.display = 'none';      // Hide image
             }
@@ -4741,6 +4956,99 @@ async function spin() {
         if (initialApiResult) {
             animationController.hasResults = true;
             animationController.results = initialApiResult;
+            
+            // Since we have the results immediately, we can pregenerate the entire sequence
+            // from the initial spinning state to the final state, for a smooth transition
+            pregenerateSymbolSequence(initialApiResult);
+        }
+        
+        // Reset the finalSymbolsAppended flag for all reels at the start of each spin
+        for (let i = 0; i < REEL_COUNT; i++) {
+            reels[i].finalSymbolsAppended = false;
+            reels[i].symbolSequence = [];
+        }
+        
+        // Pregenerate a full sequence of symbols that will flow during the spin
+        function pregenerateSymbolSequence(results) {
+            if (!results || !results.reels) return;
+            
+            // For each reel
+            for (let i = 0; i < REEL_COUNT; i++) {
+                if (!results.reels[i]) continue;
+                
+                const finalSymbols = results.reels[i];
+                const totalVisibleSymbols = SYMBOLS_PER_REEL_ARRAY[i];
+                const totalSymbols = totalVisibleSymbols + EXTRA_SYMBOLS * 2; // Total in the conveyor
+                
+                // Create a new sequence array long enough to handle the entire spin animation
+                // We'll create enough symbols for several rotations during spinning
+                // Increase the number of spins to ensure a longer animation
+                const spinCount = isQuickSpinMode ? 40 : 20; // Increased number of full reel rotations
+                const totalSpinningSymbols = totalVisibleSymbols * spinCount;
+                
+                // This will be our full array of symbols for the entire animation
+                const symbolSequence = [];
+                
+                // 1. First, add enough random symbols for the main spinning phase
+                // These will be shown during the main part of the spinning animation
+                for (let j = 0; j < totalSpinningSymbols; j++) {
+                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                    symbolSequence.push({
+                        name: SYMBOLS[randomIndex].name,
+                        isSpecial: Math.random() < 0.3,
+                        scale: Math.random() * 0.5 + 1.1
+                    });
+                }
+                
+                // 2. Add more transition symbols to ensure a longer, smoother transition to the final symbols
+                // This creates a more natural flow into the winning symbols
+                const transitionSymbolCount = totalVisibleSymbols * 4; // Increased transition symbols
+                for (let j = 0; j < transitionSymbolCount; j++) {
+                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                    symbolSequence.push({
+                        name: SYMBOLS[randomIndex].name,
+                        isSpecial: Math.random() < 0.3,
+                        scale: Math.random() * 0.5 + 1.1
+                    });
+                }
+                
+                // 3. Add transition symbols before the final symbols
+                // This creates spacing before the final symbols start appearing
+                const preFinalsTransitionCount = totalVisibleSymbols * 3;
+                for (let t = 0; t < preFinalsTransitionCount; t++) {
+                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                    symbolSequence.push({
+                        name: SYMBOLS[randomIndex].name,
+                        isSpecial: Math.random() < 0.3,
+                        scale: Math.random() * 0.5 + 1.1
+                    });
+                }
+                
+                // 4. Add the final result symbols in consecutive order without any symbols in between
+                // This ensures they flow in one after the other consecutively
+                for (let j = 0; j < finalSymbols.length; j++) {
+                    // Add the actual final symbol
+                    symbolSequence.push(finalSymbols[j]);
+                }
+                
+                // Add extra symbols at the end to ensure smooth deceleration
+                // This prevents the reel from stopping abruptly
+                const endingSymbolCount = totalVisibleSymbols * 2;
+                for (let j = 0; j < endingSymbolCount; j++) {
+                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                    symbolSequence.push({
+                        name: SYMBOLS[randomIndex].name,
+                        isSpecial: Math.random() < 0.3,
+                        scale: Math.random() * 0.5 + 1.1
+                    });
+                }
+                
+                // Store this sequence in the reel object
+                reels[i].symbolSequence = symbolSequence;
+                reels[i].sequenceIndex = 0; // Start from the beginning
+                
+                console.log(`Reel ${i} - Generated ${symbolSequence.length} symbol sequence`);
+            }
         }
         
         // Calculate dimensions
@@ -4748,8 +5056,9 @@ async function spin() {
         const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
         
         // Animation configuration
-        const spinSpeed = isQuickSpinMode ? 40 : 30; // Pixels per frame
+        const spinSpeed = isQuickSpinMode ? 40 : 20; // Pixels per frame
         const stopDelayBetweenReels = isQuickSpinMode ? 300 : 600; // ms between reel stops
+        // Increased minimum spin time to ensure a longer animation even if API returns quickly
         const minSpinTime = isQuickSpinMode ? 1000 : 2000; // Minimum spin time before any reel stops
         
         // Animation state variables
@@ -4767,7 +5076,7 @@ async function spin() {
         // }
         
         // Safety timeout to prevent infinite spinning
-        const maxSpinTime = 15000; // 15 seconds max spin time
+        const maxSpinTime = 150000; // 15 seconds max spin time
         
         // Animation function using requestAnimationFrame for smoother animation
         function animate(timestamp) {
@@ -4775,6 +5084,9 @@ async function spin() {
             if (animationController.hasResults && waitingForResults) {
                 console.log("Animation received results, preparing to stop reels");
                 waitingForResults = false;
+                
+                // Pregenerate all symbol sequences now that we have results
+                pregenerateSymbolSequence(animationController.results);
                 
                 // Calculate when reels should start stopping
                 // Allow for a natural spin duration before stopping
@@ -4847,12 +5159,8 @@ async function spin() {
                     // Set the time when this reel should be fully stopped
                     reelStopTimes[i] = timestamp + symbolHeight * 3; // Time to travel 3 more symbols
                     
-                    // Play stop sound if enabled
-                    if (soundEffectsEnabled) {
-                        const stopSound = new Audio("sounds/SE_Spinstop.mp3");
-                        stopSound.volume = 0.9;
-                        stopSound.play().catch(e => console.log("Audio play failed:", e));
-                    }
+                    // Play stop sound using the global audio manager
+                    audioManager.play('reelStop');
                 }
                 
                 // Calculate how far this reel should have traveled
@@ -4870,13 +5178,29 @@ async function spin() {
                         // Position the reel exactly where it should be
                         reels[i].position = 0;
                         
-                        // Set the final symbols if available
+                        // Make sure the final visible symbols match the results
                         if (animationController.results && 
                             animationController.results.reels && 
                             animationController.results.reels[i]) {
-
-                            reels[i].finalSymbols = animationController.results.reels[i];
-
+                            
+                            const finalSymbols = animationController.results.reels[i];
+                            
+                            // Set the visible symbols to the final result
+                            // They should already be in the right positions due to our sequence,
+                            // but this ensures perfect positioning
+                            reels[i].finalSymbols = finalSymbols;
+                            
+                            // Update the visible symbols to match exactly the final expected state
+                            // For downward flowing symbols, ensure final result appears correctly
+                            const totalSymbols = reels[i].symbols.length;
+                            for (let j = 0; j < finalSymbols.length; j++) {
+                                // Position each final symbol correctly at the proper location
+                                // For downward flowing reels with symbols from top
+                                const index = j % totalSymbols;
+                                reels[i].symbols[index] = finalSymbols[j];
+                            }
+                            
+                            // Check for scatter symbols to play sounds
                             console.log(reels[i].finalSymbols)
                             const hasScatterInFinal = reels[i].finalSymbols.some(symbol => symbol.name.toLowerCase() === "scatter");
                             console.log(hasScatterInFinal)
@@ -4884,16 +5208,15 @@ async function spin() {
                             console.log(consecutiveScatterSymbols)
                             const hasConsecutiveScatters = consecutiveScatterSymbols.every(item => item === true)
                             if (hasConsecutiveScatters){
-                                const scatterSound = new Audio(`sounds/SE_BASE_Hit_0${i + 1}.mp3`);
-                                scatterSound.volume = 0.9;
-                                scatterSoundcurrentTime = 0; // Start from the 4th second
-                                scatterSound.play().catch(e => console.log("Audio play failed:", e));
+                                // Play scatter hit sound using the global audio manager
+                                // Make sure i stays within valid range (1-5) for baseHit sounds
+                                const hitSoundIndex = Math.min(Math.max(1, i + 1), 5);
+                                audioManager.play('baseHit' + hitSoundIndex);
                             } 
 
                             if (i == 4){
                                 consecutiveScatterSymbols = []
                             }
-
                         }
                         
                         continue;
@@ -4901,55 +5224,106 @@ async function spin() {
                     
                     // Deceleration effect - ease out as we approach the stop time
                     const progress = 1 - timeUntilStop / (symbolHeight * 3);
-                    const easeOutFactor = 1 - Math.pow(1 - progress, 44); // Cubic ease out
+                    // const easeOutFactor = 1 - Math.pow(1 - progress, 44); // Cubic ease out
+                    const easeOutFactor = 1 - Math.pow(1 - progress, 44);
                     
-                    // Calculate distance with deceleration
+                    // Calculate distance with deceleration (negative for downward flow)
                     const totalSpinDistance = symbolHeight * SYMBOLS_PER_REEL * 5; // 5 full rotations during deceleration
-                    distance = totalSpinDistance * (1 - easeOutFactor);
+                    distance = -1 * totalSpinDistance * (1 - easeOutFactor); // Negative for downward flow
                     
                     // Add an extremely subtle oscillation effect when nearly stopped
                     // for a more natural conveyor belt-like deceleration
                     if (progress > 0.85) {
                         // Very subtle oscillation with reduced amplitude for smooth stopping
+                        // For downward flow, we add the opposite oscillation
                         const oscillation = Math.sin(progress * 2) * 0.3 * (1 - progress);
-                        distance += oscillation;
+                        distance -= oscillation; // Subtract for downward movement
+                    }
+                    
+                    // When we're nearing the end of the reel's spin, adjust the sequence position
+                    // to ensure we've moved through enough symbols based on our deceleration progress
+                    if (!reels[i].finalSymbolsAppended && reels[i].symbolSequence && reels[i].symbolSequence.length > 0) {
+                        // Calculate what percentage of the sequence we should have moved through based on deceleration progress
+                        const totalSequenceLength = reels[i].symbolSequence.length;
+                        const desiredPosition = Math.floor(totalSequenceLength * progress * 0.9); // 90% at full deceleration
+                        
+                        // Only move forward if we're behind where we should be
+                        if (reels[i].sequenceIndex < desiredPosition) {
+                            // Ensure we're showing the right symbols at this point in the deceleration
+                            reels[i].sequenceIndex = desiredPosition;
+                            console.log(`Reel ${i} - Adjusted sequence index to ${desiredPosition}/${totalSequenceLength} (${Math.round(progress*100)}% progress)`);
+                        }
+
+                        
+                        // Mark when we've entered the final phase (last 20% of deceleration)
+                        if (progress > 0.8 && !reels[i].finalSymbolsAppended) {
+                            reels[i].finalSymbolsAppended = true;
+                            console.log(`Reel ${i} - Entering final phase of spin animation`);
+                        }
                     }
 
                 } else {
-                    // Regular spinning - constant speed
+                    // Regular spinning - constant speed with negative distance for downward movement
                     // Use elapsed time to ensure consistent speed across all reels
-                    distance = (elapsed / 16.67) * spinSpeed; // 16.67ms is roughly 60fps
+                    distance = -1 * (elapsed / 16.67) * spinSpeed; // 16.67ms is roughly 60fps, negative for downward flow
                 }
 
                 
                 // Smooth conveyor belt-like motion for the reels with downward flow
                 const previousPosition = reels[i].position || 0;
                 const totalHeight = symbolHeight * SYMBOLS_PER_REEL_ARRAY[i];
-                // For downward flow, we need to make distance positive
-                const newPosition = distance % totalHeight;
+                // Since distance is already negative for downward flow, we just use it directly
+                // This creates a consistent downward motion
+                let newPosition = (-distance) % totalHeight;
+                if (newPosition < 0) newPosition += totalHeight;
                 
-                // Generate new random symbols continuously as the reel spins
                 // Check if we've passed a full symbol boundary
                 const prevSymbolIndex = Math.floor(previousPosition / symbolHeight);
                 const newSymbolIndex = Math.floor(newPosition / symbolHeight);
                 
-                // Always generate new symbols at the top for each frame
-                // This ensures symbols always appear to originate from the top
-                const totalSymbols = SYMBOLS_PER_REEL_ARRAY[i];
+                // Update symbols continuously for smooth animation without boundaries
+                // This creates a more fluid motion by updating symbols based on fractional position
+                const fractionalProgress = (newPosition % symbolHeight) / symbolHeight;
                 
-                // Always replace the top 3 symbols (those about to enter the view)
-                // to create a continuous stream of new symbols from the top
-                for (let k = 0; k < 3; k++) {
-                    // Calculate indices for symbols at the top of the reel
-                    const topSymbolIndex = (newSymbolIndex - SYMBOLS_PER_REEL - k + totalSymbols) % totalSymbols;
+                // For downward flow, we need to update symbols entering from the top
+                // We'll update it when it's within 20% of entering
+                if (fractionalProgress > 0.8 || fractionalProgress < 0.2) {
+                    const totalSymbols = SYMBOLS_PER_REEL_ARRAY[i];
                     
-                    // Generate a new random symbol
-                    const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
-                    reels[i].symbols[topSymbolIndex] = {
-                        name: SYMBOLS[randomIndex].name,
-                        isSpecial: Math.random() < 0.3,
-                        scale: Math.random() * 0.5 + 1.1
-                    };
+                    // Calculate which symbol is at or about to enter the top position
+                    const currentIndex = Math.floor(newPosition / symbolHeight);
+                    
+                    // For downward flow with symbols from top, we place new symbols at the top
+                    // This is typically where the first symbol is positioned
+                    const topSymbolIndex = (currentIndex - 1 + totalSymbols) % totalSymbols;
+                    
+                    // If we have a pregenerated sequence, use symbols from it
+                    if (reels[i].symbolSequence && reels[i].symbolSequence.length > 0 && !reels[i].finalSymbolsAppended) {
+                        // Get the next symbol from our sequence
+                        const sequenceIndex = reels[i].sequenceIndex % reels[i].symbolSequence.length;
+                        const nextSymbol = reels[i].symbolSequence[sequenceIndex];
+                        
+                        // Place this symbol at the top of the reel (for symbols flowing downward)
+                        reels[i].symbols[topSymbolIndex] = nextSymbol;
+                        
+                        // Only increment sequence on full symbol boundary crossings
+                        if (newSymbolIndex !== prevSymbolIndex) {
+                            reels[i].sequenceIndex++;
+                            
+                            // Log if we're near the end of the sequence
+                            if (reels[i].sequenceIndex >= reels[i].symbolSequence.length - 10) {
+                                console.log(`Reel ${i} - Approaching end of sequence: ${reels[i].sequenceIndex}/${reels[i].symbolSequence.length}`);
+                            }
+                        }
+                    } else {
+                        // Normal random symbol generation (fallback or if we haven't pregenerated)
+                        const randomIndex = Math.floor(Math.random() * SYMBOLS.length);
+                        reels[i].symbols[topSymbolIndex] = {
+                            name: SYMBOLS[randomIndex].name,
+                            isSpecial: Math.random() < 0.3,
+                            scale: Math.random() * 0.5 + 1.1
+                        };
+                    }
                 }
                 
                 // Update reel position with speed variation based on index
@@ -5037,6 +5411,8 @@ async function spin() {
             
             // Fetch results from server
             apiResult = await fetchSpinResultsFromServer(payload);
+
+
             console.log("API returned results:", apiResult);
             hideLoadingIndicator();
             
