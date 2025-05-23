@@ -822,8 +822,8 @@
             z-index: 999999;
         }
 
-        /* Canvas styles */
-        canvas {
+        /* Canvas and container styles */
+        canvas, #slotMachine {
             display: block;
             position: absolute;
             top: 0;
@@ -1363,12 +1363,7 @@
             <div>
                 <img id="img_top" src="bg-top6.gif" style="width: 100%;height: auto;" alt="">
                 <img id="img_top_volcano_part_1" src="volcano.gif" style="width: 100%;height: auto;display: none;" alt="">
-                <img id="img_top_volcano_part_3x" class="part2-volcano" src="multipliers/part2/3x.gif" style="width: 100%;height: auto;display: none;" alt="">
-                <img id="img_top_volcano_part_6x" class="part2-volcano" src="multipliers/part2/6x.gif" style="width: 100%;height: auto;display: none;" alt="">
-                <img id="img_top_volcano_part_9x" class="part2-volcano" src="multipliers/part2/9x.gif" style="width: 100%;height: auto;display: none;" alt="">
-                <img id="img_top_volcano_part_18x" class="part2-volcano" src="multipliers/part2/18x.gif" style="width: 100%;height: auto;display: none;" alt="">
-                <img id="img_top_volcano_part_36x" class="part2-volcano" src="multipliers/part2/36x.gif" style="width: 100%;height: auto;display: none;" alt="">
-                <img id="img_top_volcano_part_72x" class="part2-volcano" src="multipliers/part2/72x.gif" style="width: 100%;height: auto;display: none;" alt="">
+                <img id="img_top_volcano_part_2" src="volcano-part-2-complete.gif" style="width: 100%;height: auto;display: none;" alt="">
             </div>
             <div id="playground" style="position: relative; overflow: hidden;min-height: 35vh; width: 100%; background-size: cover; z-index: 99;">
                 <!-- Start Free Spins Overlay -->
@@ -1382,7 +1377,7 @@
 
 
                 <div id="display_win_amount" style="display:none; position: absolute; top: 0; left: 0; height: 100%; width: 100%; z-index: 999; background-color: rgba(0,0,0,0.7);">
-                    <div id="win-amount2" class="russo-one-regular  gradient-text" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;border-radius: 10px; font-size: 2.0rem; ">
+                    <div id="win-amount2" class="russo-one-regular  gradient-text" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;border-radius: 10px; font-size: 1.8rem; ">
                     </div>
                 </div>
 
@@ -1408,7 +1403,7 @@
                     </div>
                     
                     <!-- Canvas for the slot machine -->
-                    <canvas id="slotMachine"></canvas>
+                    <div id="slotMachine"></div>
                     <!-- Removed duplicate win-amount2 display -->
                 </div>
             </div>
@@ -1596,12 +1591,15 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.2.1/dist/pixi-filters.js"></script>
+<script src="pixi-slot.js"></script>
+<script src="test-slot.js"></script>
 
 <script>
     // Game configuration
     const REEL_COUNT = 5;
     // Different number of symbols per reel for progressive stopping
-    const SYMBOLS_PER_REEL_ARRAY = [60, 63, 66, 69, 72];
+    const SYMBOLS_PER_REEL_ARRAY = [40, 43, 46, 49, 52];
     const SYMBOLS_PER_REEL = 3; // Keep this for consistency with UI calculations
     const SYMBOL_SIZE = 100;
     const REEL_WIDTH = SYMBOL_SIZE;
@@ -4296,18 +4294,16 @@ function groupWinValuesDisplay(spinResults) {
     let currentIndex = 0;
 
     winValueDisplayInterval = setInterval(() => {
-        if (!isFreeSpinMode){
-            const currentItem = displayItems[currentIndex];
-            console.log('---------gooooooooooooooood------------')
-            console.log(currentItem.row)
-            document.getElementById('win-amount2').style.marginTop = '0%';
-            if (currentItem.row == 1){
-                document.getElementById('win-amount2').style.marginTop = '22%';
-            }else if (currentItem.row == 2){
-                document.getElementById('win-amount2').style.marginTop = '45%';
-            }
-            document.getElementById('win-amount2').innerHTML = parseFloat(currentItem.win_value).toFixed(2);
+        const currentItem = displayItems[currentIndex];
+        console.log('---------gooooooooooooooood------------')
+        console.log(currentItem.row)
+        document.getElementById('win-amount2').style.marginTop = '0%';
+        if (currentItem.row == 1){
+            document.getElementById('win-amount2').style.marginTop = '22%';
+        }else if (currentItem.row == 2){
+            document.getElementById('win-amount2').style.marginTop = '45%';
         }
+        document.getElementById('win-amount2').innerHTML = parseFloat(currentItem.win_value).toFixed(2);
         // 🔁 Use currentItem.row for positioning/animation
         // Example usage:
         // highlightRow(currentItem.row);
@@ -4502,26 +4498,15 @@ function handleSpinCompletion(apiResult) {
                 // const buffer = await fetchGifAsBuffer(url);
                 // const duration = getGifDuration(buffer);
                 // console.log(`GIF duration: ${duration}ms`);
-                setTimeout(callback, 3500);
+                setTimeout(callback, 4500);
             }
 
             const gifElement = document.getElementById("img_top");
             const gifUrl = gifElement.src;
 
             onGifFinish(gifUrl, () => {
-                if (apiResult.bonusMultiplier == 3) {
-                    document.getElementById('img_top').src = 'multipliers/part2/3x.gif';
-                } else if (apiResult.bonusMultiplier == 6) {
-                    document.getElementById('img_top').src = 'multipliers/part2/6x.gif';
-                } else if (apiResult.bonusMultiplier == 9) {
-                    document.getElementById('img_top').src = 'multipliers/part2/9x.gif';
-                } else if (apiResult.bonusMultiplier == 18) {
-                    document.getElementById('img_top').src = 'multipliers/part2/18x.gif';
-                } else if (apiResult.bonusMultiplier == 36) {
-                    document.getElementById('img_top').src = 'multipliers/part2/36x.gif';
-                } else if (apiResult.bonusMultiplier == 72) {
-                    document.getElementById('img_top').src = 'multipliers/part2/72x.gif';
-                }
+                // console.log("GIF finished playing once.");
+                document.getElementById('img_top').src = 'volcano-part-2-complete.gif'
                 // Add your custom logic here
             });
 
@@ -4766,10 +4751,9 @@ async function spin() {
         const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
         
         // Animation configuration
-        const spinSpeed = isQuickSpinMode ? 50 : 36; // Pixels per frame
+        const spinSpeed = isQuickSpinMode ? 40 : 30; // Pixels per frame
         const stopDelayBetweenReels = isQuickSpinMode ? 300 : 600; // ms between reel stops
-        
-         const minSpinTime = isQuickSpinMode ? 1000 : 1500;
+        // Removed minimum spin time - reels will stop as soon as they reach their final symbols
         
         // Animation state variables
         let startTime = null;
@@ -4796,7 +4780,7 @@ async function spin() {
                 waitingForResults = false;
                 
                 // Start stopping reels immediately when we have results
-                firstReelStopTime = timestamp + minSpinTime;
+                firstReelStopTime = timestamp;
                 
                 // Calculate stop times for each reel with increasing delays
                 for (let i = 0; i < REEL_COUNT; i++) {
@@ -4810,7 +4794,7 @@ async function spin() {
                 
                 // If we have results from the beginning, calculate when each reel should stop
                 if (!waitingForResults) {
-                    firstReelStopTime = startTime + minSpinTime;
+                    firstReelStopTime = startTime;
                     
                     // Calculate stop times for each reel with increasing delays
                     for (let i = 0; i < REEL_COUNT; i++) {

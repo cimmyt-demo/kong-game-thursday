@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale: 1.0, maximum-scale: 1.0, user-scalable: no">
+    <title>Kong Slot Machine - PixiJS Implementation Tests</title>
+    <style>
+        body {
+            margin: 20px;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        
+        #test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1, h2 {
+            color: #333;
+        }
+        
+        #test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 5px solid #007bff;
+        }
+        
+        .test-pass {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .test-fail {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        #slotMachine {
+            width: 800px;
+            height: 600px;
+            background-color: #222;
+            margin: 20px auto;
+            display: block;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        #test-controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background-color: #0069d9;
+        }
+    </style>
+</head>
+<body>
+    <div id="test-container">
+        <h1>Kong Slot Machine PixiJS Implementation Tests</h1>
+        
+        <div id="test-controls">
+            <button id="run-all-tests">Run All Tests</button>
+            <button id="test-initialization">Test Initialization</button>
+            <button id="test-symbols">Test Symbols</button>
+            <button id="test-spin">Test Spin</button>
+            <button id="test-win">Test Win Calculation</button>
+        </div>
+        
+        <div id="test-results">
+            <h2>Test Results</h2>
+            <div id="results-output"></div>
+        </div>
+        
+        <!-- Game container for testing -->
+        <div id="slotMachine" class="hidden"></div>
+        
+        <!-- Hidden UI elements needed for tests -->
+        <div id="hidden-elements" class="hidden">
+            <span id="update_winnings">0.00</span>
+            <span id="balanceText">1000.00</span>
+            <div id="winOverlay"></div>
+            <div id="freespinsoverlay"></div>
+            <div id="startfreespinsoverlay"></div>
+            <div id="free-spins-indicator"></div>
+        </div>
+    </div>
+    
+    <!-- Load scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
+    <script src="pixi-slot-fixed.js"></script>
+    <script src="test-slot.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const resultsOutput = document.getElementById('results-output');
+            
+            // Original console.log to store outputs
+            const originalConsoleLog = console.log;
+            const originalConsoleError = console.error;
+            
+            // Override console.log to also display in the results div
+            console.log = function(message) {
+                // Call the original console.log
+                originalConsoleLog.apply(console, arguments);
+                
+                // Add to results div
+                const logElement = document.createElement('div');
+                logElement.textContent = message;
+                
+                if (message.includes('PASS')) {
+                    logElement.className = 'test-pass';
+                } else if (message.includes('FAIL')) {
+                    logElement.className = 'test-fail';
+                }
+                
+                resultsOutput.appendChild(logElement);
+            };
+            
+            // Override console.error to also display in the results div
+            console.error = function(message) {
+                // Call the original console.error
+                originalConsoleError.apply(console, arguments);
+                
+                // Add to results div
+                const logElement = document.createElement('div');
+                logElement.textContent = message;
+                logElement.className = 'test-fail';
+                resultsOutput.appendChild(logElement);
+            };
+            
+            // Test runner function
+            function runTest(testFunction) {
+                // Clear previous results
+                resultsOutput.innerHTML = '';
+                
+                // Show the slot machine container
+                document.getElementById('slotMachine').classList.remove('hidden');
+                
+                // Initialize the slot machine
+                const symbols = [
+                    { name: 'Treasure Chest', image: 'treasurechest.png', color: '#ff5252', payouts: [0, 0, 40, 100, 250], normal_scale: 1.2, z_index: 97 },
+                    { name: 'Explorer', image: 'explorer.png', color: '#ffeb3b', payouts: [0, 0, 30, 80, 200], normal_scale: 1.2, z_index: 95 },
+                    { name: 'Compass', image: 'compass.png', color: '#ff9800', payouts: [0, 0, 25, 60, 175], normal_scale: 1.15, z_index: 94 },
+                    { name: 'Binoculars', image: 'binoculars.png', color: '#9c27b0', payouts: [0, 0, 20, 50, 150], normal_scale: 1.15, z_index: 94 },
+                    { name: 'A', image: 'a.png', color: '#f44336', payouts: [0, 0, 10, 20, 100], normal_scale: 1.10, z_index: 93 },
+                    { name: 'K', image: 'k.png', color: '#4caf50', payouts: [0, 0, 8, 15, 90], normal_scale: 1.10, z_index: 93 },
+                    { name: 'Q', image: 'q.png', color: '#ffc107', payouts: [0, 0, 6, 12, 80], normal_scale: 1.10, z_index: 93 },
+                    { name: 'J', image: 'j.png', color: '#2196f3', payouts: [0, 0, 5, 10, 70], normal_scale: 1.10, z_index: 93 },
+                    { name: 'Wild', image: 'wild.png', color: '#00bcd4', payouts: [0, 0, 50, 125, 300], normal_scale: 1.25, z_index: 120 },
+                    { name: 'Scatter', image: 'scatter.png', color: '#e91e63', payouts: [0, 0, 5, 20, 50], normal_scale: 1.30, z_index: 97 }
+                ];
+                
+                const config = {
+                    containerId: 'slotMachine',
+                    reelCount: 5,
+                    symbolsPerReel: 3,
+                    symbolsPerReelArray: [40, 43, 46, 49, 52],
+                    symbolSize: 100,
+                    extraSymbols: 2,
+                    symbols: symbols,
+                    wallThickness: {
+                        top: 20,
+                        right: 7,
+                        bottom: 60,
+                        left: 7
+                    },
+                    balance: 1000,
+                    stake: 0.3
+                };
+                
+                // Initialize slot machine
+                window.slotMachine = new KongSlotMachine(config);
+                
+                // Wait for initialization to complete
+                setTimeout(() => {
+                    // Run the test
+                    const testSuite = new SlotMachineTestSuite(window.slotMachine);
+                    
+                    if (testFunction) {
+                        testFunction.call(testSuite);
+                    } else {
+                        testSuite.runAllTests();
+                    }
+                }, 1000);
+            }
+            
+            // Set up button event listeners
+            document.getElementById('run-all-tests').addEventListener('click', () => runTest());
+            document.getElementById('test-initialization').addEventListener('click', () => runTest(function() { this.testInitialization(); }));
+            document.getElementById('test-symbols').addEventListener('click', () => runTest(function() { this.testSymbolRendering(); }));
+            document.getElementById('test-spin').addEventListener('click', () => runTest(function() { this.testReelSpinning(); }));
+            document.getElementById('test-win').addEventListener('click', () => runTest(function() { this.testWinCalculation(); }));
+        });
+    </script>
+</body>
+</html>

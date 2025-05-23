@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale: 1.0, maximum-scale: 1.0, user-scalable: no">
+    <title>Kong (Treasure Hunt) Slot Machine - PixiJS Version</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #2c2c2c;
+            touch-action: manipulation;
+            font-optical-sizing: auto;
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        #game-container {
+            width: 100%;
+            height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+        }
+        
+        .game-canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+            width: 100%;
+            margin: auto;
+            overflow: hidden;
+            z-index: 888;
+        }
+        
+        #slotMachine {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .game-controls {
+            width: 100%;
+            background-color: #333;
+            z-index: 1000;
+            bottom: 0 !important;
+            padding: 10px 0;
+        }
+        
+        .control-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .spin-button {
+            cursor: pointer;
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            font-weight: bold;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .spin-button:hover {
+            background-color: #ffca2c;
+            transform: scale(1.05);
+        }
+        
+        .secondary-button {
+            cursor: pointer;
+            background-color: #555;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .secondary-button:hover {
+            background-color: #666;
+        }
+        
+        .balance-display {
+            color: white;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 18px;
+        }
+        
+        .win-display {
+            color: #ffc107;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            height: 30px;
+        }
+        
+        /* Win overlay */
+        #winOverlay {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #closeBtn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 20;
+        }
+        
+        .win-content {
+            text-align: center;
+            z-index: 15;
+            color: #ffd700;
+            font-size: 40px;
+        }
+        
+        /* Coins container */
+        #coinsContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        /* Free spins overlay */
+        #freespinsoverlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            height: 100%;
+            width: 100%;
+            z-index: 999999;
+        }
+        
+        /* Start free spins overlay */
+        #startfreespinsoverlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            height: 100%;
+            width: 100%;
+            z-index: 999999;
+        }
+        
+        /* Free spins indicator */
+        #free-spins-indicator {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(192, 156, 14, 0.8);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1.0rem;
+            font-weight: bold;
+            z-index: 100;
+        }
+        
+        /* Features overlay */
+        #featuresOverlay {
+            display: none;
+            z-index: 9999;
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            background-color: rgb(0,0,0,0.8);
+        }
+        
+        /* Normal spins display */
+        #normalspins_display {
+            display: flex;
+        }
+        
+        /* Free spins display */
+        #freespins_display {
+            display: none;
+        }
+        
+        /* Test panel */
+        #testPanel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            z-index: 9999;
+        }
+        
+        #testPanel button {
+            margin: 5px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        #testPanel button:hover {
+            background-color: #3e8e41;
+        }
+        
+        #testResults {
+            margin-top: 10px;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="featuresOverlay">
+            <div style="height: 100%; width: 100%; font-weight: bold;" class="d-flex justify-content-center align-items-center">
+                <div class="mx-auto">
+                    <div class="mx-auto">
+                        <button id="feature1" class="btn btn-warning btn-lg my-2 mb-2 mx-3">
+                            Feature 1
+                        </button>
+                    </div>
+                    <div class="mx-auto">
+                        <button id="feature2" class="btn btn-warning btn-lg my-2 mx-3">
+                            Feature 2
+                        </button>
+                    </div>
+                    <div class="mx-auto">
+                        <button id="feature3" class="btn btn-warning btn-lg my-2 mb-2 mx-3">
+                            Feature 3
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Canvas Content -->
+        <div class="game-canvas-container">
+            <!-- Free Spins Indicator -->
+            <div id="free-spins-indicator">
+                FREE SPINS: <span id="free-spins-count">0</span> | MULTIPLIER: <span id="bonus-multiplier">0</span>x
+            </div>
+            
+            <!-- PixiJS container (div instead of canvas) -->
+            <div id="slotMachine"></div>
+            
+            <!-- Start Free Spins Overlay -->
+            <div id="startfreespinsoverlay">
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%; width: 100%;">
+                    <div id="startfreespinsbutton" class="py-1 px-3 text-white" style="border-radius: 6px; border: 2px white solid; font-size: 0.75rem; background-color: rgba(0, 0, 0, 0.8); cursor: pointer;">
+                        PRESS TO START THE BONUS
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Free Spins Overlay -->
+            <div id="freespinsoverlay">
+                <div class="py-3 px-3 d-flex justify-content-center align-items-center" style="height: 100%;width:100%;">
+                    <img class="py-2 px-2" id="freespinsoverlayimg" src="freespinsoverlay.png" style="width: 85%; height: auto;" alt="Free Spins">
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="game-controls">
+            <div id="normalspins_display">
+                <div class="win-display">
+                    WIN <span id="update_winnings">0.00</span>
+                </div>
+            </div>
+            <div id="freespins_display" style="display: none;">
+                <div class="win-display">
+                    FREE SPINS <span id="remaining_fs_holder">0</span>/<span id="total_fs_holder">0</span> | WIN <span id="update_fs_winnings">0.00</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <button id="autoPlayButton" class="secondary-button">AUTO<br><span id="remainingAutoSpins" style="display: none;">0</span></button>
+                <button id="spinButton" class="spin-button">SPIN</button>
+                <button id="stakeButton" class="secondary-button">BET<br><span id="currentStake">0.3</span></button>
+            </div>
+            <div class="balance-display">
+                BALANCE: <span id="balanceText">1000.00</span>
+            </div>
+            <div class="text-center mt-2">
+                <button id="featuresButton" class="btn btn-sm btn-warning">Test Features</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Win Overlay -->
+    <div id="winOverlay">
+        <button id="closeBtn" class="btn-close btn-close-white" aria-label="Close"></button>
+        <div id="coinsContainer"></div>
+        <div class="win-content">
+            <img id="winImg" style="max-width: 200px;" src="winlevels/bigwin.png" alt="">
+            <div id="winAmount">$0</div>
+        </div>
+    </div>
+    
+    <!-- Test Panel -->
+    <div id="testPanel">
+        <h4>Test Panel</h4>
+        <button id="testSpin">Test Spin</button>
+        <button id="testWin">Test Big Win</button>
+        <button id="testFreeSpins">Test Free Spins</button>
+        <div id="testResults"></div>
+    </div>
+
+    <!-- Load scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.2.1/dist/pixi-filters.js"></script>
+    <script src="pixi-slot-fixed.js"></script>
+    
+    <script>
+        // Initialize test panel and event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test spin button
+            document.getElementById('testSpin').addEventListener('click', function() {
+                if (window.slotMachine) {
+                    window.slotMachine.spin();
+                } else {
+                    document.getElementById('testResults').innerHTML = 'Slot machine not initialized';
+                }
+            });
+            
+            // Test big win button
+            document.getElementById('testWin').addEventListener('click', function() {
+                if (window.slotMachine) {
+                    const mockResults = window.slotMachine.generateMockResults();
+                    mockResults.generateBigWin = true;
+                    window.slotMachine.spinAnimation(mockResults);
+                } else {
+                    document.getElementById('testResults').innerHTML = 'Slot machine not initialized';
+                }
+            });
+            
+            // Test free spins button
+            document.getElementById('testFreeSpins').addEventListener('click', function() {
+                if (window.slotMachine) {
+                    const mockResults = {
+                        reels: window.slotMachine.generateMockResults().reels,
+                        triggerFreeSpins: true,
+                        generateBigWin: false
+                    };
+                    window.slotMachine.spinAnimation(mockResults);
+                } else {
+                    document.getElementById('testResults').innerHTML = 'Slot machine not initialized';
+                }
+            });
+            
+            // Feature buttons
+            document.getElementById('feature1').addEventListener('click', function() {
+                if (window.slotMachine) {
+                    document.getElementById('featuresOverlay').style.display = 'none';
+                    window.slotMachine.spin();
+                }
+            });
+            
+            document.getElementById('feature2').addEventListener('click', function() {
+                if (window.slotMachine) {
+                    document.getElementById('featuresOverlay').style.display = 'none';
+                    const mockResults = window.slotMachine.generateMockResults();
+                    mockResults.generateBigWin = true;
+                    window.slotMachine.spinAnimation(mockResults);
+                }
+            });
+            
+            document.getElementById('feature3').addEventListener('click', function() {
+                if (window.slotMachine) {
+                    document.getElementById('featuresOverlay').style.display = 'none';
+                    const mockResults = {
+                        reels: window.slotMachine.generateMockResults().reels,
+                        triggerFreeSpins: true,
+                        generateBigWin: false
+                    };
+                    window.slotMachine.spinAnimation(mockResults);
+                }
+            });
+            
+            // Features button
+            document.getElementById('featuresButton').addEventListener('click', function() {
+                document.getElementById('featuresOverlay').style.display = 'block';
+            });
+            
+            // Close win overlay
+            document.getElementById('closeBtn').addEventListener('click', function() {
+                document.getElementById('winOverlay').style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
