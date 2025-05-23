@@ -4914,7 +4914,7 @@ async function spin() {
                             console.log(consecutiveScatterSymbols)
                             const hasConsecutiveScatters = consecutiveScatterSymbols.every(item => item === true)
                             if (hasConsecutiveScatters){
-                                const scatterSound = new Audio(`sounds/SE_BASE_Hit_0${i + 1}.mp3`);
+                                const scatterSound = new Audio(`sounds/SE_Base_Hit_0${i + 1}.mp3`);
                                 scatterSound.volume = 0.9;
                                 scatterSoundcurrentTime = 0; // Start from the 4th second
                                 scatterSound.play().catch(e => console.log("Audio play failed:", e));
