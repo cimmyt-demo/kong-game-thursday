@@ -1393,7 +1393,7 @@
 
 
                 <div id="display_win_amount" style="display:none; position: absolute; top: 0; left: 0; height: 100%; width: 100%; z-index: 999; background-color: rgba(0,0,0,0.7);">
-                    <div id="win-amount2" class="russo-one-regular text-container  gradient-text" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;border-radius: 10px; font-size: 2.0rem; ">
+                    <div id="win-amount2" class="russo-one-regular text-container  gradient-text" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;border-radius: 10px; font-size: 2.4rem; ">
                     </div>
                 </div>
 
@@ -4018,6 +4018,7 @@ function handleSpinCompletion(apiResult) {
     if (apiResult.win > 0) {
         // Update balance with winnings
         balance += apiResult.win;
+        console.log(`New Balance after win: ${balance}`)
         if (!isFreeSpinMode){
             displayBalance(balance);
         }
@@ -4070,9 +4071,16 @@ function handleSpinCompletion(apiResult) {
         
         if (autoSpins > 0) {
             // Trigger next auto-spin after a delay
-            setTimeout(() => {
-                if (!spinning) spin();
-            }, 2000);
+            if (apiResult.win > 0){
+                setTimeout(() => {
+                    if (!spinning) spin();
+                }, 3000);
+            } else {
+                setTimeout(() => {
+                    if (!spinning) spin();
+                }, 2000);
+            }
+            
         } else {
             remainingAutoSpins.innerHTML = '';
         }
@@ -4216,7 +4224,7 @@ function updateSpinningReelsWithResults(results) {
 
 let winValueDisplayInterval = null; // holds the interval ID globally
 
-function groupWinValuesDisplay(spinResults) {
+function groupWinValuesDisplay(spinResults) { 
     console.log('Entered ----------------------------------------');
 
     if (spinResults.length > 0) {
@@ -4244,11 +4252,10 @@ function groupWinValuesDisplay(spinResults) {
         winValuesGroupedByWay[way].push(result);
     }
 
-    // For each group (way), find best row and unique win_values
     for (const way in winValuesGroupedByWay) {
         const results = winValuesGroupedByWay[way];
 
-        // Count symbols per row
+        // Count how many times each row appears
         const rowCounts = {};
         for (const res of results) {
             if (!rowCounts[res.row]) {
@@ -4257,21 +4264,37 @@ function groupWinValuesDisplay(spinResults) {
             rowCounts[res.row]++;
         }
 
-        // Determine best row: most symbols, or first row in case of tie
-        let bestRow = null;
+        // Find all rows with the maximum count
         let maxCount = 0;
-
-        for (const row in rowCounts) {
-            const count = rowCounts[row];
-            const numericRow = parseInt(row);
-
-            if (count > maxCount || (count === maxCount && (bestRow === null || numericRow < bestRow))) {
+        for (const count of Object.values(rowCounts)) {
+            if (count > maxCount) {
                 maxCount = count;
-                bestRow = numericRow;
             }
         }
 
-        // Get unique win values for this group and pair with bestRow
+        const candidateRows = Object.keys(rowCounts).filter(row => rowCounts[row] === maxCount).map(Number);
+
+        // Check if any of these candidate rows have a symbol on reel 3 (index 2)
+        let bestRow = null;
+        for (const row of candidateRows) {
+            const hasMiddleReelSymbol = results.some(res => res.row === row && res.reel === 2);
+            if (hasMiddleReelSymbol) {
+                bestRow = row;
+                break;
+            }
+        }
+
+        // If no candidate row has symbol in middle reel, choose any that does
+        if (bestRow === null) {
+            const withMiddleReel = results.find(res => res.reel === 2);
+            if (withMiddleReel) {
+                bestRow = withMiddleReel.row;
+            } else {
+                bestRow = candidateRows[0]; // fallback to first candidate
+            }
+        }
+
+        // Collect unique win values for this best row
         const seen = new Set();
         for (const res of results) {
             if (!seen.has(res.win_value)) {
@@ -4284,49 +4307,32 @@ function groupWinValuesDisplay(spinResults) {
         }
     }
 
-    // If nothing to display
+    // Display logic
     if (displayItems.length === 1) {
-        if (displayItems[0].row == 1){
-            document.getElementById('win-amount2').style.marginTop = '22%';
-        }else if (displayItems[0].row == 2){
-            document.getElementById('win-amount2').style.marginTop = '45%';
-        } else {
-            document.getElementById('win-amount2').style.marginTop = '0%';
-        }
-        document.getElementById('win-amount2').innerHTML = parseFloat(displayItems[0].win_value).toFixed(2);
+        const row = displayItems[0].row;
+        const winEl = document.getElementById('win-amount2');
+
+        winEl.style.marginTop = row === 1 ? '22%' : row === 2 ? '45%' : '0%';
+        winEl.innerHTML = parseFloat(displayItems[0].win_value).toFixed(2);
         return;
     }
 
-    // Display the first win_value
-    
-
-    // Optional: Use displayItems[0].row here if you want to trigger any visual for the first row
-    // Example: highlightRow(displayItems[0].row);
-
-   
     let currentIndex = 0;
 
     winValueDisplayInterval = setInterval(() => {
-        if (!isFreeSpinMode){
+        if (!isFreeSpinMode) {
             const currentItem = displayItems[currentIndex];
-            console.log('---------gooooooooooooooood------------')
-            console.log(currentItem.row)
-            document.getElementById('win-amount2').style.marginTop = '0%';
-            if (currentItem.row == 1){
-                document.getElementById('win-amount2').style.marginTop = '22%';
-            }else if (currentItem.row == 2){
-                document.getElementById('win-amount2').style.marginTop = '45%';
-            }
-            document.getElementById('win-amount2').innerHTML = parseFloat(currentItem.win_value).toFixed(2);
+            const winEl = document.getElementById('win-amount2');
+
+            winEl.style.marginTop = currentItem.row === 1 ? '22%' :
+                                    currentItem.row === 2 ? '45%' : '0%';
+
+            winEl.innerHTML = parseFloat(currentItem.win_value).toFixed(2);
         }
-        // 🔁 Use currentItem.row for positioning/animation
-        // Example usage:
-        // highlightRow(currentItem.row);
 
         currentIndex = (currentIndex + 1) % displayItems.length;
     }, 2000);
 }
-
 
 
 function updateWinnings(targetAmount) {
@@ -4597,11 +4603,25 @@ function handleSpinCompletion(apiResult) {
         
         // Check if free spins are over
         if (remainingFreeSpinCount >= freeSpinCount) {
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            async function run() {
+                console.log("Start");
+                await sleep(2000); // Sleep for 2000 milliseconds (2 seconds)
+                console.log("End after 2 seconds");
+            }
+            run();
+
+            displayBalance(balance)
+
+            console.log("niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiice")
+
             // End free spins - transition from free spin to background music
             audioManager.stopSound(audioManager.sounds.freeSpin);
             audioManager.playBackgroundMusic();
-
-            displayBalance(balance)
+            
 
             freeSpinCount = 0;
             remainingFreeSpinCount = 0;
@@ -4777,10 +4797,10 @@ async function spin() {
         const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
         
         // Animation configuration
-        const spinSpeed = isQuickSpinMode ? 50 : 36; // Pixels per frame
+        const spinSpeed = isQuickSpinMode ? 55 : 36; // Pixels per frame
         const stopDelayBetweenReels = isQuickSpinMode ? 300 : 600; // ms between reel stops
         
-         const minSpinTime = isQuickSpinMode ? 1000 : 1500;
+         const minSpinTime = isQuickSpinMode ? 500 : 1500;
         
         // Animation state variables
         let startTime = null;
