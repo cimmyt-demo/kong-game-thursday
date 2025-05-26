@@ -4405,22 +4405,24 @@ function updateWinnings(targetAmount) {
         winningSound.play().catch(e => console.log("Audio play failed:", e));
     }
 
+    let progressByLastSpin = accumulatedAmountDuringFreespin;
+
     let counter = setInterval(() => {
         currentAmount += increment;
         if (!isFreeSpinMode){
-            element.innerHTML = `${currentAmount.toFixed(2)}`;
+            element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
         } else if (freeSpinEndedRecently === true){
-            element.innerHTML = `${(currentAmount + accumulatedAmountDuringFreespin).toFixed(2)}`;
+            element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
             freeSpinEndedRecently = false;
         }
         else {
-            element.innerHTML = `${(currentAmount + accumulatedAmountDuringFreespin).toFixed(2)}`;
+            element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
         }
         
 
         if ((increment > 0 && currentAmount >= targetAmount) || (increment < 0 && currentAmount <= targetAmount)) {
             if (!isFreeSpinMode){
-                element.innerHTML = `${targetAmount.toFixed(2)}`;
+                element.innerHTML = `${(targetAmount + progressByLastSpin).toFixed(2)}`;
             }
             clearInterval(counter);
             if (soundEffectsEnabled){
@@ -4433,7 +4435,7 @@ function updateWinnings(targetAmount) {
         }
     }, 20); // Update every 20ms
 
-    if (isFreeSpinMode || remainingFreeSpinCount >= freeSpinCount){
+    if (isFreeSpinMode || freeSpinEndedRecently){
         accumulatedAmountDuringFreespin += targetAmount;
     }
 
@@ -4701,11 +4703,11 @@ function handleSpinCompletion(apiResult) {
 
             accumulatedAmountDuringFreespin = 0;
 
-            drawWalls()
-
             displayBalance(balance)
 
             console.log("niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiice")
+
+            
 
             // End free spins - transition from free spin to background music
             audioManager.stopSound(audioManager.sounds.freeSpin);
@@ -4718,6 +4720,8 @@ function handleSpinCompletion(apiResult) {
             bonusMultiplier = 0;
             originalBetAmount = 0;
             freeSpinsIndicator.style.display = 'none';
+
+            drawWalls()
             
             // Reset displays
             freeSpinsOverlayImg.style.display = "block";
