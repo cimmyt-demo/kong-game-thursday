@@ -1806,6 +1806,31 @@
             
             // Add global click handler to handle autoplay policy
             document.addEventListener('click', this.handleUserInteraction.bind(this), {once: true});
+            
+            // Add visibility change listener to handle tab focus
+            document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+        }
+        
+        // Handle visibility change (pause music when tab not active)
+        handleVisibilityChange() {
+            if (document.hidden) {
+                // Tab is not active/visible - pause background music
+                if (this.sounds.background) {
+                    this.sounds.background.pause();
+                }
+                if (this.sounds.freeSpin) {
+                    this.sounds.freeSpin.pause();
+                }
+            } else {
+                // Tab is active/visible again - resume background music if enabled
+                if (this.backgroundMusicEnabled) {
+                    if (isFreeSpinMode && this.sounds.freeSpin) {
+                        this.sounds.freeSpin.play().catch(e => console.log("Audio play failed:", e));
+                    } else if (this.sounds.background) {
+                        this.sounds.background.play().catch(e => console.log("Audio play failed:", e));
+                    }
+                }
+            }
         }
         
         // Helper to create a sound with proper settings
@@ -1837,7 +1862,13 @@
         
         // Play a sound with proper resets and error handling
         playSound(sound) {
+            // Don't play if sound effects are disabled or sound is null
             if (!this.soundEffectsEnabled || !sound) return;
+            
+            // For background music, check if it's enabled
+            if ((sound === this.sounds.background || sound === this.sounds.freeSpin) && !this.backgroundMusicEnabled) {
+                return;
+            }
             
             // Reset the sound to start
             try {
@@ -1863,7 +1894,7 @@
         handleUserInteraction() {
             if (this._needsUserInteraction) {
                 console.log("User interacted, attempting to play audio");
-                if (this.backgroundMusicEnabled) {
+                if (this.backgroundMusicEnabled && !document.hidden) {
                     this.sounds.background.play().catch(e => console.log("Still can't play background:", e));
                 }
                 this._needsUserInteraction = false;
@@ -1872,7 +1903,7 @@
         
         // Play background music
         playBackgroundMusic() {
-            if (!this.backgroundMusicEnabled) return;
+            if (!this.backgroundMusicEnabled || document.hidden) return;
             this.playSound(this.sounds.background);
         }
         
@@ -1932,6 +1963,9 @@
         
         // Toggle background music on/off
         toggleBackgroundMusic() {
+            //toggle also sound effects:
+            this.toggleSoundEffects()
+
             this.backgroundMusicEnabled = !this.backgroundMusicEnabled;
             backgroundMusicEnabled = this.backgroundMusicEnabled;
             
@@ -3934,6 +3968,7 @@ async function spin() {
   
     // Function to update the animation with results
     function updateSpinningReelsWithResults(results) {
+        console.log("Updating spinning reels with results:", results);
         animationController.hasResults = true;
         animationController.results = results;
     }
@@ -4240,6 +4275,8 @@ function updateSpinningReelsWithResults(results) {
 let winValueDisplayInterval = null; // holds the interval ID globally
 
 function groupWinValuesDisplay(spinResults) { 
+    console.log('Entered ----------------------------------------');
+
     if (spinResults.length > 0) {
         document.getElementById('display_win_amount').style.display = 'block';
     }
@@ -4641,7 +4678,9 @@ function handleSpinCompletion(apiResult) {
             }
 
             async function run() {
+                console.log("Start");
                 await sleep(2000); // Sleep for 2000 milliseconds (2 seconds)
+                console.log("End after 2 seconds");
             }
             run();
 
@@ -4650,6 +4689,9 @@ function handleSpinCompletion(apiResult) {
             drawWalls()
 
             displayBalance(balance)
+
+            console.log("niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiice")
+
             // End free spins - transition from free spin to background music
             audioManager.stopSound(audioManager.sounds.freeSpin);
             audioManager.playBackgroundMusic();

@@ -3934,6 +3934,7 @@ async function spin() {
   
     // Function to update the animation with results
     function updateSpinningReelsWithResults(results) {
+        console.log("Updating spinning reels with results:", results);
         animationController.hasResults = true;
         animationController.results = results;
     }
@@ -4240,6 +4241,8 @@ function updateSpinningReelsWithResults(results) {
 let winValueDisplayInterval = null; // holds the interval ID globally
 
 function groupWinValuesDisplay(spinResults) { 
+    console.log('Entered ----------------------------------------');
+
     if (spinResults.length > 0) {
         document.getElementById('display_win_amount').style.display = 'block';
     }
@@ -4641,7 +4644,9 @@ function handleSpinCompletion(apiResult) {
             }
 
             async function run() {
+                console.log("Start");
                 await sleep(2000); // Sleep for 2000 milliseconds (2 seconds)
+                console.log("End after 2 seconds");
             }
             run();
 
@@ -4650,6 +4655,9 @@ function handleSpinCompletion(apiResult) {
             drawWalls()
 
             displayBalance(balance)
+
+            console.log("niiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiice")
+
             // End free spins - transition from free spin to background music
             audioManager.stopSound(audioManager.sounds.freeSpin);
             audioManager.playBackgroundMusic();
