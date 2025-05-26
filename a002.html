@@ -64,6 +64,46 @@
         letter-spacing: 2px;
     }
 
+    .text-3d {
+        color: #ffff00;
+        font-weight: 900;
+        font-size: clamp(3rem, 8vw, 6rem);
+        letter-spacing: 0.05em;
+        margin-bottom: 2rem;
+        text-shadow: 
+            /* Yellow top layer */
+            0px 0px 0px #ffff00,
+            
+            /* Orange middle layers */
+            0px 1px 0px #ff8c00,
+            0px 2px 0px #ff7f00,
+            0px 3px 0px #ff6600,
+            0px 4px 0px #ff5500,
+            
+            /* Brown bottom layers */
+            0px 5px 0px #cc6600,
+            0px 6px 0px #b85500,
+            0px 7px 0px #a04400,
+            0px 8px 0px #8b3a00,
+            0px 9px 0px #773300,
+            0px 10px 0px #662b00,
+            0px 11px 0px #552200,
+            0px 12px 0px #441a00,
+            
+            /* Dark outline and depth */
+            1px 1px 0px #331100,
+            -1px 1px 0px #331100,
+            1px -1px 0px #331100,
+            -1px -1px 0px #331100,
+            
+            /* Shadow for depth */
+            0px 15px 10px rgba(0, 0, 0, 0.3),
+            0px 20px 20px rgba(0, 0, 0, 0.2),
+            0px 25px 30px rgba(0, 0, 0, 0.1);
+        
+        animation: float 4s ease-in-out infinite;
+    }
+
     /* Create depth layers */
     .gradient-text::before {
         content: attr(data-text);
@@ -1378,7 +1418,7 @@
 
 
                 <div id="display_win_amount" style="display:none; position: absolute; top: 0; left: 0; height: 100%; width: 100%; z-index: 999; background-color: rgba(0,0,0,0.7);">
-                    <div id="win-amount2" class="russo-one-regular  gradient-text" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;border-radius: 10px; font-size: 1.8rem; ">
+                    <div id="win-amount2" class="russo-one-regular text-3d" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;border-radius: 10px; font-size: 1.8rem; ">
                     </div>
                 </div>
 

@@ -57,22 +57,24 @@
     display: inline-block;
     text-align: center;
 
-    /* More vibrant and contrasted gradient */
-    background: linear-gradient(to bottom,
-        #fff200 0%,     /* vivid yellow */
-        #ffae00 20%,    /* rich orange */
-        #ff5e00 45%,    /* deep orange-red */
-        #b33900 70%,    /* darker red-orange */
-        #003f5c 100%    /* dark blue-teal */
+    /* Smoother gradient with gradual color transitions */
+    background: linear-gradient(to right,
+        #cc6600 0%,       /* vivid yellow */
+        #003f5c 25%,      /* lighter orange */
+        #ff9933 50%,      /* warm orange */
+        #cc6600 75%,      /* darker orange-brown */
+        #ff9933 100%      /* dark blue-teal */
     );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
 
-    /* Enhanced 3D shadow effect */
+    /* Keep your 3D shadow effect */
     text-shadow:
         1px 1px #F08000,
         2px 2px #884400,
+        3px 3px #663300,
+        3px 3px #663300,
         3px 3px #663300,
         4px 4px #442200,
         5px 5px #221100,
@@ -82,12 +84,45 @@
 }
 
 
-.gradient-text::after {
-    transform: translateY(4px) translateZ(-4px);
-    opacity: 0.2;
-    filter: blur(1px);
-}
-
+ .text-3d {
+        color: #ffff00;
+        font-weight: 900;
+        font-size: clamp(3rem, 8vw, 6rem);
+        letter-spacing: 0.05em;
+        margin-bottom: 2rem;
+        text-shadow: 
+            /* Yellow top layer */
+            0px 0px 0px #ffff00,
+            
+            /* Orange middle layers */
+            0px 1px 0px #ff8c00,
+            0px 2px 0px #ff7f00,
+            0px 3px 0px #ff6600,
+            0px 4px 0px #ff5500,
+            
+            /* Brown bottom layers */
+            0px 5px 0px #cc6600,
+            0px 6px 0px #b85500,
+            0px 7px 0px #a04400,
+            0px 8px 0px #8b3a00,
+            0px 9px 0px #773300,
+            0px 10px 0px #662b00,
+            0px 11px 0px #552200,
+            0px 12px 0px #441a00,
+            
+            /* Dark outline and depth */
+            1px 1px 0px #331100,
+            -1px 1px 0px #331100,
+            1px -1px 0px #331100,
+            -1px -1px 0px #331100,
+            
+            /* Shadow for depth */
+            0px 15px 10px rgba(0, 0, 0, 0.3),
+            0px 20px 20px rgba(0, 0, 0, 0.2),
+            0px 25px 30px rgba(0, 0, 0, 0.1);
+        
+        animation: float 4s ease-in-out infinite;
+    }
 
 
 
@@ -1317,7 +1352,7 @@
             </div>
         </div>
         
-        <div id="jdb_overlay">
+        <div id="jdb_overlay" >
             <div style="height: 100%; width: 100%;" class="d-flex justify-content-center align-items-center">
                 <div class="row">
                     <div class="d-flex justify-content-center align-items-center mx-auto">
@@ -1334,7 +1369,7 @@
             </div>
         </div>
     
-        <div id="kong_overlay">
+        <div id="kong_overlay" >
             <div class="d-flex justify-content-center">
                 <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
             </div>
@@ -1729,6 +1764,7 @@
     let tempBackgroundMusicEnabled = true;
 
     let accumulatedAmountDuringFreespin = 0;
+    let freeSpinEndedRecently = false
     
     // Game mode
     const gameMode = {
@@ -3859,7 +3895,9 @@ async function spin() {
 
     // Hide win message
     winMessageElement.style.display = 'none';
-    document.getElementById('update_winnings').innerHTML = '0.00';
+    if (!isFreeSpinMode){
+        document.getElementById('update_winnings').innerHTML = '0.00';
+    }
 
     // Prepare reels for spinning
     for (let i = 0; i < REEL_COUNT; i++) {
@@ -4001,7 +4039,9 @@ function handleSpinCompletion(apiResult) {
         
         // Display win amount
         document.getElementById('display_win_amount').style.display = 'block';
-        document.getElementById('update_winnings').innerHTML = apiResult.win.toFixed(2);
+        if (!isFreeSpinMode){
+            document.getElementById('update_winnings').innerHTML = apiResult.win.toFixed(2);
+        }
         
         // Show win message
         winMessageElement.style.display = 'block';
@@ -4313,9 +4353,8 @@ function groupWinValuesDisplay(spinResults) {
 
 function updateWinnings(targetAmount) {
     let element = document.getElementById('update_winnings');
-    let currentAmount = parseFloat(element.innerHTML) || 0;
+    let currentAmount = 0;
     let increment = (targetAmount - currentAmount) / 50; // Adjust speed
-
     const winningSound = new Audio("sounds/SE_Scoring_01.mp3");
     winningSound.volume = 0.9;
     winningSoundcurrentTime = 0; // Start from the 4th second
@@ -4323,10 +4362,21 @@ function updateWinnings(targetAmount) {
 
     let counter = setInterval(() => {
         currentAmount += increment;
-        element.innerHTML = `${currentAmount.toFixed(2)}`;
+        if (!isFreeSpinMode){
+            element.innerHTML = `${currentAmount.toFixed(2)}`;
+        } else if (freeSpinEndedRecently === true){
+            element.innerHTML = `${(currentAmount + accumulatedAmountDuringFreespin).toFixed(2)}`;
+            freeSpinEndedRecently = false;
+        }
+        else {
+            element.innerHTML = `${(currentAmount + accumulatedAmountDuringFreespin).toFixed(2)}`;
+        }
+        
 
         if ((increment > 0 && currentAmount >= targetAmount) || (increment < 0 && currentAmount <= targetAmount)) {
-            element.innerHTML = `${targetAmount.toFixed(2)}`;
+            if (!isFreeSpinMode){
+                element.innerHTML = `${targetAmount.toFixed(2)}`;
+            }
             clearInterval(counter);
             winningSound.pause()
             if (!isFreeSpinMode){
@@ -4334,6 +4384,12 @@ function updateWinnings(targetAmount) {
             }
         }
     }, 20); // Update every 20ms
+
+    if (isFreeSpinMode || remainingFreeSpinCount >= freeSpinCount){
+        accumulatedAmountDuringFreespin += targetAmount;
+    }
+
+    
 }
 
     function getWinLevel(amount) {
@@ -4426,13 +4482,7 @@ function handleSpinCompletion(apiResult) {
     if (apiResult.win > 0) {
         // Update balance with winnings
         balance += apiResult.win;
-
-        if (isFreeSpinMode ){
-            accumulatedAmountDuringFreespin += apiResult.win
-            updateWinnings(accumulatedAmountDuringFreespin)
-        } else {
-            updateWinnings(apiResult.win);
-        }
+        updateWinnings(apiResult.win);
 
         // Play win sound using audio manager
         audioManager.playWinSound(apiResult.win);
@@ -4444,7 +4494,10 @@ function handleSpinCompletion(apiResult) {
             }, 1000);
         }
     } else {
-        document.getElementById('update_winnings').innerHTML = '0.00';
+        if (!isFreeSpinMode){
+            document.getElementById('update_winnings').innerHTML = '0.00';
+        }
+        
     }
 
     // Handle free spins
@@ -4545,6 +4598,8 @@ function handleSpinCompletion(apiResult) {
             
     } 
     else if (apiResult.triggerFreeSpins && isFreeSpinMode) {
+        remainingFreeSpinCount += 1;
+
         // Additional free spins during free spin mode
         setTimeout(() => {
             freeSpinsOverlayImg.style.display = "none";
@@ -4583,6 +4638,7 @@ function handleSpinCompletion(apiResult) {
         
         // Check if free spins are over
         if (remainingFreeSpinCount >= freeSpinCount) {
+            freeSpinEndedRecently = true
             function sleep(ms) {
                 return new Promise(resolve => setTimeout(resolve, ms));
             }
@@ -4732,7 +4788,9 @@ async function spin() {
 
     // Hide win message
     winMessageElement.style.display = 'none';
-    document.getElementById('update_winnings').innerHTML = '0.00';
+    if (!isFreeSpinMode){
+        document.getElementById('update_winnings').innerHTML = '0.00';
+    }
 
     // Prepare reels for spinning
     for (let i = 0; i < REEL_COUNT; i++) {
@@ -4781,10 +4839,10 @@ async function spin() {
         const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
         
         // Animation configuration
-        const spinSpeed = isQuickSpinMode ? 60 : 36; // Pixels per frame
+        const spinSpeed = isQuickSpinMode ? 65 : 36; // Pixels per frame
         const stopDelayBetweenReels = isQuickSpinMode ? 300 : 600; // ms between reel stops
         
-         const minSpinTime = isQuickSpinMode ? 100 : 1500;
+         const minSpinTime = isQuickSpinMode ? 10 : 1500;
         
         // Animation state variables
         let startTime = null;
