@@ -502,7 +502,7 @@
             width: 25px;
         }
         .totalbetinner-img{
-            height: 27px;
+            height: 24px;
         }
         .current-stake{
             font-size: 1.1rem;
@@ -1887,13 +1887,15 @@
         
         // Play win sound based on amount
         playWinSound(amount = 0) {
-            if (amount >= 300) {
-                this.playSound(this.sounds.ultraWin);
-            } else if (amount >= 200) {
-                this.playSound(this.sounds.megaWin);
-            } else if (amount >= 100) {
-                this.playSound(this.sounds.bigWin);
-            } 
+            if (!isFreeSpinMode){
+                if (amount >= 300) {
+                    this.playSound(this.sounds.ultraWin);
+                } else if (amount >= 200) {
+                    this.playSound(this.sounds.megaWin);
+                } else if (amount >= 100) {
+                    this.playSound(this.sounds.bigWin);
+                } 
+            }
             // else {
             //     this.playSound(this.sounds.win);
             // }
@@ -2595,8 +2597,9 @@ function addBonusFrameToLastReel(){
         
         // Stop big win sound and resume background music
         if (soundEffectsEnabled) {
-            bigWinSound.pause();
-            bigWinSound.currentTime = 0;
+            audioManager.stop('win')
+            // bigWinSound.pause();
+            // bigWinSound.currentTime = 0;
             
             if (backgroundMusicEnabled) {
                 if (isFreeSpinMode) {
@@ -3203,7 +3206,7 @@ function drawStoppedReels() {
             // Calculate image dimensions to fit within the symbol area
             const imgPadding = width * 0.05;
             const imgWidth = width - imgPadding * 2;
-            const imgHeight = imgWidth * 1.1; // Make height 1.3 times the width
+            const imgHeight = imgWidth * 1.16; // Make height 1.16 times the width
             
             // Draw the image
             ctx.drawImage(
