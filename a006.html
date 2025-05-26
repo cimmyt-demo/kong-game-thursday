@@ -1757,6 +1757,8 @@
     let backgroundMusicEnabled = true;
     let tempSoundEffectsEnabled = true;
     let tempBackgroundMusicEnabled = true;
+
+    let accumulatedAmountDuringFreespin = 0;
     
     // Game mode
     const gameMode = {
@@ -4449,11 +4451,15 @@ function handleSpinCompletion(apiResult) {
 
     // Update win amount
     if (apiResult.win > 0) {
-        //display winning amount
-        updateWinnings(apiResult.win);
-        
         // Update balance with winnings
         balance += apiResult.win;
+
+        if (isFreeSpinMode ){
+            accumulatedAmountDuringFreespin += apiResult.win
+            updateWinnings(accumulatedAmountDuringFreespin)
+        } else {
+            updateWinnings(apiResult.win);
+        }
 
         // Play win sound using audio manager
         audioManager.playWinSound(apiResult.win);
@@ -4614,6 +4620,10 @@ function handleSpinCompletion(apiResult) {
                 console.log("End after 2 seconds");
             }
             run();
+
+            accumulatedAmountDuringFreespin = 0;
+
+            drawWalls()
 
             displayBalance(balance)
 
@@ -4798,10 +4808,10 @@ async function spin() {
         const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
         
         // Animation configuration
-        const spinSpeed = isQuickSpinMode ? 55 : 36; // Pixels per frame
+        const spinSpeed = isQuickSpinMode ? 60 : 36; // Pixels per frame
         const stopDelayBetweenReels = isQuickSpinMode ? 300 : 600; // ms between reel stops
         
-         const minSpinTime = isQuickSpinMode ? 500 : 1500;
+         const minSpinTime = isQuickSpinMode ? 100 : 1500;
         
         // Animation state variables
         let startTime = null;
