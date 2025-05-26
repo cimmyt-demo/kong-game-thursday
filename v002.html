@@ -1904,7 +1904,12 @@
         // Play background music
         playBackgroundMusic() {
             if (!this.backgroundMusicEnabled || document.hidden) return;
-            this.playSound(this.sounds.background);
+            if (!isFreeSpinMode){
+                this.playSound(this.sounds.background);
+            } else {
+                this.playSound(this.sounds.freeSpin);
+            }
+            
         }
         
         // Play spin sound
@@ -1924,7 +1929,7 @@
         
         // Play win sound based on amount
         playWinSound(amount = 0) {
-            if (!isFreeSpinMode){
+            if (!isFreeSpinMode && soundEffectsEnabled){
                 if (amount >= 300) {
                     this.playSound(this.sounds.ultraWin);
                 } else if (amount >= 200) {
@@ -1970,7 +1975,11 @@
             backgroundMusicEnabled = this.backgroundMusicEnabled;
             
             if (!this.backgroundMusicEnabled) {
-                this.stopSound(this.sounds.background);
+                if (!isFreeSpinMode){
+                    this.stopSound(this.sounds.background);
+                }else{
+                    this.stopSound(this.sounds.freeSpin)
+                }
             } else {
                 this.playBackgroundMusic();
             }
@@ -2637,7 +2646,7 @@ function addBonusFrameToLastReel(){
         
         // Stop big win sound and resume background music
         if (soundEffectsEnabled) {
-            audioManager.stop('win')
+            audioManager.stopSound(audioManager.sounds.win)
             // bigWinSound.pause();
             // bigWinSound.currentTime = 0;
             
@@ -4390,9 +4399,11 @@ function updateWinnings(targetAmount) {
     let currentAmount = 0;
     let increment = (targetAmount - currentAmount) / 50; // Adjust speed
     const winningSound = new Audio("sounds/SE_Scoring_01.mp3");
-    winningSound.volume = 0.9;
-    winningSoundcurrentTime = 0; // Start from the 4th second
-    winningSound.play().catch(e => console.log("Audio play failed:", e));
+    if (soundEffectsEnabled){
+        winningSound.volume = 0.9;
+        winningSoundcurrentTime = 0; // Start from the 4th second
+        winningSound.play().catch(e => console.log("Audio play failed:", e));
+    }
 
     let counter = setInterval(() => {
         currentAmount += increment;
@@ -4412,7 +4423,10 @@ function updateWinnings(targetAmount) {
                 element.innerHTML = `${targetAmount.toFixed(2)}`;
             }
             clearInterval(counter);
-            winningSound.pause()
+            if (soundEffectsEnabled){
+                winningSound.pause()
+            }
+            
             if (!isFreeSpinMode){
                 displayBalance(balance)
             }
@@ -4454,8 +4468,9 @@ function updateWinnings(targetAmount) {
         const winOverlay = document.getElementById('winOverlay');
         winOverlay.style.display = 'flex';
 
-        bigWinSound.play()
-        
+        if (soundEffectsEnabled){
+            bigWinSound.play()
+        }
         // Start with $0
         let currentAmount = 0;
         const winAmount = document.getElementById('winAmount');
@@ -5009,7 +5024,7 @@ async function spin() {
                             consecutiveScatterSymbols.push(hasScatterInFinal)
                             console.log(consecutiveScatterSymbols)
                             const hasConsecutiveScatters = consecutiveScatterSymbols.every(item => item === true)
-                            if (hasConsecutiveScatters){
+                            if (hasConsecutiveScatters && soundEffectsEnabled){
                                 const scatterSound = new Audio(`sounds/SE_Base_Hit_0${i + 1}.mp3`);
                                 scatterSound.volume = 0.9;
                                 scatterSoundcurrentTime = 0; // Start from the 4th second
