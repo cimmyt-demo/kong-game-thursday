@@ -236,6 +236,46 @@
             padding: 20px;
             margin-top: 100px;
         }
+        #inactivityOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+        }
+        #inactivityOverlay h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #ff9900;
+        }
+        #inactivityOverlay p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        #reloadButton {
+            background: linear-gradient(to bottom, #ff9900, #ff6600);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #reloadButton:hover {
+            background: linear-gradient(to bottom, #ffaa33, #ff7722);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
         .overlay-content-stake {
             border-radius: 12px;
             width: 100%;
@@ -1352,7 +1392,7 @@
             </div>
         </div>
         
-        <div id="jdb_overlay" >
+        <div id="jdb_overlay" style="display: none;">
             <div style="height: 100%; width: 100%;" class="d-flex justify-content-center align-items-center">
                 <div class="row">
                     <div class="d-flex justify-content-center align-items-center mx-auto">
@@ -1369,7 +1409,7 @@
             </div>
         </div>
     
-        <div id="kong_overlay" >
+        <div id="kong_overlay" style="display: none;">
             <div class="d-flex justify-content-center">
                 <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
             </div>
@@ -2366,18 +2406,18 @@ function addBonusFrameToLastReel(){
     // Function to hook into the game's draw functions
     function hookIntoGameDrawFunctions() {
         // Make sure the game's drawing functions exist
-        if (!window.drawStoppedReels) {
+        if (!window.drawGame) {
             console.error("Game drawing functions not found. Make sure this script runs after the game is initialized.");
             return;
         }
         
-        // Store the original drawStoppedReels function
-        const originalDrawStoppedReels = window.drawStoppedReels;
+        // Store the original drawGame function
+        const originalDrawGame = window.drawGame;
         
-        // Override the drawStoppedReels function to add our bonus frame
-        window.drawStoppedReels = function() {
+        // Override the drawGame function to add our bonus frame
+        window.drawGame = function() {
             // Call the original function first
-            originalDrawStoppedReels.apply(this, arguments);
+            originalDrawGame.apply(this, arguments);
             
             // Now add our bonus frame to the last reel
             if (loadedImages === totalFrames) {
@@ -2392,15 +2432,12 @@ function addBonusFrameToLastReel(){
                 const reelX = WALL_THICKNESS.left + lastReelIndex * reelWidth;
                 const reelY = WALL_THICKNESS.top;
                 
-                // Only draw the frame if the reel is not spinning
-                if (!reels[lastReelIndex].isSpinning) {
-                    // Draw the current frame of the bonus border
-                    ctx.drawImage(frameImages[currentFrame], reelX, reelY, reelWidth, reelHeight);
-                }
+                // Draw the bonus frame around the last reel (even while spinning)
+                ctx.drawImage(frameImages[currentFrame], reelX -14 , reelY - 14, reelWidth + 21, reelHeight + 23);
             }
         };
         
-        // Start the animation
+        // Start the animation to cycle through frames
         startAnimation();
     }
     
@@ -2417,33 +2454,14 @@ function addBonusFrameToLastReel(){
             currentFrame = (currentFrame + 1) % totalFrames;
             
             // Redraw the game to update the frame
-            if (window.drawGame && !window.spinning) {
+            if (window.drawGame) {
                 window.drawGame();
             }
         }, animationSpeed);
         
-        // Also hook into the spin function to pause/resume animation
-        if (window.spin) {
-            const originalSpin = window.spin;
-            window.spin = function() {
-                // Pause animation during spin
-                clearInterval(animationInterval);
-                animationInterval = null;
-                
-                // Call original spin function
-                originalSpin.apply(this, arguments);
-                
-                // Resume animation after spin completes
-                const checkSpinning = setInterval(() => {
-                    if (!window.spinning) {
-                        clearInterval(checkSpinning);
-                        startAnimation();
-                    }
-                }, 500);
-            };
-        }
+        // Don't override the spin function as we want the animation to continue during spin
+        // (we'll control it separately when the 4th reel stops)
     }
-    
     
     
     // Initialize when the document is ready
@@ -4928,6 +4946,11 @@ async function spin() {
                 for (let i = 0; i < REEL_COUNT; i++) {
                     reelStopStartTimes[i] = firstReelStopTime + i * stopDelayBetweenReels;
                 }
+                
+                // If win amount > 10, add extra delay to the last reel
+                if (animationController.results && animationController.results.win > 10) {
+                    reelStopStartTimes[4] += 500; // Add 500ms extra delay to last reel
+                }
             }
             
             // Initialize start time on first frame
@@ -4980,7 +5003,7 @@ async function spin() {
             
             // Update each reel
             let allReelsStopped = true;
-            
+
             for (let i = 0; i < REEL_COUNT; i++) {
                 if (!reels[i].isSpinning) continue;
                 
@@ -4988,6 +5011,12 @@ async function spin() {
                 
                 // If we have results and it's time to start stopping this reel
                 if (!waitingForResults && reelStopTimes[i] === null && timestamp >= reelStopStartTimes[i]) {
+                    // Check if this is the 4th reel (index 3) and win amount > 10
+                    if (i === 3 && animationController.results && animationController.results.win == 0) {
+                        // The 4th reel is stopping, call addBonusFrameToLastReel for the last reel
+                        addBonusFrameToLastReel();
+                    }
+                    
                     // Set the time when this reel should be fully stopped
                     // Only travel enough distance to display the final symbols from API result
                     reelStopTimes[i] = timestamp + symbolHeight * 1; // Reduced time to just reach the final position
@@ -5268,7 +5297,82 @@ function toggleGameMode() {
 
     // New variables
     
+    // Inactivity timer implementation
+    let inactivityTimeout = null;
+    let lastActivityTime = Date.now();
+    const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes in milliseconds
+    
+    // Function to show inactivity overlay
+    function showInactivityOverlay() {
+        const inactivityOverlay = document.getElementById('inactivityOverlay');
+        if (inactivityOverlay) {
+            inactivityOverlay.style.display = 'flex';
+        }
+    }
+    
+    // Function to reset the inactivity timer
+    function resetInactivityTimer() {
+        lastActivityTime = Date.now();
+        if (inactivityTimeout) {
+            clearTimeout(inactivityTimeout);
+        }
+        
+        inactivityTimeout = setTimeout(() => {
+            // Check if 5 minutes have passed since last activity
+            const currentTime = Date.now();
+            const timeSinceLastActivity = currentTime - lastActivityTime;
+            
+            if (timeSinceLastActivity >= INACTIVITY_LIMIT) {
+                showInactivityOverlay();
+            }
+        }, INACTIVITY_LIMIT);
+    }
+    
+    // Function to reload the page
+    function reloadPage() {
+        window.location.reload();
+    }
+    
+    // Add event listeners for user activity
+    document.addEventListener('mousemove', resetInactivityTimer);
+    document.addEventListener('mousedown', resetInactivityTimer);
+    document.addEventListener('keypress', resetInactivityTimer);
+    document.addEventListener('touchstart', resetInactivityTimer);
+    document.addEventListener('touchmove', resetInactivityTimer);
+    document.addEventListener('scroll', resetInactivityTimer);
+    
+    // Initialize inactivity timer when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        resetInactivityTimer();
+        
+        // Add event listener for reload button
+        const reloadButton = document.getElementById('reloadButton');
+        if (reloadButton) {
+            reloadButton.addEventListener('click', reloadPage);
+        }
+    });
+    
+    // Also check for visibility change (tab change)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            // Reset timer when the tab becomes visible again
+            resetInactivityTimer();
+        } else {
+            // When tab is hidden, start counting inactivity
+            lastActivityTime = Date.now();
+        }
+    });
 </script>
+
+<!-- Inactivity Overlay -->
+<div id="inactivityOverlay">
+    <div>
+        <h2>Session Timeout</h2>
+        <p>Your session has timed out due to inactivity.</p>
+        <p>Please reload the game to continue playing.</p>
+        <button id="reloadButton">Reload Game</button>
+    </div>
+</div>
 </body>
 </html>
 

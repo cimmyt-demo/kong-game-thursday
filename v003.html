@@ -1811,18 +1811,78 @@
             document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
         }
         
-        // Handle visibility change (pause music when tab not active)
+        // Handle visibility change (pause game when tab not active)
         handleVisibilityChange() {
             if (document.hidden) {
-                // Tab is not active/visible - pause background music
+                // Tab is not active/visible
+                console.log("Tab hidden - pausing game");
+                
+                // Pause all audio
                 if (this.sounds.background) {
                     this.sounds.background.pause();
                 }
                 if (this.sounds.freeSpin) {
                     this.sounds.freeSpin.pause();
                 }
+                
+                // Store the current game state
+                window.gameWasSpinning = spinning;
+                
+                // Pause all animations
+                if (spinning) {
+                    // Cancel any active animation frames
+                    if (window.currentAnimationFrame) {
+                        cancelAnimationFrame(window.currentAnimationFrame);
+                        window.currentAnimationFrame = null;
+                    }
+                    
+                    // Cancel any intervals
+                    if (currentInterval) {
+                        clearInterval(currentInterval);
+                        currentInterval = null;
+                    }
+                    
+                    // Cancel win value display interval
+                    if (winValueDisplayInterval !== null) {
+                        clearInterval(winValueDisplayInterval);
+                        winValueDisplayInterval = null;
+                    }
+                }
+                
+                // Store the tab inactive time
+                window.tabHiddenTime = Date.now();
             } else {
-                // Tab is active/visible again - resume background music if enabled
+                // Tab is active/visible again
+                console.log("Tab visible again - resuming game");
+                
+                // Calculate how long the tab was inactive
+                const inactiveTime = Date.now() - (window.tabHiddenTime || 0);
+                console.log(`Tab was inactive for ${inactiveTime}ms`);
+                
+                // If tab was inactive for more than 30 seconds, reload the game state
+                if (inactiveTime > 30000 && isFreeSpinMode) {
+                    console.log("Long inactivity during free spins - resetting game state");
+                    
+                    // Force stop any spinning
+                    if (spinning) {
+                        for (let i = 0; i < REEL_COUNT; i++) {
+                            reels[i].isSpinning = false;
+                        }
+                        spinning = false;
+                    }
+                    
+                    // Redraw game with current state
+                    drawGame();
+                    
+                    // If we were in the middle of free spins, prepare for next spin
+                    if (isFreeSpinMode && freeSpinCount > 0) {
+                        setTimeout(() => {
+                            if (!spinning) spin();
+                        }, 1000);
+                    }
+                }
+                
+                // Resume audio based on game state
                 if (this.backgroundMusicEnabled) {
                     if (isFreeSpinMode && this.sounds.freeSpin) {
                         this.sounds.freeSpin.play().catch(e => console.log("Audio play failed:", e));
@@ -1830,6 +1890,9 @@
                         this.sounds.background.play().catch(e => console.log("Audio play failed:", e));
                     }
                 }
+                
+                // Redraw the game to ensure everything is visually updated
+                drawGame();
             }
         }
         
@@ -2131,6 +2194,44 @@ function initLoading() {
     }
 
     
+    
+    // Add global variables for visibility state tracking
+    window.lastVisibilityState = document.visibilityState;
+    window.tabHiddenTime = 0;
+    window.gameWasSpinning = false;
+    window.currentAnimationFrame = null;
+    window.lastFreeSpinRecoveryTime = 0;
+    
+    // Function to check and recover free spins state if needed
+    function checkAndRecoverFreeSpinsState() {
+        // Only attempt recovery once every 5 seconds maximum
+        const now = Date.now();
+        if (now - window.lastFreeSpinRecoveryTime < 5000) {
+            return;
+        }
+        window.lastFreeSpinRecoveryTime = now;
+        
+        // Check if we're in free spin mode but the game appears to be stuck
+        if (isFreeSpinMode && freeSpinCount > 0 && !spinning) {
+            console.log("Detected potential stuck state in free spins - attempting recovery");
+            
+            // If we've been stuck for more than 3 seconds, try to trigger the next spin
+            setTimeout(() => {
+                if (isFreeSpinMode && freeSpinCount > 0 && !spinning) {
+                    console.log("Free spins recovery - triggering next spin");
+                    spin();
+                }
+            }, 3000);
+        }
+    }
+    
+    // Add visibility change listener specifically for free spins recovery
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && isFreeSpinMode) {
+            // Tab became visible while in free spin mode - check if we need recovery
+            checkAndRecoverFreeSpinsState();
+        }
+    });
     
     // Initialize the game
     function initGame() {
@@ -4222,6 +4323,12 @@ function highlightWinningPositions(positions) {
 
 // Animation loop for effects
 function updateAnimations(timestamp) {
+    // Don't update animations if tab is hidden
+    if (document.hidden) {
+        animationLoopRunning = false;
+        return;
+    }
+    
     const currentTime = Date.now();
     let hasActiveAnimations = false;
     
@@ -4243,9 +4350,10 @@ function updateAnimations(timestamp) {
     
     // Continue animation loop if there are active animations
     if (hasActiveAnimations) {
-        requestAnimationFrame(updateAnimations);
+        window.currentAnimationFrame = requestAnimationFrame(updateAnimations);
     } else {
         animationLoopRunning = false;
+        window.currentAnimationFrame = null;
     }
 }
 
@@ -4916,6 +5024,20 @@ async function spin() {
         
         // Animation function using requestAnimationFrame for smoother animation
         function animate(timestamp) {
+            // Handle tab visibility - pause animation if tab is not visible
+            if (document.hidden) {
+                console.log("Tab hidden during spin animation - pausing");
+                // Schedule a new animation frame when the tab becomes visible again
+                window.addEventListener('visibilitychange', function resumeOnVisible() {
+                    if (!document.hidden) {
+                        console.log("Tab visible again - resuming spin animation");
+                        window.removeEventListener('visibilitychange', resumeOnVisible);
+                        window.currentAnimationFrame = requestAnimationFrame(animate);
+                    }
+                });
+                return;
+            }
+            
             // Check if we now have results that we didn't have before
             if (animationController.hasResults && waitingForResults) {
                 console.log("Animation received results, preparing to stop reels");
@@ -5022,8 +5144,11 @@ async function spin() {
 
                             reels[i].finalSymbols = animationController.results.reels[i];
 
+                            console.log(reels[i].finalSymbols)
                             const hasScatterInFinal = reels[i].finalSymbols.some(symbol => symbol.name.toLowerCase() === "scatter");
+                            console.log(hasScatterInFinal)
                             consecutiveScatterSymbols.push(hasScatterInFinal)
+                            console.log(consecutiveScatterSymbols)
                             const hasConsecutiveScatters = consecutiveScatterSymbols.every(item => item === true)
                             if (hasConsecutiveScatters && soundEffectsEnabled){
                                 const scatterSound = new Audio(`sounds/SE_Base_Hit_0${i + 1}.mp3`);
@@ -5112,10 +5237,11 @@ async function spin() {
             
             // Continue animation if any reels are still spinning
             if (!allReelsStopped) {
-                requestAnimationFrame(animate);
+                window.currentAnimationFrame = requestAnimationFrame(animate);
             } else {
                 // All reels have stopped
                 spinning = false;
+                window.currentAnimationFrame = null;
                 
                 // Stop the reel speed up sound
                 // if (soundEffectsEnabled) {
@@ -5140,7 +5266,7 @@ async function spin() {
         }
         
         // Start the animation
-        requestAnimationFrame(animate);
+        window.currentAnimationFrame = requestAnimationFrame(animate);
     }
     
 

@@ -236,6 +236,46 @@
             padding: 20px;
             margin-top: 100px;
         }
+        #inactivityOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+        }
+        #inactivityOverlay h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #ff9900;
+        }
+        #inactivityOverlay p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        #reloadButton {
+            background: linear-gradient(to bottom, #ff9900, #ff6600);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        #reloadButton:hover {
+            background: linear-gradient(to bottom, #ffaa33, #ff7722);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
         .overlay-content-stake {
             border-radius: 12px;
             width: 100%;
@@ -1352,7 +1392,7 @@
             </div>
         </div>
         
-        <div id="jdb_overlay" >
+        <div id="jdb_overlay" style="display: none;">
             <div style="height: 100%; width: 100%;" class="d-flex justify-content-center align-items-center">
                 <div class="row">
                     <div class="d-flex justify-content-center align-items-center mx-auto">
@@ -1369,7 +1409,7 @@
             </div>
         </div>
     
-        <div id="kong_overlay" >
+        <div id="kong_overlay" style="display: none;">
             <div class="d-flex justify-content-center">
                 <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
             </div>
@@ -2325,62 +2365,77 @@ lossLimitOptions.addEventListener('click', (e) => {
 
     
     // Bonus Frame Animation Script
-function addBonusFrameToLastReel(){
-    // Configuration
-    const totalFrames = 8; // Number of animation frames
-    const frameImages = []; // Will hold the loaded images
-    let loadedImages = 0;
-    let currentFrame = 0;
-    let animationInterval = null;
-    const lastReelIndex = 4; // 0-based index for the 5th reel
-    const animationSpeed = 100; // ms between frames (adjust for faster/slower animation)
+// Global variables for bonus frame management
+let bonusFrameActive = false;
+let bonusFrameImages = [];
+let bonusFrameCurrentFrame = 0;
+let bonusFrameAnimationInterval = null;
+const BONUS_TOTAL_FRAMES = 8;
+let bonusFrameImagesLoaded = 0;
+
+function addBonusFrameToLastReel() {
+    console.log("Adding bonus frame to last reel");
+    bonusFrameActive = true;
     
-    // Function to initialize the bonus frame
-    function initBonusFrame() {
-        console.log("Initializing animated bonus frame for last reel...");
-        loadFrameImages();
-    }
-    
-    // Function to load the frame images
-    function loadFrameImages() {
-        for (let i = 0; i < totalFrames; i++) {
+    // If images are not loaded yet, load them
+    if (bonusFrameImages.length === 0) {
+        // Load the frame images
+        for (let i = 0; i < BONUS_TOTAL_FRAMES; i++) {
             const img = new Image();
             img.crossOrigin = "anonymous";
-            // Path to your frame images - adjust as needed
             img.src = `green/${i}_Base_Reel_SpeedUp_SS.png`;
             img.onload = () => {
-                loadedImages++;
-                console.log(`Loaded frame ${i+1}/${totalFrames}`);
-                if (loadedImages === totalFrames) {
-                    console.log("All frames loaded, starting animation...");
-                    hookIntoGameDrawFunctions();
+                bonusFrameImagesLoaded++;
+                console.log(`Loaded bonus frame ${i+1}/${BONUS_TOTAL_FRAMES}`);
+                
+                // If all frames are loaded, start the animation
+                if (bonusFrameImagesLoaded === BONUS_TOTAL_FRAMES) {
+                    console.log("All bonus frames loaded, starting animation");
+                    startBonusFrameAnimation();
+                    // Apply the drawGame override when images are loaded
+                    applyDrawGameOverride();
                 }
             };
             img.onerror = () => {
-                console.error(`Failed to load frame ${i}`);
+                console.error(`Failed to load bonus frame ${i}`);
             };
-            frameImages.push(img);
+            bonusFrameImages.push(img);
         }
+    } else {
+        // Images already loaded, just start the animation
+        startBonusFrameAnimation();
+    }
+}
+
+// Function to start the bonus frame animation
+function startBonusFrameAnimation() {
+    // Clear any existing animation
+    if (bonusFrameAnimationInterval) {
+        clearInterval(bonusFrameAnimationInterval);
     }
     
-    // Function to hook into the game's draw functions
-    function hookIntoGameDrawFunctions() {
-        // Make sure the game's drawing functions exist
-        if (!window.drawStoppedReels) {
-            console.error("Game drawing functions not found. Make sure this script runs after the game is initialized.");
-            return;
-        }
+    // Start a new animation interval
+    bonusFrameAnimationInterval = setInterval(() => {
+        bonusFrameCurrentFrame = (bonusFrameCurrentFrame + 1) % BONUS_TOTAL_FRAMES;
+    }, 100);
+}
+
+// Function to override the drawGame function safely
+function applyDrawGameOverride() {
+    // Make sure drawGame exists
+    if (typeof window.drawGame === 'function') {
+        console.log("Overriding drawGame function to add bonus frame support");
         
-        // Store the original drawStoppedReels function
-        const originalDrawStoppedReels = window.drawStoppedReels;
+        // Store the original function
+        const originalDrawGame = window.drawGame;
         
-        // Override the drawStoppedReels function to add our bonus frame
-        window.drawStoppedReels = function() {
+        // Override with our enhanced version
+        window.drawGame = function() {
             // Call the original function first
-            originalDrawStoppedReels.apply(this, arguments);
+            originalDrawGame.apply(this, arguments);
             
-            // Now add our bonus frame to the last reel
-            if (loadedImages === totalFrames) {
+            // If bonus frame is active and all images are loaded, draw it
+            if (bonusFrameActive && bonusFrameImagesLoaded === BONUS_TOTAL_FRAMES) {
                 const canvas = document.getElementById('slotMachine');
                 const ctx = canvas.getContext('2d');
                 
@@ -2388,74 +2443,27 @@ function addBonusFrameToLastReel(){
                 const reelWidth = (canvas.width - WALL_THICKNESS.left - WALL_THICKNESS.right) / REEL_COUNT;
                 const reelHeight = canvas.height - WALL_THICKNESS.top - WALL_THICKNESS.bottom;
                 
-                // Calculate position of the last reel
+                // Calculate position of the last reel (index 4)
+                const lastReelIndex = 4;
                 const reelX = WALL_THICKNESS.left + lastReelIndex * reelWidth;
                 const reelY = WALL_THICKNESS.top;
                 
-                // Only draw the frame if the reel is not spinning
-                if (!reels[lastReelIndex].isSpinning) {
-                    // Draw the current frame of the bonus border
-                    ctx.drawImage(frameImages[currentFrame], reelX, reelY, reelWidth, reelHeight);
-                }
+                // Draw the bonus frame around the last reel
+                ctx.drawImage(bonusFrameImages[bonusFrameCurrentFrame], reelX - 14, reelY - 14, reelWidth + 21, reelHeight + 23);
             }
         };
-        
-        // Start the animation
-        startAnimation();
-    }
-    
-    // Function to start the animation
-    function startAnimation() {
-        // Clear any existing animation
-        if (animationInterval) {
-            clearInterval(animationInterval);
-        }
-        
-        // Start a new animation interval
-        animationInterval = setInterval(() => {
-            // Update to the next frame
-            currentFrame = (currentFrame + 1) % totalFrames;
-            
-            // Redraw the game to update the frame
-            if (window.drawGame && !window.spinning) {
-                window.drawGame();
-            }
-        }, animationSpeed);
-        
-        // Also hook into the spin function to pause/resume animation
-        if (window.spin) {
-            const originalSpin = window.spin;
-            window.spin = function() {
-                // Pause animation during spin
-                clearInterval(animationInterval);
-                animationInterval = null;
-                
-                // Call original spin function
-                originalSpin.apply(this, arguments);
-                
-                // Resume animation after spin completes
-                const checkSpinning = setInterval(() => {
-                    if (!window.spinning) {
-                        clearInterval(checkSpinning);
-                        startAnimation();
-                    }
-                }, 500);
-            };
-        }
-    }
-    
-    
-    
-    // Initialize when the document is ready
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        // Wait a bit to ensure the game is fully initialized
-        setTimeout(initBonusFrame, 1000);
     } else {
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(initBonusFrame, 1000);
-        });
+        console.error("drawGame function not found, cannot override");
+        // Try again after a short delay
+        setTimeout(applyDrawGameOverride, 500);
     }
-};
+}
+
+// Apply the override after the page has loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit for all game functions to be defined
+    setTimeout(applyDrawGameOverride, 1000);
+});
     
     
     
@@ -4928,6 +4936,11 @@ async function spin() {
                 for (let i = 0; i < REEL_COUNT; i++) {
                     reelStopStartTimes[i] = firstReelStopTime + i * stopDelayBetweenReels;
                 }
+                
+                // If win amount > 10, add extra delay to the last reel
+                if (animationController.results && animationController.results.win > 10) {
+                    reelStopStartTimes[4] += 500; // Add 500ms extra delay to last reel
+                }
             }
             
             // Initialize start time on first frame
@@ -4980,7 +4993,7 @@ async function spin() {
             
             // Update each reel
             let allReelsStopped = true;
-            
+
             for (let i = 0; i < REEL_COUNT; i++) {
                 if (!reels[i].isSpinning) continue;
                 
@@ -4991,6 +5004,13 @@ async function spin() {
                     // Set the time when this reel should be fully stopped
                     // Only travel enough distance to display the final symbols from API result
                     reelStopTimes[i] = timestamp + symbolHeight * 1; // Reduced time to just reach the final position
+                    
+                    // Check if this is the 4th reel (index 3) and win amount > 10
+                    if (i === 3 && animationController.results && animationController.results.win > 10) {
+                        console.log("4th reel stopping, win amount > 10, adding bonus frame to last reel");
+                        // The 4th reel is stopping, call addBonusFrameToLastReel for the last reel
+                        addBonusFrameToLastReel();
+                    }
                     
                     // Play stop sound if enabled
                     if (soundEffectsEnabled) {
@@ -5014,6 +5034,18 @@ async function spin() {
                         
                         // Position the reel exactly where it should be
                         reels[i].position = 0;
+                        
+                        // If this is the last reel (index 4), check if we need to handle bonus frame
+                        if (i === 4 && bonusFrameActive) {
+                            // Continue showing the bonus frame for a while after the last reel stops
+                            setTimeout(() => {
+                                bonusFrameActive = false; // Disable bonus frame after delay
+                                if (bonusFrameAnimationInterval) {
+                                    clearInterval(bonusFrameAnimationInterval);
+                                    bonusFrameAnimationInterval = null;
+                                }
+                            }, 2000); // Show for 2 more seconds after last reel stops
+                        }
                         
                         // Set the final symbols if available
                         if (animationController.results && 
@@ -5268,7 +5300,82 @@ function toggleGameMode() {
 
     // New variables
     
+    // Inactivity timer implementation
+    let inactivityTimeout = null;
+    let lastActivityTime = Date.now();
+    const INACTIVITY_LIMIT = 5 * 60 * 1000; // 5 minutes in milliseconds
+    
+    // Function to show inactivity overlay
+    function showInactivityOverlay() {
+        const inactivityOverlay = document.getElementById('inactivityOverlay');
+        if (inactivityOverlay) {
+            inactivityOverlay.style.display = 'flex';
+        }
+    }
+    
+    // Function to reset the inactivity timer
+    function resetInactivityTimer() {
+        lastActivityTime = Date.now();
+        if (inactivityTimeout) {
+            clearTimeout(inactivityTimeout);
+        }
+        
+        inactivityTimeout = setTimeout(() => {
+            // Check if 5 minutes have passed since last activity
+            const currentTime = Date.now();
+            const timeSinceLastActivity = currentTime - lastActivityTime;
+            
+            if (timeSinceLastActivity >= INACTIVITY_LIMIT) {
+                showInactivityOverlay();
+            }
+        }, INACTIVITY_LIMIT);
+    }
+    
+    // Function to reload the page
+    function reloadPage() {
+        window.location.reload();
+    }
+    
+    // Add event listeners for user activity
+    document.addEventListener('mousemove', resetInactivityTimer);
+    document.addEventListener('mousedown', resetInactivityTimer);
+    document.addEventListener('keypress', resetInactivityTimer);
+    document.addEventListener('touchstart', resetInactivityTimer);
+    document.addEventListener('touchmove', resetInactivityTimer);
+    document.addEventListener('scroll', resetInactivityTimer);
+    
+    // Initialize inactivity timer when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        resetInactivityTimer();
+        
+        // Add event listener for reload button
+        const reloadButton = document.getElementById('reloadButton');
+        if (reloadButton) {
+            reloadButton.addEventListener('click', reloadPage);
+        }
+    });
+    
+    // Also check for visibility change (tab change)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            // Reset timer when the tab becomes visible again
+            resetInactivityTimer();
+        } else {
+            // When tab is hidden, start counting inactivity
+            lastActivityTime = Date.now();
+        }
+    });
 </script>
+
+<!-- Inactivity Overlay -->
+<div id="inactivityOverlay">
+    <div>
+        <h2>Session Timeout</h2>
+        <p>Your session has timed out due to inactivity.</p>
+        <p>Please reload the game to continue playing.</p>
+        <button id="reloadButton">Reload Game</button>
+    </div>
+</div>
 </body>
 </html>
 
