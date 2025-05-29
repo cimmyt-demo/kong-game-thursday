@@ -2414,6 +2414,7 @@ function addBonusFrameToLastReel(){
         
         // Store the original drawStoppedReels function
         const originalDrawStoppedReels = window.drawStoppedReels;
+        window.originalDrawStoppedReels = originalDrawStoppedReels; // Store globally for removal function
         
         // Override the drawStoppedReels function to add our bonus frame
         window.drawStoppedReels = function() {
@@ -2460,6 +2461,9 @@ function addBonusFrameToLastReel(){
             }
         }, animationSpeed);
         
+        // Store interval reference globally for removal function
+        window.bonusFrameAnimationInterval = animationInterval;
+        
         // Also hook into the spin function to pause/resume animation
         // if (window.spin) {
         //     const originalSpin = window.spin;
@@ -2493,6 +2497,41 @@ function addBonusFrameToLastReel(){
         });
     }
 };
+
+/**
+ * Checks if bonus frame is present on the last reel and removes it if found
+ * Should be called at the beginning of each spin to ensure clean state
+ * @returns {boolean} - Returns true if bonus frame was removed, false if no bonus frame was present
+ */
+function removeBonusFrameFromLastReel() {
+    // Check if the original drawStoppedReels function exists in window
+    if (window.originalDrawStoppedReels) {
+        console.log("Removing bonus frame from last reel");
+        
+        // Restore the original drawStoppedReels function
+        window.drawStoppedReels = window.originalDrawStoppedReels;
+        
+        // Clear the reference to the original function to prevent memory leaks
+        window.originalDrawStoppedReels = null;
+        
+        // If there's an animation interval running, clear it
+        if (window.bonusFrameAnimationInterval) {
+            clearInterval(window.bonusFrameAnimationInterval);
+            window.bonusFrameAnimationInterval = null;
+            console.log("Stopped bonus frame animation");
+        }
+        
+        // Redraw the game to update visuals
+        if (window.drawGame) {
+            window.drawGame();
+        }
+        
+        return true; // Return true if successfully removed
+    }
+    
+    // If there was no bonus frame to remove
+    return false;
+}
     
     
     
@@ -5144,8 +5183,8 @@ function spinAnimation(callback, initialApiResult) {
         let allReelsStopped = true;
         
         for (let i = 0; i < REEL_COUNT; i++) {
-            // if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins && checkConsecutiveSymbols(apiResult.reels)){
-            if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins){
+            // if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins){
+            if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins && checkConsecutiveSymbols(apiResult.reels)){
                 addBonusFrameToLastReel();
                 audioManager.playSound(audioManager.sounds.reelSpeedUp)
                 addedBonusReel = true;
