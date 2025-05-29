@@ -3493,7 +3493,7 @@ function highlightWinningSymbols(reelSymbols, winningPositions) {
                                     anim.minScaleReached = true;
                                     // Continue to cycle through frames, reset to beginning
                                     anim.currentFrame = 0;
-                                } else if (anim.minScaleReached && anim.currentFrame >= scatterFrameCount - 5) {
+                                } else if (anim.minScaleReached && anim.currentFrame >= scatterFrameCount - 10) {
                                     // After scaling down, when we reach the last 5 frames, jump back to start
                                     // This skips the last 5 frames during subsequent loops
                                     anim.currentFrame = 0;
@@ -3508,7 +3508,7 @@ function highlightWinningSymbols(reelSymbols, winningPositions) {
                             const scaleDownDuration = 1000; // 1 second for scale down
                             const elapsedTime = now - anim.startTime;
                             const minScaleFactor = 1.30;     // Minimum scale (smaller than starting scale)
-                            const maxScaleFactor = 1.45;     // Maximum scale (larger than starting scale)
+                            const maxScaleFactor = 1.40;     // Maximum scale (larger than starting scale)
                             let scaleFactor;
                             
                             if (elapsedTime <= scaleUpDuration) {
@@ -4983,7 +4983,7 @@ function handleSpinCompletion(apiResult) {
                     }
                     // Redraw the game to update the display
                     drawGame();
-                }, 7500);
+                }, 6500);
             } else {
                 highlightWinningSymbols(apiResult.reels, apiResult.winningPositions);
             }
