@@ -4561,6 +4561,62 @@ function updateWinnings(targetAmount) {
 
 
 
+let anySymbolConsecutive = false;
+
+function checkConsecutiveSymbols(reels) {
+    console.log('Checking consecutive symbols:', reels);
+    
+    // Reset the global variable
+    anySymbolConsecutive = false;
+    
+    // Get all unique symbols (excluding wild)
+    const allSymbols = new Set();
+    reels.forEach(reel => {
+        reel.forEach(symbol => {
+            if (symbol.name !== "Wild") {
+                allSymbols.add(symbol.name);
+            }
+        });
+    });
+    
+    // Check each symbol for consecutive appearance
+    for (const symbolName of allSymbols) {
+        if (isSymbolConsecutive(reels, symbolName)) {
+            console.log(`Symbol "${symbolName}" appears consecutively across all reels`);
+            anySymbolConsecutive = true;
+            break; // Found at least one consecutive symbol
+        }
+    }
+    
+    console.log('Any symbol consecutive:', anySymbolConsecutive);
+    return anySymbolConsecutive;
+}
+
+function isSymbolConsecutive(reels, targetSymbol) {
+    // Check if the target symbol appears in each reel (with wild substitution)
+    for (let reelIndex = 0; reelIndex < reels.length; reelIndex++) {
+        const reel = reels[reelIndex];
+        let symbolFound = false;
+        
+        // Check each position in the current reel
+        for (let row = 0; row < reel.length; row++) {
+            const symbol = reel[row];
+            if (symbol.name === targetSymbol || symbol.name === "Wild") {
+                symbolFound = true;
+                break;
+            }
+        }
+        
+        // If symbol not found in this reel, it's not consecutive
+        if (!symbolFound) {
+            return false;
+        }
+    }
+    
+    return true; // Symbol found in all reels
+}
+
+
 
 function extractScatterPositions(reels) {
 
@@ -4858,7 +4914,7 @@ function handleSpinCompletion(apiResult) {
                     }
                     // Redraw the game to update the display
                     drawGame();
-                }, 7000);
+                }, 7500);
             } else {
                 highlightWinningSymbols(apiResult.reels, apiResult.winningPositions);
             }
@@ -4872,6 +4928,8 @@ function handleSpinCompletion(apiResult) {
 
 // Modify the spinAnimation function to handle waiting for server results
 async function spin() {
+    anySymbolConsecutive = false;
+
     document.getElementById('display_win_amount').style.display = 'none';
 
     if (spinning || (balance < stake && !isFreeSpinMode)) return;
@@ -5081,7 +5139,7 @@ function spinAnimation(callback, initialApiResult) {
         let allReelsStopped = true;
         
         for (let i = 0; i < REEL_COUNT; i++) {
-            if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && apiResult.win >= 100 ){
+            if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins && checkConsecutiveSymbols(apiResult.reels)){
                 addBonusFrameToLastReel();
                 audioManager.playSound(audioManager.sounds.reelSpeedUp)
                 addedBonusReel = true;
