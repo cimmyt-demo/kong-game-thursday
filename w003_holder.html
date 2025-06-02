@@ -1392,7 +1392,7 @@
             </div>
         </div>
         
-        <div id="jdb_overlay">
+        <div id="jdb_overlay" style="display: none;">
             <div style="height: 100%; width: 100%;" class="d-flex justify-content-center align-items-center">
                 <div class="row">
                     <div class="d-flex justify-content-center align-items-center mx-auto">
@@ -1409,7 +1409,7 @@
             </div>
         </div>
     
-        <div id="kong_overlay">
+        <div id="kong_overlay" style="display: none;">
             <div class="d-flex justify-content-center">
                 <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
             </div>
@@ -4642,7 +4642,9 @@ function checkConsecutiveSymbols(reels) {
     const allSymbols = new Set();
     reels.forEach(reel => {
         reel.forEach(symbol => {
-            allSymbols.add(symbol.name);
+            if (symbol.name !== "Wild") {
+                allSymbols.add(symbol.name);
+            }
         });
     });
     
@@ -4661,14 +4663,14 @@ function checkConsecutiveSymbols(reels) {
 
 function isSymbolConsecutive(reels, targetSymbol) {
     // Check if the target symbol appears in each reel (with wild substitution)
-    for (let reelIndex = 0; reelIndex < reels.length - 1; reelIndex++) {
+    for (let reelIndex = 0; reelIndex < reels.length; reelIndex++) {
         const reel = reels[reelIndex];
         let symbolFound = false;
         
-        // Check each position in the current reel 
+        // Check each position in the current reel
         for (let row = 0; row < reel.length; row++) {
             const symbol = reel[row];
-            if (symbol.name === targetSymbol) {
+            if (symbol.name === targetSymbol || symbol.name === "Wild") {
                 symbolFound = true;
                 break;
             }
