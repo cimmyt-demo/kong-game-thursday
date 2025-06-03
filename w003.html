@@ -147,7 +147,8 @@
             margin: 0px !important;
             padding: 0px !important;
             width: 100%;
-            background-image: url('wood.jpg');
+            background-image: url('background_cp.png');
+            background-size: cover;
             z-index: 1000;
             bottom: 0 !important;
         }
@@ -535,8 +536,8 @@
             width: 60px;
         }
         .spin-button{
-            height: 90px;
-            width: 90px;
+            height: 85px;
+            width: 85px;
         }
         .autospininner-img{
             height: 35px;
@@ -1471,7 +1472,7 @@
 
             <!-- Controls -->
             <div class="game-controls p-2">
-                <div id="results_holder" class="w-100 text-center text-white d-flex justify-content-center align-items-center" style="margin-top: -25px;height: 25px; font-size: 1.3rem;">
+                <div id="results_holder" class="w-100 text-center text-white d-flex justify-content-center align-items-center" style="margin-top: -22px;height: 25px; font-size: 1.2rem;">
                     <div style="margin: 5px 0px;">
                         WIN <span class="px-1" id="update_winnings">0.00</span>
                     </div>
@@ -1667,7 +1668,7 @@
     const WALL_THICKNESS = {
         top: 20,
         right: 7,
-        bottom: 60,
+        bottom: 80,
         left: 7
     };
     const GAME_WIDTH = REEL_WIDTH * REEL_COUNT + WALL_THICKNESS.left + WALL_THICKNESS.right;
@@ -2080,7 +2081,7 @@ function resizeCanvas() {
     const cssWidth = container.clientWidth;
     const cssHeight = container.clientHeight;
 
-    const dpr = 2; // 2x internal resolution
+    const dpr = 4; // 4x internal resolution
 
     // Logical size (CSS) - keep the visual size exactly the same
     canvas.style.width = cssWidth + 'px';
@@ -3006,6 +3007,7 @@ function removeBonusFrameFromLastReel() {
         // 5. Draw stopped reels (these will appear on top of all walls)
         drawStoppedReels();
         
+        
         // 6. Win display (if there's a win)
         if (winAmount > 0 && !spinning) {
             drawWinDisplay();
@@ -3376,7 +3378,7 @@ function highlightWinningSymbols(reelSymbols, winningPositions) {
     const spriteScales = {};
     
     // Preload scatter animation frames
-    const scatterFrameCount = 61;
+    const scatterFrameCount = 70;
     const scatterFrameImages = [];
     let loadedScatterFrames = 0;
     
@@ -3504,8 +3506,8 @@ function highlightWinningSymbols(reelSymbols, winningPositions) {
                             }
                             
                             // Define animation timing (in milliseconds)
-                            const scaleUpDuration = 1000;   // 1 second for scale up
-                            const scaleDownDuration = 1000; // 1 second for scale down
+                            const scaleUpDuration = 500;   // 1 second for scale up
+                            const scaleDownDuration = 500; // 1 second for scale down
                             const elapsedTime = now - anim.startTime;
                             const minScaleFactor = 1.30;     // Minimum scale (smaller than starting scale)
                             const maxScaleFactor = 1.40;     // Maximum scale (larger than starting scale)
@@ -4981,7 +4983,7 @@ function handleSpinCompletion(apiResult) {
                     }
                     // Redraw the game to update the display
                     drawGame();
-                }, 6500);
+                }, 4500);
             } else {
                 highlightWinningSymbols(apiResult.reels, apiResult.winningPositions);
             }
@@ -5113,7 +5115,7 @@ function spinAnimation(callback, initialApiResult) {
     const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
     
     // Animation configuration
-    const spinSpeed = isQuickSpinMode ? 65 : 36; // Pixels per frame
+    const spinSpeed = isQuickSpinMode ? 70 : 90; // Pixels per frame
     const stopDelayBetweenReels = isQuickSpinMode ? 300 : 600; // ms between reel stops
     
     const minSpinTime = isQuickSpinMode ? 10 : 1500;
@@ -5208,7 +5210,7 @@ function spinAnimation(callback, initialApiResult) {
         let allReelsStopped = true;
         
         for (let i = 0; i < REEL_COUNT; i++) {
-            if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins && checkConsecutiveSymbols(apiResult.reels)){
+            if (!reels[0].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins && checkConsecutiveSymbols(apiResult.reels)){
             // if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins){
                 addBonusFrameToLastReel();
                 audioManager.playSound(audioManager.sounds.reelSpeedUp)
