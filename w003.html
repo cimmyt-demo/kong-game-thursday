@@ -5210,7 +5210,7 @@ function spinAnimation(callback, initialApiResult) {
         let allReelsStopped = true;
         
         for (let i = 0; i < REEL_COUNT; i++) {
-            if (!reels[0].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins && checkConsecutiveSymbols(apiResult.reels)){
+            if (!reels[0].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins && apiResult.win >= 20 && checkConsecutiveSymbols(apiResult.reels)){
             // if (!reels[1].isSpinning && !addedBonusReel && !waitingForResults && apiResult && !apiResult.triggerFreeSpins){
                 addBonusFrameToLastReel();
                 audioManager.playSound(audioManager.sounds.reelSpeedUp)
