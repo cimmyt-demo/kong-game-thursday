@@ -1393,7 +1393,7 @@
             </div>
         </div>
         
-        <div id="jdb_overlay">
+        <div id="jdb_overlay" style="display: none;">
             <div style="height: 100%; width: 100%;" class="d-flex justify-content-center align-items-center">
                 <div class="row">
                     <div class="d-flex justify-content-center align-items-center mx-auto">
@@ -1410,7 +1410,7 @@
             </div>
         </div>
     
-        <div id="kong_overlay">
+        <div id="kong_overlay" style="display: none;">
             <div class="d-flex justify-content-center">
                 <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
             </div>
@@ -2984,6 +2984,83 @@ function removeBonusFrameFromLastReel() {
     function resetSpinButtonImage() {
         spinButtonInnerImage.style.transition = 'transform 0.5s ease';
         spinButtonInnerImage.style.transform = 'rotate(360deg)';
+    }
+
+    // New function to draw the game with new symbols instead of stopped reels
+function drawGameWithNewSymbols() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw the game in layers:
+    // 1. Background
+    drawBackground();
+    
+    // 2. All walls (drawn first, symbols will appear on top)
+    drawWalls();
+    
+    // 3. Reel backgrounds
+    drawReelBackgrounds();
+    
+    // 4. Draw spinning reels (these will appear to go under the bottom wall)
+    drawSpinningReels();
+    
+    // 5. Draw reels with NEW symbols instead of stopped reels
+    drawReelsWithNewSymbols();
+    
+    // 6. Win display (if there's a win)
+    if (winAmount > 0 && !spinning) {
+        drawWinDisplay();
+    }
+}
+
+    // Function to draw reels with completely new random symbols
+    function drawReelsWithNewSymbols() {
+        const reelWidth = (canvas.width - WALL_THICKNESS.left - WALL_THICKNESS.right) / REEL_COUNT;
+        const reelHeight = canvas.height - WALL_THICKNESS.top - WALL_THICKNESS.bottom;
+        const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
+        
+        // Draw reels with new symbols
+        for (let i = 0; i < REEL_COUNT; i++) {
+            // Only draw if this reel has stopped spinning
+            if (reels[i].isSpinning) continue;
+            
+            const reelX = WALL_THICKNESS.left + i * reelWidth;
+            const reelY = WALL_THICKNESS.top;
+            
+            // Generate completely new symbols for this reel
+            const newSymbols = [];
+            for (let j = 0; j < SYMBOLS_PER_REEL; j++) {
+                // For first reel (i === 0), exclude Wild from possible symbols
+                let availableSymbols = i === 0 
+                    ? SYMBOLS.filter(s => s.name !== 'Wild')
+                    : SYMBOLS;
+                
+                const randomIndex = Math.floor(Math.random() * availableSymbols.length);
+                const randomSymbolName = availableSymbols[randomIndex].name;
+                
+                newSymbols.push({
+                    name: randomSymbolName,
+                    isSpecial: Math.random() < 0.3,
+                    scale: SYMBOL_SCALE_MAP[randomSymbolName] || 1.2
+                });
+            }
+            
+            // Draw the new symbols
+            for (let j = 0; j < newSymbols.length; j++) {
+                const symbol = newSymbols[j];
+                const symbolData = SYMBOLS.find(s => s.name === symbol.name);
+                
+                // Calculate position - ensure exact positioning
+                const symbolX = Math.round(reelX);
+                const symbolY = Math.round(reelY + j * symbolHeight);
+                
+                // Draw symbol with new random symbol
+                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, symbol.isSpecial, symbol.scale);
+            }
+            
+            // Optionally update the reel's finalSymbols to the new symbols
+            // reels[i].finalSymbols = newSymbols;
+        }
     }
 
     // Draw the game
@@ -4748,11 +4825,8 @@ function handleSpinCompletion(apiResult) {
     // Handle free spins
     if (apiResult.triggerFreeSpins && !isFreeSpinMode) {
         freeSpinTriggeredRecently = true;
-
-        startfreespinsoverlay.style.display = 'block'
         
         // Change background image to volcano
-        document.getElementById('img_top').src = 'volcano.gif'
         
         // Show free spins overlay
             function delayMs(milliseconds) {
@@ -4760,7 +4834,10 @@ function handleSpinCompletion(apiResult) {
             }
 
             async function showImageTemporarily() {
+                await delayMs(2500); 
                 freeSpinsOverlay.style.display = 'block';  
+                startfreespinsoverlay.style.display = 'block'
+                document.getElementById('img_top').src = 'volcano.gif'
                 audioManager.stopSound(audioManager.sounds.background);
                 audioManager.playSound(audioManager.sounds.freeSpin);   // Show image
                 await delayMs(4000);               // Wait 4 seconds
@@ -4982,8 +5059,8 @@ function handleSpinCompletion(apiResult) {
                         drawStoppedReels = originalDrawStoppedReels;
                     }
                     // Redraw the game to update the display
-                    drawGame();
-                }, 4500);
+                    drawGameWithNewSymbols();
+                }, 2000);
             } else {
                 highlightWinningSymbols(apiResult.reels, apiResult.winningPositions);
             }
