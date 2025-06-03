@@ -4868,11 +4868,11 @@ function handleSpinCompletion(apiResult) {
             async function showImageTemporarily() {
                 await delayMs(3500); 
                 freeSpinsOverlay.style.display = 'block';  
-                startfreespinsoverlay.style.display = 'block'
                 document.getElementById('img_top').src = 'volcano.gif'
                 audioManager.stopSound(audioManager.sounds.background);
                 audioManager.playSound(audioManager.sounds.freeSpin);   // Show image
-                await delayMs(4000);               // Wait 4 seconds
+                await delayMs(4000);     
+                startfreespinsoverlay.style.display = 'block'          // Wait 4 seconds
                 freeSpinsOverlay.style.display = 'none';      // Hide image
             }
 
