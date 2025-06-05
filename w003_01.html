@@ -285,6 +285,7 @@
             justify-content: center;
             text-align: center;
             color: white;
+            display: none !important;
         }
         #inactivityOverlay h2 {
             font-size: 2rem;
@@ -6344,7 +6345,7 @@ function toggleGameMode() {
     function showInactivityOverlay() {
         const inactivityOverlay = document.getElementById('inactivityOverlay');
         if (inactivityOverlay) {
-            inactivityOverlay.style.display = 'flex';
+            inactivityOverlay.style.display = 'none';
         }
     }
     
