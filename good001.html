@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ember Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e, #0f3460);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .coins-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 100%;
+            height: 200px;
+            background-image: url('coins_at_bottom.png');
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            background-size: contain;
+        }
+
+        .ember-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .ember {
+            position: absolute;
+            background-image: url('ember.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            width: 20px;
+            height: 20px;
+            opacity: 0;
+            animation: rise linear infinite;
+        }
+
+        .ember.front {
+            z-index: 15;
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(0) translateX(0) scale(0.5) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+                transform: translateY(-10vh) translateX(0) scale(0.7) rotate(var(--rotation));
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-50vh) translateX(var(--drift-x)) scale(1) rotate(var(--rotation));
+                z-index: 15;
+            }
+            80% {
+                opacity: 0.5;
+                transform: translateY(-50vh) translateX(var(--drift-x)) scale(0.8) rotate(var(--rotation));
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50vh) translateX(var(--final-x)) scale(0.3) rotate(var(--rotation));
+            }
+        }
+
+        /* Particle variations */
+        .ember.small {
+            width: 10px;
+            height: 15px;
+        }
+
+        .ember.medium {
+            width: 10px;
+            height: 10px;
+        }
+
+        .ember.large {
+            width: 10px;
+            height: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ember-container" id="emberContainer"></div>
+    <div class="coins-container"></div>
+
+    <script>
+        class EmberAnimation {
+            constructor() {
+                this.container = document.getElementById('emberContainer');
+                this.embers = [];
+                this.maxEmbers = 50;
+                this.init();
+            }
+
+            init() {
+                this.createEmbers();
+                this.startAnimation();
+            }
+
+            createEmber() {
+                const ember = document.createElement('div');
+                ember.className = 'ember';
+                
+                // Random size variation
+                const sizes = ['small', 'medium', 'large'];
+                const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+                ember.classList.add(randomSize);
+
+                // Random starting position along the bottom
+                const startX = Math.random() * window.innerWidth;
+                ember.style.left = startX + 'px';
+                ember.style.bottom = '0px';
+
+                // Random drift values
+                const driftX = (Math.random() - 0.5) * 200; // -100 to 100px drift
+                const finalX = (Math.random() - 0.5) * 400; // -200 to 200px final drift
+                ember.style.setProperty('--drift-x', driftX + 'px');
+                ember.style.setProperty('--final-x', finalX + 'px');
+                
+                // Random rotation
+                const rotation = Math.random() * 360;
+                ember.style.setProperty('--rotation', rotation + 'deg');
+
+                // Random animation duration
+                const duration = 3 + Math.random() * 4; // 3-7 seconds
+                ember.style.animationDuration = duration + 's';
+
+                // Random delay
+                const delay = Math.random() * 2; // 0-2 seconds delay
+                ember.style.animationDelay = delay + 's';
+
+                this.container.appendChild(ember);
+
+                // Remove ember after animation completes
+                setTimeout(() => {
+                    if (ember.parentNode) {
+                        ember.parentNode.removeChild(ember);
+                    }
+                }, (duration + delay) * 1000);
+
+                return ember;
+            }
+
+            createEmbers() {
+                // Create initial batch of embers
+                for (let i = 0; i < this.maxEmbers; i++) {
+                    setTimeout(() => {
+                        this.createEmber();
+                    }, Math.random() * 500); // Spread initial creation over 5 seconds
+                }
+            }
+
+            startAnimation() {
+                // Continuously create new embers
+                setInterval(() => {
+                    if (this.container.children.length < this.maxEmbers * 2) {
+                        this.createEmber();
+                    }
+                }, 1 + Math.random() * 3); // Create new ember every 200-500ms
+            }
+        }
+
+        // Start the animation when page loads
+        window.addEventListener('load', () => {
+            new EmberAnimation();
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Clear existing embers and restart
+            const container = document.getElementById('emberContainer');
+            container.innerHTML = '';
+            new EmberAnimation();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ember Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e, #0f3460);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .coins-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            width: 100%;
+            height: 200px;
+            background-image: url('coins_at_bottom.png');
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            background-size: contain;
+        }
+
+        .ember-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .ember {
+            position: absolute;
+            background-image: url('ember.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 12px;
+            height: 16px;
+            opacity: 0;
+            animation: rise linear forwards;
+        }
+
+        .ember.front {
+            z-index: 15;
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(0) translateX(0) scale(0.3) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+                transform: translateY(var(--y-10)) translateX(var(--x-10)) scale(0.6) rotate(var(--rotation));
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(var(--y-50)) translateX(var(--x-50)) scale(1) rotate(var(--rotation));
+                z-index: 15;
+            }
+            80% {
+                opacity: 0.7;
+                transform: translateY(var(--y-80)) translateX(var(--x-80)) scale(0.8) rotate(var(--rotation));
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(var(--y-100)) translateX(var(--x-100)) scale(0.2) rotate(var(--rotation));
+            }
+        }
+
+        /* Particle variations */
+        .ember.small {
+            width: 12px;
+            height: 12px;
+        }
+
+        .ember.medium {
+            width: 13px;
+            height: 13px;
+        }
+
+        .ember.large {
+            width: 14px;
+            height: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ember-container" id="emberContainer"></div>
+    <div class="coins-container"></div>
+
+    <script>
+class EmberAnimation {
+    constructor() {
+        this.container = document.getElementById('emberContainer');
+        this.embers = [];
+        this.maxEmbers = 200;
+        this.screenWidth = window.innerWidth;
+        this.screenHeight = window.innerHeight;
+        this.init();
+    }
+
+    init() {
+        this.createEmbers();
+        this.startAnimation();
+    }
+
+    createEmber() {
+        const ember = document.createElement('div');
+        ember.className = 'ember';
+        
+        // Random size variation
+        const sizes = ['small', 'medium', 'large'];
+        const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
+        ember.classList.add(randomSize);
+
+        // Random starting position along the bottom
+        const startX = Math.random() * this.screenWidth;
+        ember.style.left = startX + 'px';
+        ember.style.bottom = '0px';
+
+        // Random angle between 60-120 degrees (converted to radians)
+        const angleInDegrees = 75 + Math.random() * 60; // 60-120 degrees
+        const angleInRadians = (angleInDegrees * Math.PI) / 180;
+        
+        // Ensure ember reaches 40-50% of screen height
+        const minHeight = this.screenHeight * 0.4; // 40% of screen height
+        const maxHeight = this.screenHeight * 0.5; // 50% of screen height
+        const targetHeight = minHeight + Math.random() * (maxHeight - minHeight);
+        
+        // Calculate total distance based on angle and target height
+        const totalDistance = targetHeight / Math.sin(angleInRadians);
+        
+        // Calculate x and y components
+        const totalX = Math.cos(angleInRadians) * totalDistance;
+        const totalY = Math.sin(angleInRadians) * totalDistance;
+        
+        // Set movement values for different animation stages
+        ember.style.setProperty('--x-10', (totalX * 0.1) + 'px');
+        ember.style.setProperty('--y-10', (-totalY * 0.1) + 'px');
+        ember.style.setProperty('--x-50', (totalX * 0.5) + 'px');
+        ember.style.setProperty('--y-50', (-totalY * 0.5) + 'px');
+        ember.style.setProperty('--x-80', (totalX * 0.8) + 'px');
+        ember.style.setProperty('--y-80', (-totalY * 0.8) + 'px');
+        ember.style.setProperty('--x-100', totalX + 'px');
+        ember.style.setProperty('--y-100', (-totalY) + 'px');
+        
+        // Random rotation
+        const rotation = Math.random() * 360;
+        ember.style.setProperty('--rotation', rotation + 'deg');
+
+        // Random animation duration
+        const duration = 4 + Math.random() * 3; // 4-7 seconds
+        ember.style.animationDuration = duration + 's';
+
+        // Random delay
+        const delay = Math.random() * 1; // 0-1 seconds delay
+        ember.style.animationDelay = delay + 's';
+
+        this.container.appendChild(ember);
+        
+        // Track this ember for edge detection
+        const emberObj = {
+            element: ember,
+            startTime: Date.now() + (delay * 10),
+            duration: duration * 1000,
+            startX: startX,
+            startY: this.screenHeight, // Start from bottom
+            totalX: totalX,
+            totalY: totalY,
+            angle: angleInDegrees,
+            removed: false
+        };
+        
+        this.embers.push(emberObj);
+
+        // Remove ember after animation completes
+        setTimeout(() => {
+            this.removeEmber(emberObj);
+        }, (duration + delay) * 1000 + 500); // Add small buffer
+
+        return emberObj;
+    }
+
+    removeEmber(emberObj) {
+        if (emberObj.removed) return;
+        emberObj.removed = true;
+        
+        if (emberObj.element && emberObj.element.parentNode) {
+            emberObj.element.parentNode.removeChild(emberObj.element);
+        }
+        
+        const index = this.embers.indexOf(emberObj);
+        if (index > -1) {
+            this.embers.splice(index, 1);
+        }
+    }
+
+    checkEdges() {
+        const now = Date.now();
+        const screenWidth = this.screenWidth;
+        const screenHeight = this.screenHeight;
+        
+        this.embers.forEach(emberObj => {
+            if (emberObj.removed || now < emberObj.startTime) return;
+            
+            const elapsed = now - emberObj.startTime;
+            const progress = Math.min(elapsed / emberObj.duration, 1);
+            
+            // Calculate current position based on animation progress
+            let progressX, progressY;
+            
+            if (progress <= 0.1) {
+                const stageProgress = progress / 0.1;
+                progressX = emberObj.totalX * 0.1 * stageProgress;
+                progressY = emberObj.totalY * 0.1 * stageProgress;
+            } else if (progress <= 0.5) {
+                const stageProgress = (progress - 0.1) / 0.4;
+                progressX = (emberObj.totalX * 0.1) + (emberObj.totalX * 0.4 * stageProgress);
+                progressY = (emberObj.totalY * 0.1) + (emberObj.totalY * 0.4 * stageProgress);
+            } else if (progress <= 0.8) {
+                const stageProgress = (progress - 0.5) / 0.3;
+                progressX = (emberObj.totalX * 0.5) + (emberObj.totalX * 0.3 * stageProgress);
+                progressY = (emberObj.totalY * 0.5) + (emberObj.totalY * 0.3 * stageProgress);
+            } else {
+                const stageProgress = (progress - 0.8) / 0.2;
+                progressX = (emberObj.totalX * 0.8) + (emberObj.totalX * 0.2 * stageProgress);
+                progressY = (emberObj.totalY * 0.8) + (emberObj.totalY * 0.2 * stageProgress);
+            }
+            
+            const currentX = emberObj.startX + progressX;
+            const currentY = emberObj.startY - progressY; // Subtract because we're moving up
+            
+            // Check if ember has reached any edge of the screen (with some margin)
+            if (currentX < -20 || currentX > screenWidth + 20 || 
+                currentY < -20 || currentY > screenHeight + 20) {
+                this.removeEmber(emberObj);
+            }
+        });
+    }
+
+    createEmbers() {
+        // Create initial batch of embers
+        for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+                this.createEmber();
+            }, Math.random() * 15);
+        }
+    }
+
+    startAnimation() {
+        // Continuously create new embers
+        setInterval(() => {
+            if (this.embers.length < this.maxEmbers) {
+                this.createEmber();
+            }
+        }, 1 + Math.random() * 3); // Create new ember every 200-500ms
+        
+        // Check for embers reaching edges
+        setInterval(() => {
+            this.checkEdges();
+        }, 100); // Check every 100ms
+    }
+
+    updateScreenSize() {
+        this.screenWidth = window.innerWidth;
+        this.screenHeight = window.innerHeight;
+    }
+}
+
+// Start the animation when page loads
+window.addEventListener('load', () => {
+    new EmberAnimation();
+});
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    // Update screen size and restart
+    const container = document.getElementById('emberContainer');
+    container.innerHTML = '';
+    setTimeout(() => {
+        new EmberAnimation();
+    }, 10);
+});
+</script>
+</body>
+</html>
