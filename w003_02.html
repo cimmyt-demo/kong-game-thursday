@@ -2256,7 +2256,6 @@ window.addEventListener('resize', () => {
     let wildFrameImages = [];
     let loadedWildFrames = 0;
     const wildFrameCount = 33;
-    let specialScatterAnimation = false;
 
     // Get canvas and context
     const canvas = document.getElementById('slotMachine');
@@ -4092,9 +4091,6 @@ function clearPreFreeSpinState() {
         ctx.restore();
     }
 
-
-
-
 // Update the highlightWinningSymbols function to handle the new winning positions format
 function highlightWinningSymbols(reelSymbols, winningPositions) {
     // If no winning positions are passed, initialize it as an empty array
@@ -4226,102 +4222,103 @@ function highlightWinningSymbols(reelSymbols, winningPositions) {
                     
                     switch (anim.symbol) {
                         case "Scatter":
-                            const now = Date.now();
-
+                            // Updated scatter animation - scale up to 75, down to 0, then loop 0-50
+                            const now = Date.now()
                             if (now - anim.lastUpdateTime >= anim.frameRate) {
-                                anim.lastUpdateTime = now;
+                                anim.lastUpdateTime = now
 
-                                if (specialScatterAnimation) {
-                                    // Smooth oscillating animation - loop frames 0–50
-                                    anim.currentFrame += 1;
-                                    if (anim.currentFrame > 75) {
-                                        anim.currentFrame = 0;
-                                    }
+                                // Handle frame progression based on scaling completion status
+                                if (anim.hasCompletedScaling) {
+                                // After scaling is complete, only loop frames 0-50
+                                anim.currentFrame += anim.direction
+                                if (anim.currentFrame > 50) {
+                                    anim.currentFrame = 0 // Jump back to start, stay within 0-50 range
+                                } else if (anim.currentFrame < 0) {
+                                    anim.currentFrame = 50 // Wrap around within 0-50 range
+                                }
                                 } else {
-                                    // Original phased animation
-                                    if (anim.hasCompletedScaling) {
-                                        anim.currentFrame += anim.direction;
-                                        if (anim.currentFrame > 50) {
-                                            anim.currentFrame = 0;
-                                        } else if (anim.currentFrame < 0) {
-                                            anim.currentFrame = 50;
-                                        }
-                                    } else {
-                                        if (!anim.isInScaleUpPhase && !anim.isInScaleDownPhase) {
-                                            anim.currentFrame += anim.direction;
-                                            if (anim.currentFrame === 60) {
-                                                anim.isInScaleUpPhase = true;
-                                                console.log("Entering scale up phase at frame 60");
-                                            }
-                                        } else if (anim.isInScaleUpPhase) {
-                                            anim.currentFrame += anim.direction;
-                                            if (anim.currentFrame === 75) {
-                                                anim.isInScaleUpPhase = false;
-                                                anim.isInScaleDownPhase = true;
-                                                anim.direction = -1;
-                                                console.log("Entering scale down phase at frame 75");
-                                            }
-                                        } else if (anim.isInScaleDownPhase) {
-                                            anim.currentFrame += anim.direction;
-                                            if (anim.currentFrame === 0) {
-                                                anim.isInScaleDownPhase = false;
-                                                anim.hasCompletedScaling = true;
-                                                anim.direction = 1;
-                                                anim.currentScale = anim.baseScale;
-                                                console.log("Scaling cycle complete - now looping frames 0-50 without scaling");
-                                            }
-                                        }
+                                // Handle the scaling phases
+                                if (!anim.isInScaleUpPhase && !anim.isInScaleDownPhase) {
+                                    // Normal progression until frame 60
+                                    anim.currentFrame += anim.direction
+
+                                    if (anim.currentFrame === 60) {
+                                    anim.isInScaleUpPhase = true
+                                    console.log("Entering scale up phase at frame 60")
                                     }
+                                } else if (anim.isInScaleUpPhase) {
+                                    // Scale up phase: frames 60-75
+                                    anim.currentFrame += anim.direction
+
+                                    if (anim.currentFrame === 75) {
+                                    anim.isInScaleUpPhase = false
+                                    anim.isInScaleDownPhase = true
+                                    anim.direction = -1 // Start going backwards
+                                    console.log("Entering scale down phase at frame 75")
+                                    }
+                                } else if (anim.isInScaleDownPhase) {
+                                    // Scale down phase: frames 75 down to 0
+                                    anim.currentFrame += anim.direction // direction is -1, so this decreases
+
+                                    if (anim.currentFrame === 0) {
+                                    anim.isInScaleDownPhase = false
+                                    anim.hasCompletedScaling = true
+                                    anim.direction = 1 // Reset direction for normal looping
+                                    anim.currentScale = anim.baseScale
+                                    console.log("Scaling cycle complete - now looping frames 0-50 without scaling")
+                                    }
+                                }
                                 }
                             }
 
-                            // Apply scale based on animation mode
-                            let scaleFactor = anim.baseScale;
+                            // Calculate scale based on current phase
+                            let scaleFactor = anim.baseScale // Default base scale
 
-                            if (specialScatterAnimation) {
-                                // Smooth oscillating scale using sine wave
-                                const timeElapsed = (Date.now() % 2000) / 2000;
-                                const scaleOscillation = Math.sin(timeElapsed * 2 * Math.PI);
-                                const normalizedOscillation = (scaleOscillation + 1) / 2;
-                                scaleFactor = anim.baseScale + (anim.maxScale - anim.baseScale) * normalizedOscillation;
-                            } else {
-                                if (!anim.hasCompletedScaling) {
-                                    if (anim.isInScaleUpPhase && anim.currentFrame >= 60 && anim.currentFrame <= 75) {
-                                        const scaleProgress = (anim.currentFrame - 60) / 15;
-                                        scaleFactor = anim.baseScale + (anim.maxScale - anim.baseScale) * scaleProgress;
-                                    } else if (anim.isInScaleDownPhase && anim.currentFrame >= 0 && anim.currentFrame <= 75) {
-                                        const scaleProgress = anim.currentFrame / 75;
-                                        scaleFactor = anim.baseScale + (anim.maxScale - anim.baseScale) * scaleProgress;
-                                    }
+                            if (!anim.hasCompletedScaling) {
+                                if (anim.isInScaleUpPhase && anim.currentFrame >= 60 && anim.currentFrame <= 75) {
+                                // Scale up from frame 60 to 75 (15 frames)
+                                const scaleProgress = (anim.currentFrame - 60) / 15 // 0 to 1
+                                scaleFactor = anim.baseScale + (anim.maxScale - anim.baseScale) * scaleProgress
+                                } else if (anim.isInScaleDownPhase && anim.currentFrame >= 0 && anim.currentFrame <= 75) {
+                                // Scale down from frame 75 to 0 (75 frames)
+                                const scaleProgress = anim.currentFrame / 75 // 1 to 0 (as frame goes from 75 to 0)
+                                scaleFactor = anim.baseScale + (anim.maxScale - anim.baseScale) * scaleProgress
                                 }
                             }
+                            // If hasCompletedScaling is true, scaleFactor remains at baseScale (1.3)
 
-                            anim.currentScale = scaleFactor;
+                            anim.currentScale = scaleFactor
 
-                            // Draw frame
+                            // Draw the current frame if it's loaded
                             if (loadedScatterFrames > anim.currentFrame) {
-                                const frameImg = scatterFrameImages[anim.currentFrame];
+                                const frameImg = scatterFrameImages[anim.currentFrame]
 
-                                const centerX = symbolX + reelWidth / 2;
-                                const centerY = symbolY + symbolHeight / 2;
+                                // Calculate center position for scaling
+                                const centerX = symbolX + reelWidth / 2
+                                const centerY = symbolY + symbolHeight / 2
 
-                                ctx.translate(centerX, centerY);
-                                ctx.scale(scaleFactor, scaleFactor);
-                                ctx.translate(-centerX, -centerY);
+                                // Apply scaling from center
+                                ctx.translate(centerX, centerY)
+                                ctx.scale(scaleFactor, scaleFactor)
+                                ctx.translate(-centerX, -centerY)
 
-                                const imgPadding = reelWidth * 0.05;
-                                const imgSize = Math.min(reelWidth, symbolHeight) - imgPadding * 2;
+                                // Draw the frame
+                                const imgPadding = reelWidth * 0.05
+                                const imgSize = Math.min(reelWidth, symbolHeight) - imgPadding * 2
                                 ctx.drawImage(
-                                    frameImg,
-                                    symbolX + (reelWidth - imgSize) / 2,
-                                    symbolY + (symbolHeight - imgSize) / 2,
-                                    imgSize,
-                                    imgSize * 1.1,
-                                );
+                                frameImg,
+                                symbolX + (reelWidth - imgSize) / 2,
+                                symbolY + (symbolHeight - imgSize) / 2,
+                                imgSize,
+                                imgSize * 1.1,
+                                )
                             } else {
-                                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, anim.currentScale);
+                                // Fallback to normal symbol if frames aren't loaded
+                                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, 1.3)
                             }
-                            break;
+                            break
+                        
+                            // Other symbol animations remain the same...
                         
                         case "Treasure Chest":
                             // Blinking effect
@@ -5681,7 +5678,6 @@ function handleSpinCompletion(apiResult) {
                 // Redraw the symbols from before free spins started
                 if (redrawPreFreeSpinSymbols()) {
                     console.log('Successfully restored pre-free spin symbols');
-                    specialScatterAnimation = true;
                     highlightWinningSymbols(reels, extractScatterPositions(stoppedReelsPreFreeSpin.reels || reels));
                 } else {
                     console.log('Failed to restore pre-free spin symbols, using current reels');
