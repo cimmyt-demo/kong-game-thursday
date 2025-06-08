@@ -2824,7 +2824,7 @@ function initLoading() {
             
             // Update background music based on new setting
             if (backgroundMusicEnabled) {
-                backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                audioManager.playBackgroundMusic();
             } else {
                 backgroundMusic.pause();
             }
@@ -3277,7 +3277,7 @@ function removeBonusFrameFromLastReel() {
                 if (isFreeSpinMode) {
                     freeSpinSound.play().catch(e => console.log("Audio play failed:", e));
                 } else {
-                    backgroundMusic.play().catch(e => console.log("Audio play failed:", e));
+                    audioManager.playBackgroundMusic();
                 }
             }
         }
