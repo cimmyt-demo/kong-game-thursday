@@ -5596,6 +5596,9 @@ function handleSpinCompletion(apiResult) {
             originalBetAmount = stake;
 
 
+            remainingFreeSpinCount += 1;
+
+
             document.getElementById('freespins_display').style.display = "flex";
             document.getElementById('normalspins_display').style.display = "none";
 
@@ -5608,6 +5611,8 @@ function handleSpinCompletion(apiResult) {
             // freeSpinsIndicator.style.display = 'block';
             freeSpinsCountElement.textContent = freeSpinCount;
             bonusMultiplierElement.textContent = bonusMultiplier;
+
+            
             
             
     } 
@@ -5651,8 +5656,19 @@ function handleSpinCompletion(apiResult) {
         document.getElementById('remaining_fs_holder').innerHTML = remainingFreeSpinCount;
         
         // Check if free spins are over
-        if (remainingFreeSpinCount >= freeSpinCount) {
+        if (remainingFreeSpinCount > freeSpinCount) {
 
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
+            async function tempSleep(ms) {
+                await sleep(10000)
+            }
+
+            tempSleep()
+
+            
             function showWinContainer() {
                 const el = document.getElementById('win-container');
                 el.style.display = 'block'; // Immediately show the element
@@ -5663,9 +5679,7 @@ function handleSpinCompletion(apiResult) {
             
 
             freeSpinEndedRecently = true
-            function sleep(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
+            
 
             async function run() {
                 console.log("Start");
