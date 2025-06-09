@@ -1082,54 +1082,6 @@
 </style>
 
 
-<style>
-    /* Enhanced wall styling */
-.reel-wall {
-    position: absolute;
-    background-image: url('inner_wall.png');
-    background-size: cover;
-    background-repeat: repeat-y;
-    z-index: 1000;
-    box-shadow: 
-        inset 2px 0 4px rgba(255, 215, 0, 0.3),
-        inset -2px 0 4px rgba(255, 215, 0, 0.3);
-}
-
-.reel-wall::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-        90deg,
-        rgba(255, 215, 0, 0.1) 0%,
-        rgba(255, 215, 0, 0.3) 50%,
-        rgba(255, 215, 0, 0.1) 100%
-    );
-    z-index: 1;
-}
-
-.reel-wall::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 100%;
-    background: linear-gradient(
-        to bottom,
-        transparent 0%,
-        rgba(255, 215, 0, 0.8) 20%,
-        rgba(255, 215, 0, 0.8) 80%,
-        transparent 100%
-    );
-    z-index: 2;
-}
-</style>
-
 </head>
 <body class="w-100">
 <div style="background-image: url('page_bcg.png'); background-size: cover; height: 100vh; padding: 0 !important;">
@@ -1194,6 +1146,7 @@
                         </div>
                     </div>
                 </div>
+    
     
                 <div class="row px-3 my-3">
                     <div class="col-lg-3 col-md-12 col-sm-12 text-center px-4 mb-3">
@@ -1965,7 +1918,7 @@ class CoinAnimation {
         coin.style.top = '-50px';
 
         // Random horizontal drift - coins can fall anywhere across the screen
-        const maxDrift = this.screenWidth * 0.2; // Can drift up to 80% of screen width
+        const maxDrift = this.screenWidth * 0.8; // Can drift up to 80% of screen width
         const drift = (Math.random() - 0.5) * maxDrift;
         coin.style.setProperty('--drift', drift + 'px');
         
@@ -2294,10 +2247,10 @@ window.addEventListener('resize', () => {
         'Explorer': 1,
         'Compass': 1,
         'Binoculars': 1,
-        'A': 0.8,
-        'K': 0.8,
-        'Q': 0.8,
-        'J': 0.8,
+        'A': 1,
+        'K': 1,
+        'Q': 1,
+        'J': 1,
         'Wild': 1,
         'Scatter': 1
     };
@@ -3736,18 +3689,6 @@ freeSpinWallImages[1].src = 'freespin-wall-right.png';
 freeSpinWallImages[2].src = 'resultsbcg4.png';
 freeSpinWallImages[3].src = 'freespin-wall-left.png';
 
-// Define and load separator images
-const normalSeparatorImage = new Image();
-const freeSpinSeparatorImage = new Image();
-
-// Set separator image sources
-normalSeparatorImage.src = 'inner_wall.png';
-freeSpinSeparatorImage.src = 'inner_wall.png';
-
-// Set crossOrigin to avoid CORS issues
-normalSeparatorImage.crossOrigin = "anonymous";
-freeSpinSeparatorImage.crossOrigin = "anonymous";
-
 // Preload all images before drawing walls
 let normalWallImagesLoaded = 0;
 let freeSpinWallImagesLoaded = 0;
@@ -3836,43 +3777,15 @@ function drawReelBackgrounds() {
                 reelHeight
             );
             
-            // Enhanced reel separators with image backgrounds
-            if (i > 0) { // Don't draw separator before first reel
-                const separatorX = reelX;
-                const separatorWidth = 20;
-                
-                // Choose separator image based on game mode
-                const separatorImage = isFreeSpinMode ? freeSpinSeparatorImage : normalSeparatorImage;
-                
-                // Draw separator background image
-                if (separatorImage && separatorImage.complete) {
-                    ctx.drawImage(
-                        separatorImage,
-                        separatorX - separatorWidth/2,
-                        reelY,
-                        separatorWidth,
-                        reelHeight
-                    );
-                } else {
-                    // Fallback if image not loaded
-                    ctx.fillStyle = isFreeSpinMode ? '#ff6b35' : '#d4af37';
-                    ctx.fillRect(separatorX - separatorWidth/2, reelY, separatorWidth, reelHeight);
-                }
-                
-                // Add glow effect overlay
-                const gradient = ctx.createLinearGradient(separatorX - 6, 0, separatorX + 6, 0);
-                gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');
-                gradient.addColorStop(0.5, isFreeSpinMode ? 'rgba(255, 107, 53, 0.2)' : 'rgba(255, 215, 0, 0.2)');
-                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
-                
-                ctx.fillStyle = gradient;
-                ctx.fillRect(separatorX - 6, reelY, 12, reelHeight);
-                
-                // Central highlight line
-                ctx.fillStyle = isFreeSpinMode ? 'rgba(255, 170, 68, 0.6)' : 'rgba(255, 215, 0, 0.6)';
-                ctx.fillRect(separatorX - 1, reelY, 2, reelHeight);
-            }
-        
+            // Draw left and right borders only
+            ctx.strokeStyle = isFreeSpinMode ? '#d97800' : '#835318';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(reelX, reelY);                       // Left border start
+            ctx.lineTo(reelX, reelY + reelHeight);          // Left border end
+            ctx.moveTo(reelX + reelWidth, reelY);           // Right border start
+            ctx.lineTo(reelX + reelWidth, reelY + reelHeight); // Right border end
+            ctx.stroke();
         }
     } else {
         // Fallback if image isn't loaded yet
@@ -3884,43 +3797,15 @@ function drawReelBackgrounds() {
             ctx.fillStyle = isFreeSpinMode ? '#3e3424' : '#333333';
             ctx.fillRect(reelX, reelY, reelWidth, reelHeight);
 
-            // Enhanced reel separators with image backgrounds
-            if (i > 0) { // Don't draw separator before first reel
-                const separatorX = reelX;
-                const separatorWidth = 20;
-                
-                // Choose separator image based on game mode
-                const separatorImage = isFreeSpinMode ? freeSpinSeparatorImage : normalSeparatorImage;
-                
-                // Draw separator background image
-                if (separatorImage && separatorImage.complete) {
-                    ctx.drawImage(
-                        separatorImage,
-                        separatorX - separatorWidth/2,
-                        reelY,
-                        separatorWidth,
-                        reelHeight
-                    );
-                } else {
-                    // Fallback if image not loaded
-                    ctx.fillStyle = isFreeSpinMode ? '#ff6b35' : '#d4af37';
-                    ctx.fillRect(separatorX - separatorWidth/2, reelY, separatorWidth, reelHeight);
-                }
-                
-                // Add glow effect overlay
-                const gradient = ctx.createLinearGradient(separatorX - 6, 0, separatorX + 6, 0);
-                gradient.addColorStop(0, 'rgba(255, 215, 0, 0)');
-                gradient.addColorStop(0.5, isFreeSpinMode ? 'rgba(255, 107, 53, 0.2)' : 'rgba(255, 215, 0, 0.2)');
-                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
-                
-                ctx.fillStyle = gradient;
-                ctx.fillRect(separatorX - 6, reelY, 12, reelHeight);
-                
-                // Central highlight line
-                ctx.fillStyle = isFreeSpinMode ? 'rgba(255, 170, 68, 0.6)' : 'rgba(255, 215, 0, 0.6)';
-                ctx.fillRect(separatorX - 1, reelY, 2, reelHeight);
-            }
-        
+            // Draw left and right borders only
+            ctx.strokeStyle = isFreeSpinMode ? '#d97800' : '#835318';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(reelX, reelY);                       // Left border start
+            ctx.lineTo(reelX, reelY + reelHeight);          // Left border end
+            ctx.moveTo(reelX + reelWidth, reelY);           // Right border start
+            ctx.lineTo(reelX + reelWidth, reelY + reelHeight); // Right border end
+            ctx.stroke();
         }
     }
 }
@@ -4192,23 +4077,13 @@ function clearPreFreeSpinState() {
             const imgHeight = imgWidth * 1.16; // Make height 1.16 times the width
             
             // Draw the image
-            const padding = 10; // Adjust this value as needed
-
             ctx.drawImage(
                 img, 
-                x + padding + (width - 2 * padding - imgWidth * SYMBOL_DIMENSION_MULTIPLIER[symbol.name]) / 2, 
-                y + padding + (height - 2 * padding - imgHeight * SYMBOL_DIMENSION_MULTIPLIER[symbol.name]) / 2, 
+                x + (width - imgWidth) / 2, 
+                y + (height - imgHeight) / 2, 
                 imgWidth * SYMBOL_DIMENSION_MULTIPLIER[symbol.name], 
                 imgHeight * SYMBOL_DIMENSION_MULTIPLIER[symbol.name]
             );
-
-            // ctx.drawImage(
-            //     img, 
-            //     x + (width - imgWidth) / 2, 
-            //     y + (height - imgHeight) / 2, 
-            //     imgWidth * SYMBOL_DIMENSION_MULTIPLIER[symbol.name], 
-            //     imgHeight * SYMBOL_DIMENSION_MULTIPLIER[symbol.name]
-            // );
         } else {
             // Fallback if image is not found
             ctx.fillStyle = symbol.color || '#999999';
@@ -5380,19 +5255,14 @@ function groupWinValuesDisplay(spinResults) {
     }
 
     // Display logic
-    if (freeSpinEndedRecently){
-        const winEl = document.getElementById('win-amount2');
-        winEl.style.marginTop = '25%';
-        winEl.innerHTML = document.getElementById('display_accumulated_freespin_amount').innerHTML;
-        freeSpinEndedRecently = false;
-        return;
-    } else if (displayItems.length === 1) {
+    if (displayItems.length === 1) {
         const row = displayItems[0].row;
         const winEl = document.getElementById('win-amount2');
-        winEl.style.marginTop = row === 1 ? '25%' : row === 2 ? '50%' : '0%';
+
+        winEl.style.marginTop = row === 1 ? '22%' : row === 2 ? '45%' : '0%';
         winEl.innerHTML = parseFloat(displayItems[0].win_value).toFixed(2);
         return;
-    } 
+    }
 
     let currentIndex = 0;
 
@@ -5401,8 +5271,8 @@ function groupWinValuesDisplay(spinResults) {
             const currentItem = displayItems[currentIndex];
             const winEl = document.getElementById('win-amount2');
 
-            winEl.style.marginTop = currentItem.row === 1 ? '25%' :
-                                    currentItem.row === 2 ? '50%' : '0%';
+            winEl.style.marginTop = currentItem.row === 1 ? '22%' :
+                                    currentItem.row === 2 ? '45%' : '0%';
 
             winEl.innerHTML = parseFloat(currentItem.win_value).toFixed(2);
         }
@@ -5431,7 +5301,7 @@ function updateWinnings(targetAmount) {
             element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
         } else if (freeSpinEndedRecently === true){
             element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
-            // freeSpinEndedRecently = false;
+            freeSpinEndedRecently = false;
         }
         else {
             element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
