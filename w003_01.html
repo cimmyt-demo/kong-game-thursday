@@ -5411,7 +5411,6 @@ function groupWinValuesDisplay(spinResults) {
     }, 2000);
 }
 
-
 function updateWinnings(targetAmount) {
     let element = document.getElementById('update_winnings');
     let currentAmount = 0;
@@ -5424,43 +5423,126 @@ function updateWinnings(targetAmount) {
     }
 
     let progressByLastSpin = accumulatedAmountDuringFreespin;
+    let animationSkipped = false;
+    let counter = null;
 
-    let counter = setInterval(() => {
+    // Function to complete the animation immediately
+    const completeAnimation = (event) => {
+        if (!animationSkipped) {
+            console.log('Animation skipped!'); // Debug log
+            animationSkipped = true;
+            
+            // Prevent event from bubbling
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
+            }
+            
+            // Clear the interval immediately
+            if (counter) {
+                clearInterval(counter);
+                counter = null;
+            }
+            
+            // Set to final amount immediately
+            currentAmount = targetAmount;
+            
+            // Update display to final amount
+            if (!isFreeSpinMode){
+                element.innerHTML = `${(targetAmount + progressByLastSpin).toFixed(2)}`;
+            } else if (freeSpinEndedRecently === true){
+                element.innerHTML = `${(targetAmount + progressByLastSpin).toFixed(2)}`;
+            } else {
+                element.innerHTML = `${(targetAmount + progressByLastSpin).toFixed(2)}`;
+            }
+            
+            // Stop sound
+            if (soundEffectsEnabled){
+                winningSound.pause();
+            }
+            
+            // Update balance if not in free spin mode
+            if (!isFreeSpinMode){
+                displayBalance(balance);
+            }
+            
+            // Remove all event listeners
+            canvas.removeEventListener('click', completeAnimation, true);
+            canvas.removeEventListener('touchstart', completeAnimation, true);
+            document.removeEventListener('click', completeAnimation, true);
+            document.removeEventListener('touchstart', completeAnimation, true);
+        }
+    };
+
+    // Add multiple event listeners to ensure we catch the interaction
+    // Use capture phase to intercept before other handlers
+    canvas.addEventListener('click', completeAnimation, true);
+    canvas.addEventListener('touchstart', completeAnimation, true);
+    
+    // Also add to document as fallback
+    document.addEventListener('click', completeAnimation, true);
+    document.addEventListener('touchstart', completeAnimation, true);
+
+    console.log('Animation started, click anywhere to skip'); // Debug log
+
+    // Start the animation interval
+    counter = setInterval(() => {
+        // Double-check if animation was skipped
+        if (animationSkipped) {
+            clearInterval(counter);
+            return;
+        }
+
         currentAmount += increment;
+        
+        // Update display with current amount
         if (!isFreeSpinMode){
             element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
         } else if (freeSpinEndedRecently === true){
             element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
-            // freeSpinEndedRecently = false;
-        }
-        else {
+        } else {
             element.innerHTML = `${(currentAmount + progressByLastSpin).toFixed(2)}`;
         }
-        
 
+        // Check if animation has reached the target naturally
         if ((increment > 0 && currentAmount >= targetAmount) || (increment < 0 && currentAmount <= targetAmount)) {
+            // Animation completed naturally
+            animationSkipped = true; // Prevent further updates
+            
+            // Set final display value
             if (!isFreeSpinMode){
                 element.innerHTML = `${(targetAmount + progressByLastSpin).toFixed(2)}`;
             }
+            
+            // Clean up
             clearInterval(counter);
+            counter = null;
+            
             if (soundEffectsEnabled){
-                winningSound.pause()
+                winningSound.pause();
             }
             
             if (!isFreeSpinMode){
-                displayBalance(balance)
+                displayBalance(balance);
             }
+            
+            // Remove all event listeners
+            canvas.removeEventListener('click', completeAnimation, true);
+            canvas.removeEventListener('touchstart', completeAnimation, true);
+            document.removeEventListener('click', completeAnimation, true);
+            document.removeEventListener('touchstart', completeAnimation, true);
         }
     }, 20); // Update every 20ms
 
+    // Update accumulated amount for free spins
     if (isFreeSpinMode || freeSpinEndedRecently){
         accumulatedAmountDuringFreespin += targetAmount;
     }
-
-    
 }
 
-    function getWinLevel(amount) {
+
+function getWinLevel(amount) {
             if (amount < winLevels.big.threshold) {
             return 'big';
             } else if (amount < winLevels.mega.threshold) {
