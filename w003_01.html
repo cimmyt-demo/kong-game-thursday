@@ -933,7 +933,7 @@
             z-index: 10;
             min-height: 200px;
             width: 100%;
-            background-image: url('coins_at_bottom.png');
+            background-image: url('coins_at_bottom7.png');
             background-repeat: no-repeat;
             background-position: center bottom;
             background-size: cover;
@@ -950,14 +950,66 @@
         }
 
         .falling-coins-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 20;
-        }
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.falling-coin {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    left: 50%; /* Start from center horizontally */
+    transform: translateX(-50%); /* Center align the coin itself */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0;
+    animation-name: fallWithDrift;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.falling-coin.front {
+    background-image: url('coin_frontside.png');
+}
+
+.falling-coin.side {
+    background-image: url('side_of_the_coin.png');
+}
+
+.falling-coin.small {
+    width: 24px;
+    height: 24px;
+}
+
+.falling-coin.large {
+    width: 35px;
+    height: 35px;
+}
+
+@keyframes fallWithDrift {
+    0% {
+        transform: translateX(-50%) translateY(-50px) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(calc(var(--drift) - 50%)) translateY(calc(100vh + 50px)) rotate(var(--rotation));
+        opacity: 0;
+    }
+}
+
 
         .ember {
             position: absolute;
@@ -973,53 +1025,6 @@
 
         .ember.front {
             z-index: 15;
-        }
-
-        .falling-coin {
-            position: absolute;
-            width: 25px;
-            height: 25px;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0;
-            animation: fall linear forwards;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-        }
-
-        .falling-coin.front {
-            background-image: url('coin_frontside.png');
-        }
-
-        .falling-coin.side {
-            background-image: url('side_of_the_coin.png');
-        }
-
-        .falling-coin.small {
-            width: 24px;
-            height: 24px;
-        }
-
-        .falling-coin.large {
-            width: 350px;
-            height: 35px;
-        }
-
-        @keyframes fall {
-            0% {
-                transform: translateY(-50px) translateX(0) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(calc(100vh + 50px)) translateX(var(--drift)) rotate(var(--rotation));
-                opacity: 0;
-            }
         }
 
         @keyframes rise {
@@ -1698,7 +1703,12 @@
                 <img id="img_top_volcano_part_18x" class="part2-volcano" src="multipliers/part2/18x.gif" style="width: 100%;height: auto;display: none;" alt="">
                 <img id="img_top_volcano_part_36x" class="part2-volcano" src="multipliers/part2/36x.gif" style="width: 100%;height: auto;display: none;" alt="">
                 <img id="img_top_volcano_part_72x" class="part2-volcano" src="multipliers/part2/72x.gif" style="width: 100%;height: auto;display: none;" alt="">
-                <img id="img_top_volcano_eruption" class="part3-volcano" src="volcano_eruption.gif" style="width: 100%;height: auto;display: none;" alt="">
+                <img id="img_top_volcano_eruption_3x" class="part3-volcano" src="multipliers/part3/3x.gif" style="width: 100%;height: auto;display: none;" alt="">
+                <img id="img_top_volcano_eruption_6x" class="part3-volcano" src="multipliers/part3/6x.gif" style="width: 100%;height: auto;display: none;" alt="">
+                <img id="img_top_volcano_eruption_9x" class="part3-volcano" src="multipliers/part3/9x.gif" style="width: 100%;height: auto;display: none;" alt="">
+                <img id="img_top_volcano_eruption_18x" class="part3-volcano" src="multipliers/part3/18x.gif" style="width: 100%;height: auto;display: none;" alt="">
+                <img id="img_top_volcano_eruption_36x" class="part3-volcano" src="multipliers/part3/36x.gif" style="width: 100%;height: auto;display: none;" alt="">
+                <img id="img_top_volcano_eruption_72x" class="part3-volcano" src="multipliers/part3/72x.gif" style="width: 100%;height: auto;display: none;" alt="">
             </div>
             <div id="playground" style="position: relative; overflow: hidden;min-height: 40vh; width: 100%; background-size: cover; z-index: 99;">
                 <!-- Start Free Spins Overlay -->
@@ -1933,8 +1943,8 @@ class CoinAnimation {
     constructor() {
         this.container = document.getElementById('fallingCoinsContainer');
         this.coins = [];
-        this.screenWidth = window.innerWidth;
-        this.screenHeight = window.innerHeight;
+        this.screenWidth = document.getElementById("game-container").offsetWidth;
+        this.screenHeight = document.getElementById("game-container").offsetHeight;
         this.isActive = true;
         this.startTime = Date.now();
         this.duration = 5000; // 5 seconds
@@ -1948,7 +1958,7 @@ class CoinAnimation {
 
         const coin = document.createElement('div');
         coin.className = 'falling-coin';
-        
+
         // Random size variation
         const sizes = ['small', '', 'large'];
         const randomSize = sizes[Math.floor(Math.random() * sizes.length)];
@@ -1959,40 +1969,39 @@ class CoinAnimation {
         const randomFace = faces[Math.floor(Math.random() * faces.length)];
         coin.classList.add(randomFace);
 
-        // All coins start from the center
+        // All coins start from the top center
         const centerX = this.screenWidth / 2;
-        coin.style.left = centerX + 'px';
-        coin.style.top = '-20px';
+        coin.style.left = `${centerX}px`; // Start at the exact center
+        coin.style.top = '0px';
 
-        // Random horizontal drift - coins can fall anywhere across the screen
-        const maxDrift = this.screenWidth * 0.2; // Can drift up to 80% of screen width
-        const drift = (Math.random() - 0.5) * maxDrift;
-        coin.style.setProperty('--drift', drift + 'px');
-        
+        // Random horizontal drift (left or right)
+        const maxDrift = this.screenWidth * 0.4; // Drift up to 40% of screen width
+        const drift = (Math.random() - 0.5) * 2 * maxDrift; // Range: -maxDrift to +maxDrift
+        coin.style.setProperty('--drift', `${drift}px`);
+
         // Random rotation
-        const rotation = Math.random() * 720; // 0-720 degrees
-        coin.style.setProperty('--rotation', rotation + 'deg');
+        const rotation = Math.random() * 720;
+        coin.style.setProperty('--rotation', `${rotation}deg`);
 
         // Random animation duration
-        const duration = 2 + Math.random() * 2; // 2-4 seconds
-        coin.style.animationDuration = duration + 's';
+        const duration = 2 + Math.random() * 2;
+        coin.style.animationDuration = `${duration}s`;
 
         // Random delay
-        const delay = Math.random() * 0.5; // 0-0.5 seconds delay
-        coin.style.animationDelay = delay + 's';
+        const delay = Math.random() * 0.5;
+        coin.style.animationDelay = `${delay}s`;
 
         this.container.appendChild(coin);
-        
+
         const coinObj = {
             element: coin,
             startTime: Date.now() + (delay * 1000),
             duration: duration * 1000,
             removed: false
         };
-        
+
         this.coins.push(coinObj);
 
-        // Remove coin after animation completes
         setTimeout(() => {
             this.removeCoin(coinObj);
         }, (duration + delay) * 1000 + 500);
@@ -2389,6 +2398,7 @@ window.addEventListener('resize', () => {
     let selectedLossLimit = Infinity; // Default selected loss limit
     let autoSpinsStopped = true;
     let isQuickSpinMode = false;
+    let currrentBonusMultiplier = 1;
     
     // Free spins state
     let freeSpinTriggeredRecently = false;
@@ -5743,6 +5753,8 @@ function handleSpinCompletion(apiResult) {
         storePreFreeSpinState(apiResult);
 
         freeSpinTriggeredRecently = true;
+
+        currrentBonusMultiplier = apiResult.bonusMultiplier;
         
         // Change background image to volcano
         
@@ -5906,7 +5918,19 @@ function handleSpinCompletion(apiResult) {
             async function run() {
                 console.log("Start");
                 document.getElementById('display_accumulated_freespin_amount').innerHTML = accumulatedAmountDuringFreespin.toFixed(2);
-                document.getElementById('img_top').src = "volcano_eruption.gif"
+                if (currrentBonusMultiplier == 3) {
+                    document.getElementById('img_top').src = 'multipliers/part3/3x.gif';
+                } else if (currrentBonusMultiplier == 6) {
+                    document.getElementById('img_top').src = 'multipliers/part3/6x.gif';
+                } else if (currrentBonusMultiplier == 9) {
+                    document.getElementById('img_top').src = 'multipliers/part3/9x.gif';
+                } else if (currrentBonusMultiplier == 18) {
+                    document.getElementById('img_top').src = 'multipliers/part3/18x.gif';
+                } else if (currrentBonusMultiplier == 36) {
+                    document.getElementById('img_top').src = 'multipliers/part3/36x.gif';
+                } else if (currrentBonusMultiplier == 72) {
+                    document.getElementById('img_top').src = 'multipliers/part3/72x.gif';
+                }
                 await sleep(3000)
                 document.getElementById('credits_overlay').style.display = 'block';
                 new CoinAnimation();
