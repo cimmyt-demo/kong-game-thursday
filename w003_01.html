@@ -1204,7 +1204,7 @@
                         APPEARS ON ALL REELS
                         <br>
                         <div class="">
-                            IF ATLEAST ONE <img style="width: 40px;height: auto;" src="scatter.png" alt=""> APPEARS ON ALL REELS FREE SPIN BONUS WITH 13 FREE SPINS AND A BONUS MULTIPLIER WILL BE TRIGGERED 
+                            IF ATLEAST ONE <img style="width: 40px;height: auto;" src="scatter.png" alt=""> APPEARS ON EACH REEL, FREE SPIN BONUS WITH 13 FREE SPINS AND A BONUS MULTIPLIER WILL BE TRIGGERED 
                         </div>
     
                         <div class="mt-4">
@@ -1215,10 +1215,10 @@
                                 6 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 6X BONUS MULTIPLIER
                             </div>
                             <div class="my-1">
-                                7 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 12X BONUS MULTIPLIER
+                                7 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 9X BONUS MULTIPLIER
                             </div>
                             <div class="my-1">
-                                8 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 24X BONUS MULTIPLIER
+                                8 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 18X BONUS MULTIPLIER
                             </div>
                             <div class="my-1">
                                 9 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 36X BONUS MULTIPLIER
@@ -1962,7 +1962,7 @@ class CoinAnimation {
         // All coins start from the center
         const centerX = this.screenWidth / 2;
         coin.style.left = centerX + 'px';
-        coin.style.top = '-50px';
+        coin.style.top = '-20px';
 
         // Random horizontal drift - coins can fall anywhere across the screen
         const maxDrift = this.screenWidth * 0.2; // Can drift up to 80% of screen width
@@ -5532,7 +5532,7 @@ function updateWinnings(targetAmount) {
             canvas.removeEventListener('touchstart', completeAnimation, true);
             document.removeEventListener('click', completeAnimation, true);
             document.removeEventListener('touchstart', completeAnimation, true);
-        }
+  }
     }, 40); // Update every 20ms
 
     // Update accumulated amount for free spins
