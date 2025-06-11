@@ -5637,8 +5637,6 @@ function getWinLevel(amount) {
 let anySymbolConsecutive = false;
 
 function checkConsecutiveSymbols(reels) {
-    console.log('Checking consecutive symbols:', reels);
-    
     // Reset the global variable
     anySymbolConsecutive = false;
     
@@ -5653,13 +5651,11 @@ function checkConsecutiveSymbols(reels) {
     // Check each symbol for consecutive appearance
     for (const symbolName of allSymbols) {
         if (isSymbolConsecutive(reels, symbolName)) {
-            console.log(`Symbol "${symbolName}" appears consecutively across all reels`);
             anySymbolConsecutive = true;
             break; // Found at least one consecutive symbol
         }
     }
     
-    console.log('Any symbol consecutive:', anySymbolConsecutive);
     return anySymbolConsecutive;
 }
 
@@ -5913,6 +5909,14 @@ function handleSpinCompletion(apiResult) {
             
 
             freeSpinEndedRecently = true
+
+
+            if (apiResult.win == 0){
+                const winEl = document.getElementById('win-amount2');
+                winEl.style.marginTop = '25%';
+                winEl.innerHTML = document.getElementById('display_accumulated_freespin_amount').innerHTML;
+                freeSpinEndedRecently = false;
+            }
             
 
             async function run() {
