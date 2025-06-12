@@ -6261,7 +6261,7 @@ function isSymbolConsecutive(reels, targetSymbol) {
         // Check each position in the current reel 
         for (let row = 0; row < reel.length; row++) {
             const symbol = reel[row];
-            if (symbol.name === targetSymbol) {
+            if (symbol.name === targetSymbol || symbol.name === "Wild") {
                 symbolFound = true;
                 break;
             }
