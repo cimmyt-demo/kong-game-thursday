@@ -4132,9 +4132,8 @@ function redrawPreFreeSpinSymbols() {
         // If there were winning positions, highlight them after a short delay
         if (stoppedReelsPreFreeSpin.winningPositions && stoppedReelsPreFreeSpin.winningPositions.length > 0) {
             setTimeout(() => {
-                let just_nothing2 = 1 + 1
-                // console.log('Highlighting pre-free spin winning positions:', stoppedReelsPreFreeSpin.winningPositions);
-                // highlightWinningSymbols(stoppedReelsPreFreeSpin.reels, stoppedReelsPreFreeSpin.winningPositions);
+                console.log('Highlighting pre-free spin winning positions:', stoppedReelsPreFreeSpin.winningPositions);
+                highlightWinningSymbols(stoppedReelsPreFreeSpin.reels, stoppedReelsPreFreeSpin.winningPositions);
             }, 500);
         }
         
@@ -4886,8 +4885,7 @@ function calculateWinAmount(results, isFreeSpinMode, bonusMultiplier) {
     
     // If we have winning positions, highlight them
     if (winningPositions.length > 0) {
-        let just_nothing3 = 1 + 1
-        // highlightWinningSymbols(results.reels, winningPositions);
+        highlightWinningSymbols(results.reels, winningPositions);
     }
     
     return {
@@ -5305,31 +5303,27 @@ function updateSpinningReelsWithResults(results) {
     }
 }
 
-let currentGroupAnimationId = null; // Track current group animation
+
 let winValueDisplayInterval = null; // holds the interval ID globally
 
 function groupWinValuesDisplay(spinResults) { 
-    console.log('Entered groupWinValuesDisplay - replacing highlightWinningSymbols with full animation support');
-    console.log('spinResults received:', spinResults);
+    console.log('Entered ----------------------------------------');
 
     if (spinResults.length > 0) {
         document.getElementById('display_win_amount').style.display = 'block';
     }
 
-    // Clear previous interval and animations
+    // Clear previous interval
     if (winValueDisplayInterval !== null) {
         clearInterval(winValueDisplayInterval);
         winValueDisplayInterval = null;
     }
-    
-    // Clear any existing animations
-    activeAnimations = {};
 
     const winValuesGroupedByWay = {};
     const displayItems = [];
 
-    if (!freeSpinEndedRecently) {
-        // Group results by 'ways'
+    if (!freeSpinEndedRecently){
+    // Group results by 'ways'
         for (let i = 0; i < spinResults.length; i++) {
             const result = spinResults[i];
             const way = result.ways;
@@ -5341,11 +5335,8 @@ function groupWinValuesDisplay(spinResults) {
             winValuesGroupedByWay[way].push(result);
         }
 
-        console.log('Grouped by ways:', winValuesGroupedByWay);
-
         for (const way in winValuesGroupedByWay) {
             const results = winValuesGroupedByWay[way];
-            console.log(`Processing way ${way} with results:`, results);
 
             // Count how many times each row appears
             const rowCounts = {};
@@ -5386,38 +5377,21 @@ function groupWinValuesDisplay(spinResults) {
                 }
             }
 
-            // Collect unique win values and convert results to position format
+            // Collect unique win values for this best row
             const seen = new Set();
             for (const res of results) {
                 if (!seen.has(res.win_value)) {
                     seen.add(res.win_value);
-                    
-                    // Convert all results for this way to position format for highlighting
-                    const groupPositions = results.map(r => ({
-                        reel: r.reel,
-                        row: r.row,
-                        symbol: r.symbol,
-                        ways: r.ways,
-                        win_value: r.win_value
-                    }));
-                    
-                    console.log(`Created groupPositions for way ${way}:`, groupPositions);
-                    
                     displayItems.push({
                         win_value: res.win_value,
-                        row: bestRow,
-                        positions: groupPositions,
-                        way: way
+                        row: bestRow
                     });
                 }
             }
         }
     }
-
-    console.log('Final displayItems:', displayItems);
-
-    // Display logic with grouped highlighting
-    if (freeSpinEndedRecently) {
+    // Display logic
+    if (freeSpinEndedRecently){
         document.getElementById('display_win_amount').style.display = 'block';
         const winEl = document.getElementById('win-amount2');
         winEl.style.marginTop = '25%';
@@ -5425,593 +5399,31 @@ function groupWinValuesDisplay(spinResults) {
         freeSpinEndedRecently = false;
         return;
     } else if (displayItems.length === 1) {
-        // Single group - show immediately with highlighting
-        console.log('Single group detected, highlighting:', displayItems[0]);
-        highlightSingleGroupWithFullAnimations(displayItems[0]);
+        const row = displayItems[0].row;
+        const winEl = document.getElementById('win-amount2');
+        winEl.style.marginTop = row === 1 ? '25%' : row === 2 ? '50%' : '0%';
+        winEl.innerHTML = parseFloat(displayItems[0].win_value).toFixed(2);
         return;
     } 
 
-    if (!freeSpinEndedRecently && displayItems.length > 1) {
+    if (!freeSpinEndedRecently){
         let currentIndex = 0;
-
-        // Show first group immediately
-        console.log('Multiple groups detected, starting with group 0:', displayItems[currentIndex]);
-        highlightSingleGroupWithFullAnimations(displayItems[currentIndex]);
 
         winValueDisplayInterval = setInterval(() => {
             if (!isFreeSpinMode) {
-                // Move to next group
-                currentIndex = (currentIndex + 1) % displayItems.length;
-                
-                console.log(`Switching to group ${currentIndex}:`, displayItems[currentIndex]);
-                
-                // Clear previous highlighting and show new group
-                activeAnimations = {};
-                highlightSingleGroupWithFullAnimations(displayItems[currentIndex]);
+                const currentItem = displayItems[currentIndex];
+                const winEl = document.getElementById('win-amount2');
+
+                winEl.style.marginTop = currentItem.row === 1 ? '25%' :
+                                        currentItem.row === 2 ? '50%' : '0%';
+
+                winEl.innerHTML = parseFloat(currentItem.win_value).toFixed(2);
             }
-        }, 2000); // 2-second interval
+
+            currentIndex = (currentIndex + 1) % displayItems.length;
+        }, 2000);
     }
-}
 
-// New function with full animation support from original highlightWinningSymbols
-function highlightSingleGroupWithFullAnimations(groupItem) {
-    console.log('------------group item----------------------')
-    console.log(groupItem)
-    if (!groupItem || !groupItem.positions) return;
-    
-    const winEl = document.getElementById('win-amount2');
-    
-    // Update win amount display position
-    winEl.style.marginTop = groupItem.row === 0 ? '0%' :
-                           groupItem.row === 1 ? '25%' :
-                           groupItem.row === 2 ? '50%' : '0%';
-    
-    // Update win amount text
-    winEl.innerHTML = parseFloat(groupItem.win_value).toFixed(2);
-    
-    console.log('Highlighting group with full animations:', groupItem.way, 'positions:', groupItem.positions);
-    
-    // Track animation frames for scatter symbols (from original function)
-    const scatterFrames = {};
-    const spriteScales = {};
-    
-    // Preload scatter animation frames (from original function)
-    const scatterFrameCount = 72;
-    const scatterFrameImages = [];
-    let loadedScatterFrames = 0;
-    
-    for (let i = 0; i <= scatterFrameCount; i++) {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-            loadedScatterFrames++;
-        };
-        img.src = `freespinframes/item_${i}.png`;
-        scatterFrameImages.push(img);
-    }
-    
-    // Clear previous animations when starting new ones
-    activeAnimations = {};
-    
-    // Set up animations for this group's positions (using original logic)
-    groupItem.positions.forEach(pos => {
-        const key = `${pos.reel}-${pos.row}`;
-        
-        activeAnimations[key] = {
-            symbol: pos.symbol,
-            reel: pos.reel,
-            row: pos.row,
-            startTime: Date.now(),
-            active: true,
-            // For scatter animations (from original)
-            currentFrame: 0,
-            direction: 1,
-            lastUpdateTime: 0,
-            frameRate: 25,
-            // Different frame rates for different phases
-            normalFrameRate: 25,
-            scaleUpFrameRate: 700 / 15,
-            scaleDownFrameRate: 500 / 75,
-            // New properties for scatter scaling behavior
-            hasScaledUp: false,
-            hasScaledDown: false,
-            isInScaleUpPhase: false,
-            isInScaleDownPhase: false,
-            minScaleReached: false,
-            // Scale values
-            baseScale: 1.3,
-            maxScale: 1.5,
-            currentScale: 1.3,
-        };
-        
-        // Initialize scale tracking for this symbol
-        const spriteId = key;
-        spriteScales[spriteId] = {
-            originalScale: 1.0,
-            currentScaleFactor: 1.0
-        };
-    });
-    
-    // Create animation frame function (from original)
-    function animateWinningSymbols() {
-        const hasActiveAnimations = Object.values(activeAnimations).some(anim => anim.active);
-        
-        if (!hasActiveAnimations) {
-            return;
-        }
-        
-        drawGame();
-        requestAnimationFrame(animateWinningSymbols);
-    }
-    
-    // Start animation loop
-    if (Object.keys(activeAnimations).length > 0) {
-        animateWinningSymbols();
-    }
-    
-    // Override drawStoppedReels to include animations (complete original logic)
-    const originalDrawStoppedReels = drawStoppedReels;
-    drawStoppedReels = function() {
-        const reelWidth = (canvas.width - WALL_THICKNESS.left - WALL_THICKNESS.right) / REEL_COUNT;
-        const reelHeight = canvas.height - WALL_THICKNESS.top - WALL_THICKNESS.bottom;
-        const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
-        
-        // Draw stopped reels
-        for (let i = 0; i < REEL_COUNT; i++) {
-            try {
-                if (reels[i].isSpinning) continue;
-            } catch (error) {
-                console.log('');
-            }
-            
-            const reelX = WALL_THICKNESS.left + i * reelWidth;
-            const reelY = WALL_THICKNESS.top;
-            
-            // Draw symbols
-            for (let j = 0; j < reels[i].finalSymbols.length; j++) {
-                const symbol = reels[i].finalSymbols[j];
-                const symbolData = SYMBOLS.find(s => s.name === symbol.name);
-                
-                const symbolX = reelX;
-                const symbolY = reelY + j * symbolHeight;
-                
-                // Check if this symbol is being animated
-                const animKey = `${i}-${j}`;
-                const anim = activeAnimations[animKey];
-                
-                if (anim && anim.active) {
-                    // Apply different animations based on symbol type (complete original logic)
-                    ctx.save();
-                    
-                    switch (anim.symbol) {
-                        case "Scatter":
-                            const now = Date.now();
-
-                            if (now - anim.lastUpdateTime >= anim.frameRate) {
-                                anim.lastUpdateTime = now;
-
-                                if (specialScatterAnimation) {
-                                    // Smooth oscillating animation - loop frames 0–50
-                                    anim.currentFrame += 1;
-                                    if (anim.currentFrame > 75) {
-                                        anim.currentFrame = 0;
-                                    }
-                                } else {
-                                    // Original phased animation
-                                    if (anim.hasCompletedScaling) {
-                                        anim.currentFrame += anim.direction;
-                                        if (anim.currentFrame > 50) {
-                                            anim.currentFrame = 0;
-                                        } else if (anim.currentFrame < 0) {
-                                            anim.currentFrame = 50;
-                                        }
-                                    } else {
-                                        if (!anim.isInScaleUpPhase && !anim.isInScaleDownPhase) {
-                                            anim.currentFrame += anim.direction;
-                                            if (anim.currentFrame === 60) {
-                                                anim.isInScaleUpPhase = true;
-                                                console.log("Entering scale up phase at frame 60");
-                                            }
-                                        } else if (anim.isInScaleUpPhase) {
-                                            anim.currentFrame += anim.direction;
-                                            if (anim.currentFrame === 75) {
-                                                anim.isInScaleUpPhase = false;
-                                                anim.isInScaleDownPhase = true;
-                                                anim.direction = -1;
-                                                console.log("Entering scale down phase at frame 75");
-                                            }
-                                        } else if (anim.isInScaleDownPhase) {
-                                            anim.currentFrame += anim.direction;
-                                            if (anim.currentFrame === 0) {
-                                                anim.isInScaleDownPhase = false;
-                                                anim.hasCompletedScaling = true;
-                                                anim.direction = 1;
-                                                anim.currentScale = anim.baseScale;
-                                                console.log("Scaling cycle complete - now looping frames 0-50 without scaling");
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Apply scale based on animation mode
-                            let scaleFactor = anim.baseScale;
-
-                            if (specialScatterAnimation) {
-                                // Smooth oscillating scale using sine wave
-                                const timeElapsed = (Date.now() % 2000) / 2000;
-                                const scaleOscillation = Math.sin(timeElapsed * 2 * Math.PI);
-                                const normalizedOscillation = (scaleOscillation + 1) / 2;
-                                scaleFactor = anim.baseScale + (anim.maxScale - anim.baseScale) * normalizedOscillation;
-                            } else {
-                                if (!anim.hasCompletedScaling) {
-                                    if (anim.isInScaleUpPhase && anim.currentFrame >= 60 && anim.currentFrame <= 75) {
-                                        const scaleProgress = (anim.currentFrame - 60) / 15;
-                                        scaleFactor = anim.baseScale + (anim.maxScale - anim.baseScale) * scaleProgress;
-                                    } else if (anim.isInScaleDownPhase && anim.currentFrame >= 0 && anim.currentFrame <= 75) {
-                                        const scaleProgress = anim.currentFrame / 75;
-                                        scaleFactor = anim.baseScale + (anim.maxScale - anim.baseScale) * scaleProgress;
-                                    }
-                                }
-                            }
-
-                            anim.currentScale = scaleFactor;
-
-                            // Draw frame
-                            if (loadedScatterFrames > anim.currentFrame) {
-                                const frameImg = scatterFrameImages[anim.currentFrame];
-
-                                const centerX = symbolX + reelWidth / 2;
-                                const centerY = symbolY + symbolHeight / 2;
-
-                                ctx.translate(centerX, centerY);
-                                ctx.scale(scaleFactor, scaleFactor);
-                                ctx.translate(-centerX, -centerY);
-
-                                const imgPadding = reelWidth * 0.05;
-                                const imgSize = Math.min(reelWidth, symbolHeight) - imgPadding * 2;
-                                ctx.drawImage(
-                                    frameImg,
-                                    symbolX + (reelWidth - imgSize) / 2,
-                                    symbolY + (symbolHeight - imgSize) / 2,
-                                    imgSize,
-                                    imgSize * 1.1,
-                                );
-                            } else {
-                                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, anim.currentScale);
-                            }
-                            break;
-                        
-                        case "Treasure Chest":
-                            // Blinking effect
-                            if (Math.floor(Date.now() / 600) % 2 === 0) {
-                                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, 1.3);
-                            }
-                            break;
-                            
-                        case "Wild":
-                            // Frame animation for Wild symbols
-                            const wildNow = Date.now();
-                            if (wildNow - anim.lastUpdateTime >= 75) {
-                                anim.lastUpdateTime = wildNow;
-                                
-                                anim.currentFrame += anim.direction;
-                                
-                                if (anim.currentFrame >= wildFrameCount) {
-                                    anim.currentFrame = wildFrameCount - 2;
-                                    anim.direction = -1;
-                                } else if (anim.currentFrame < 0) {
-                                    anim.currentFrame = 1;
-                                    anim.direction = 1;
-                                }
-                            }
-                            
-                            const wildFrameProgress = anim.currentFrame / wildFrameCount;
-                            const wildMaxScaleFactor = 1.75;
-                            const wildScaleFactor = 1.5 + (wildMaxScaleFactor - 1.0) * wildFrameProgress;
-                            
-                            if (loadedWildFrames > anim.currentFrame) {
-                                const frameImg = wildFrameImages[anim.currentFrame];
-                                
-                                const centerX = symbolX + reelWidth / 2;
-                                const centerY = symbolY + symbolHeight / 2;
-                                
-                                ctx.translate(centerX, centerY);
-                                ctx.scale(wildScaleFactor, wildScaleFactor);
-                                ctx.translate(-centerX, -centerY);
-                                
-                                const imgPadding = reelWidth * 0.05;
-                                const imgSize = Math.min(reelWidth, symbolHeight) - imgPadding * 2;
-                                ctx.drawImage(
-                                    frameImg,
-                                    symbolX + (reelWidth - imgSize) / 2,
-                                    symbolY + (symbolHeight - imgSize) / 2,
-                                    imgSize,
-                                    imgSize
-                                );
-                            } else {
-                                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, 1.3);
-                            }
-                            break;
-                            
-                        case "Explorer":
-                        case "Compass":
-                        case "Binoculars":
-                            if (Math.floor(Date.now() / 600) % 2 === 0) {
-                                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, 1.15);
-                            }
-                            break;
-                            
-                        case "A":
-                        case "K":
-                        case "Q":
-                        case "J":
-                            if (Math.floor(Date.now() / 600) % 2 === 0) {
-                                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, 1.15);
-                            }
-                            break;
-                            
-                        default:
-                            const defaultScale = 1.1 + 0.1 * Math.sin(Date.now() / 200);
-                            drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, defaultScale);
-                    }
-                    
-                    ctx.restore();
-                } else {
-                    // Draw normal symbol
-                    drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, symbol.isSpecial, symbol.scale);
-                }
-            }
-        }
-    };
-    
-    // Store reference for cleanup
-    window.originalDrawStoppedReelsForGroup = originalDrawStoppedReels;
-}
-
-// New function to highlight a single group (replaces the logic from highlightWinningSymbols)
-function highlightSingleGroup(groupItem) {
-    if (!groupItem || !groupItem.positions) return;
-    
-    const winEl = document.getElementById('win-amount2');
-    
-    // Update win amount display position
-    winEl.style.marginTop = groupItem.row === 0 ? '0%' :
-                           groupItem.row === 1 ? '25%' :
-                           groupItem.row === 2 ? '50%' : '0%';
-    
-    // Update win amount text
-    winEl.innerHTML = parseFloat(groupItem.win_value).toFixed(2);
-    
-    console.log('Highlighting group:', groupItem.way, 'with positions:', groupItem.positions);
-    
-    // Clear existing animations
-    activeAnimations = {};
-    
-    // Set up animations for this group's positions (using original highlightWinningSymbols logic)
-    groupItem.positions.forEach(pos => {
-        const key = `${pos.reel}-${pos.row}`;
-        
-        // Use the same animation setup as original highlightWinningSymbols
-        activeAnimations[key] = {
-            symbol: pos.symbol,
-            reel: pos.reel,
-            row: pos.row,
-            startTime: Date.now(),
-            active: true,
-            currentFrame: 0,
-            direction: 1,
-            lastUpdateTime: 0,
-            frameRate: pos.symbol === "Wild" ? 30 : 25,
-            baseScale: pos.symbol === "Scatter" ? 1.4 : 1.3,
-            maxScale: pos.symbol === "Scatter" ? 1.7 : 1.5,
-            currentScale: pos.symbol === "Scatter" ? 1.4 : 1.3,
-        };
-    });
-    
-    // Start the animation loop (same as original highlightWinningSymbols)
-    function animateWinningSymbols() {
-        const currentTime = Date.now();
-        let hasActiveAnimations = false;
-        
-        Object.keys(activeAnimations).forEach(key => {
-            const anim = activeAnimations[key];
-            if (!anim.active) return;
-            
-            hasActiveAnimations = true;
-            
-            // Update frame timing
-            if (currentTime - anim.lastUpdateTime >= (1000 / anim.frameRate)) {
-                anim.lastUpdateTime = currentTime;
-                
-                // Handle different symbol types (same logic as original)
-                if (anim.symbol === "Wild") {
-                    anim.currentFrame = (anim.currentFrame + 1) % wildFrameCount;
-                } else if (anim.symbol === "Scatter") {
-                    // Pulsing animation for scatter
-                    const elapsed = currentTime - anim.startTime;
-                    const pulseSpeed = 0.003;
-                    anim.currentScale = anim.baseScale + 
-                        (anim.maxScale - anim.baseScale) * 
-                        (Math.sin(elapsed * pulseSpeed) * 0.5 + 0.5);
-                } else {
-                    // Blinking animation for other symbols
-                    anim.currentFrame = (anim.currentFrame + anim.direction);
-                    if (anim.currentFrame >= 10 || anim.currentFrame <= 0) {
-                        anim.direction *= -1;
-                    }
-                }
-            }
-        });
-        
-        if (hasActiveAnimations) {
-            drawGame();
-            requestAnimationFrame(animateWinningSymbols);
-        }
-    }
-    
-    // Start animation if we have symbols to animate
-    if (Object.keys(activeAnimations).length > 0) {
-        animateWinningSymbols();
-    }
-}
-
-// New function to show a specific win group with highlighting
-function showWinGroup(groupItem) {
-    if (!groupItem) return;
-    
-    const winEl = document.getElementById('win-amount2');
-    
-    // Update win amount display position
-    winEl.style.marginTop = groupItem.row === 0 ? '0%' :
-                           groupItem.row === 1 ? '25%' :
-                           groupItem.row === 2 ? '50%' : '0%';
-    
-    // Update win amount text
-    winEl.innerHTML = parseFloat(groupItem.win_value).toFixed(2);
-    
-    // Highlight the symbols for this group
-    if (groupItem.positions && groupItem.positions.length > 0) {
-        highlightWinningGroup(groupItem.positions);
-    }
-}
-// New function to highlight only symbols in the current group
-
-// New function to highlight only symbols in the current group
-function highlightWinningGroup(positions) {
-    console.log('Highlighting group with positions:', positions);
-    
-    // Cancel any existing group animation
-    if (currentGroupAnimationId) {
-        cancelAnimationFrame(currentGroupAnimationId);
-        currentGroupAnimationId = null;
-    }
-    
-    // Clear any existing animations but don't interfere with other systems
-    const groupAnimations = {};
-    
-    // Set up animations for this group's positions only
-    positions.forEach(pos => {
-        const key = `${pos.reel}-${pos.row}`;
-        
-        groupAnimations[key] = {
-            symbol: pos.symbol,
-            reel: pos.reel,
-            row: pos.row,
-            startTime: Date.now(),
-            active: true,
-            currentFrame: 0,
-            direction: 1,
-            lastUpdateTime: 0,
-            frameRate: 25,
-            baseScale: 1.3,
-            maxScale: 1.5,
-            currentScale: 1.3,
-        };
-    });
-    
-    // Store the original drawStoppedReels function if not already stored
-    if (!window.originalDrawStoppedReelsForGroup) {
-        window.originalDrawStoppedReelsForGroup = drawStoppedReels;
-    }
-    
-    // Override drawStoppedReels to include group-specific animations
-    drawStoppedReels = function() {
-        const reelWidth = (canvas.width - WALL_THICKNESS.left - WALL_THICKNESS.right) / REEL_COUNT;
-        const reelHeight = canvas.height - WALL_THICKNESS.top - WALL_THICKNESS.bottom;
-        const symbolHeight = reelHeight / SYMBOLS_PER_REEL;
-        
-        // Draw stopped reels
-        for (let i = 0; i < REEL_COUNT; i++) {
-            try {
-                if (reels[i].isSpinning) continue;
-            } catch (error) {
-                console.log('');
-            }
-            
-            const reelX = WALL_THICKNESS.left + i * reelWidth;
-            const reelY = WALL_THICKNESS.top;
-            
-            // Draw symbols
-            for (let j = 0; j < reels[i].finalSymbols.length; j++) {
-                const symbol = reels[i].finalSymbols[j];
-                const symbolData = SYMBOLS.find(s => s.name === symbol.name);
-                
-                const symbolX = reelX;
-                const symbolY = reelY + j * symbolHeight;
-                
-                // Check if this symbol is being animated in current group
-                const animKey = `${i}-${j}`;
-                const anim = groupAnimations[animKey];
-                
-                if (anim && anim.active) {
-                    // Apply group-specific animations
-                    ctx.save();
-                    
-                    switch (anim.symbol) {
-                        case "Scatter":
-                            // Pulsing effect for scatter
-                            const scatterScale = 1.3 + 0.2 * Math.sin(Date.now() / 300);
-                            drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, scatterScale);
-                            break;
-                            
-                        case "Wild":
-                            // Glowing effect for wild
-                            const wildScale = 1.4 + 0.1 * Math.sin(Date.now() / 200);
-                            drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, wildScale);
-                            break;
-                            
-                        default:
-                            // Blinking effect for other symbols
-                            if (Math.floor(Date.now() / 600) % 2 === 0) {
-                                drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, true, 1.3);
-                            }
-                            break;
-                    }
-                    
-                    ctx.restore();
-                } else {
-                    // Draw normal symbol
-                    drawSymbol(symbolX, symbolY, reelWidth, symbolHeight, symbolData, symbol.isSpecial, symbol.scale);
-                }
-            }
-        }
-    };
-    
-    // Start animation loop for this group
-    function animateGroup() {
-        const hasActiveAnimations = Object.values(groupAnimations).some(anim => anim.active);
-        
-        if (hasActiveAnimations) {
-            drawGame();
-            currentGroupAnimationId = requestAnimationFrame(animateGroup);
-        }
-    }
-    
-    if (Object.keys(groupAnimations).length > 0) {
-        animateGroup();
-    }
-}
-
-
-// New function to clear winning highlights
-function clearWinningHighlights() {
-    // Cancel any group animation
-    if (currentGroupAnimationId) {
-        cancelAnimationFrame(currentGroupAnimationId);
-        currentGroupAnimationId = null;
-    }
-    
-    // Restore original drawStoppedReels function if it was overridden
-    if (window.originalDrawStoppedReelsForGroup) {
-        drawStoppedReels = window.originalDrawStoppedReelsForGroup;
-        window.originalDrawStoppedReelsForGroup = null;
-    }
-    
-    // Redraw the game to update the display
-    if (typeof drawGame === 'function') {
-        drawGame();
-    }
 }
 
 function updateWinnings(targetAmount) {
@@ -6687,8 +6099,7 @@ function handleSpinCompletion(apiResult) {
                     drawGameWithNewSymbols();
                 }, 3500);
             } else {
-                let just_nothing = 1 + 1
-                // highlightWinningSymbols(apiResult.reels, apiResult.winningPositions);
+                highlightWinningSymbols(apiResult.reels, apiResult.winningPositions);
             }
             
             
