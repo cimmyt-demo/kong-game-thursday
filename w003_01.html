@@ -1806,7 +1806,7 @@
                             <span class="text-center">
                                 <span class="badge px-4 py-2 text-white" style="background-color: rgba(0,0,0,0.7);">CREDIT: <span id="balanceText">...</span></span>
                                 <br>
-                                <span class="text-white text-center" style="font-size: 1.0rem;">
+                                <span class="text-white text-center" style="font-size: 0.7rem;">
                                     &lt; <span>DEMO GAME</span> &gt;
                                 </span>
                             </span>
@@ -5142,7 +5142,7 @@ function handleSpinCompletion(apiResult) {
             // Auto-trigger next free spin after a delay
             setTimeout(() => {
                 if (!spinning) spin();
-            }, 2000);
+            }, apiResult.win > 0 ? 3500 : 2000);
         }
     }
     
@@ -5156,7 +5156,7 @@ function handleSpinCompletion(apiResult) {
             if (apiResult.win > 0){
                 setTimeout(() => {
                     if (!spinning) spin();
-                }, 3000);
+                }, 4000);
             } else {
                 setTimeout(() => {
                     if (!spinning) spin();
@@ -5322,75 +5322,77 @@ function groupWinValuesDisplay(spinResults) {
     const winValuesGroupedByWay = {};
     const displayItems = [];
 
+    if (!freeSpinEndedRecently){
     // Group results by 'ways'
-    for (let i = 0; i < spinResults.length; i++) {
-        const result = spinResults[i];
-        const way = result.ways;
+        for (let i = 0; i < spinResults.length; i++) {
+            const result = spinResults[i];
+            const way = result.ways;
 
-        if (!winValuesGroupedByWay[way]) {
-            winValuesGroupedByWay[way] = [];
+            if (!winValuesGroupedByWay[way]) {
+                winValuesGroupedByWay[way] = [];
+            }
+
+            winValuesGroupedByWay[way].push(result);
         }
 
-        winValuesGroupedByWay[way].push(result);
+        for (const way in winValuesGroupedByWay) {
+            const results = winValuesGroupedByWay[way];
+
+            // Count how many times each row appears
+            const rowCounts = {};
+            for (const res of results) {
+                if (!rowCounts[res.row]) {
+                    rowCounts[res.row] = 0;
+                }
+                rowCounts[res.row]++;
+            }
+
+            // Find all rows with the maximum count
+            let maxCount = 0;
+            for (const count of Object.values(rowCounts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                }
+            }
+
+            const candidateRows = Object.keys(rowCounts).filter(row => rowCounts[row] === maxCount).map(Number);
+
+            // Check if any of these candidate rows have a symbol on reel 3 (index 2)
+            let bestRow = null;
+            for (const row of candidateRows) {
+                const hasMiddleReelSymbol = results.some(res => res.row === row && res.reel === 2);
+                if (hasMiddleReelSymbol) {
+                    bestRow = row;
+                    break;
+                }
+            }
+
+            // If no candidate row has symbol in middle reel, choose any that does
+            if (bestRow === null) {
+                const withMiddleReel = results.find(res => res.reel === 2);
+                if (withMiddleReel) {
+                    bestRow = withMiddleReel.row;
+                } else {
+                    bestRow = candidateRows[0]; // fallback to first candidate
+                }
+            }
+
+            // Collect unique win values for this best row
+            const seen = new Set();
+            for (const res of results) {
+                if (!seen.has(res.win_value)) {
+                    seen.add(res.win_value);
+                    displayItems.push({
+                        win_value: res.win_value,
+                        row: bestRow
+                    });
+                }
+            }
+        }
     }
-
-    for (const way in winValuesGroupedByWay) {
-        const results = winValuesGroupedByWay[way];
-
-        // Count how many times each row appears
-        const rowCounts = {};
-        for (const res of results) {
-            if (!rowCounts[res.row]) {
-                rowCounts[res.row] = 0;
-            }
-            rowCounts[res.row]++;
-        }
-
-        // Find all rows with the maximum count
-        let maxCount = 0;
-        for (const count of Object.values(rowCounts)) {
-            if (count > maxCount) {
-                maxCount = count;
-            }
-        }
-
-        const candidateRows = Object.keys(rowCounts).filter(row => rowCounts[row] === maxCount).map(Number);
-
-        // Check if any of these candidate rows have a symbol on reel 3 (index 2)
-        let bestRow = null;
-        for (const row of candidateRows) {
-            const hasMiddleReelSymbol = results.some(res => res.row === row && res.reel === 2);
-            if (hasMiddleReelSymbol) {
-                bestRow = row;
-                break;
-            }
-        }
-
-        // If no candidate row has symbol in middle reel, choose any that does
-        if (bestRow === null) {
-            const withMiddleReel = results.find(res => res.reel === 2);
-            if (withMiddleReel) {
-                bestRow = withMiddleReel.row;
-            } else {
-                bestRow = candidateRows[0]; // fallback to first candidate
-            }
-        }
-
-        // Collect unique win values for this best row
-        const seen = new Set();
-        for (const res of results) {
-            if (!seen.has(res.win_value)) {
-                seen.add(res.win_value);
-                displayItems.push({
-                    win_value: res.win_value,
-                    row: bestRow
-                });
-            }
-        }
-    }
-
     // Display logic
     if (freeSpinEndedRecently){
+        document.getElementById('display_win_amount').style.display = 'block';
         const winEl = document.getElementById('win-amount2');
         winEl.style.marginTop = '25%';
         winEl.innerHTML = document.getElementById('display_accumulated_freespin_amount').innerHTML;
@@ -5404,21 +5406,24 @@ function groupWinValuesDisplay(spinResults) {
         return;
     } 
 
-    let currentIndex = 0;
+    if (!freeSpinEndedRecently){
+        let currentIndex = 0;
 
-    winValueDisplayInterval = setInterval(() => {
-        if (!isFreeSpinMode) {
-            const currentItem = displayItems[currentIndex];
-            const winEl = document.getElementById('win-amount2');
+        winValueDisplayInterval = setInterval(() => {
+            if (!isFreeSpinMode) {
+                const currentItem = displayItems[currentIndex];
+                const winEl = document.getElementById('win-amount2');
 
-            winEl.style.marginTop = currentItem.row === 1 ? '25%' :
-                                    currentItem.row === 2 ? '50%' : '0%';
+                winEl.style.marginTop = currentItem.row === 1 ? '25%' :
+                                        currentItem.row === 2 ? '50%' : '0%';
 
-            winEl.innerHTML = parseFloat(currentItem.win_value).toFixed(2);
-        }
+                winEl.innerHTML = parseFloat(currentItem.win_value).toFixed(2);
+            }
 
-        currentIndex = (currentIndex + 1) % displayItems.length;
-    }, 2000);
+            currentIndex = (currentIndex + 1) % displayItems.length;
+        }, 2000);
+    }
+
 }
 
 function updateWinnings(targetAmount) {
@@ -5912,16 +5917,52 @@ function handleSpinCompletion(apiResult) {
 
 
             if (apiResult.win == 0){
+                console.log('Entering because win == 0')
+                document.getElementById('display_win_amount').style.display = 'block';
                 const winEl = document.getElementById('win-amount2');
                 winEl.style.marginTop = '25%';
-                winEl.innerHTML = document.getElementById('display_accumulated_freespin_amount').innerHTML;
+                winEl.innerHTML = document.getElementById('update_winnings').innerHTML;
                 freeSpinEndedRecently = false;
             }
-            
+
+            function animateCount(from, to, id, decimals = 2) {
+                let d = 3000,
+                    el = document.getElementById(id),
+                    start = performance.now();
+
+                requestAnimationFrame(function step(t) {
+                    let p = Math.min((t - start) / d, 1);
+                    let currentValue = from + (to - from) * p;
+                    el.innerHTML = parseFloat(currentValue).toFixed(decimals);
+                    if (p < 1) requestAnimationFrame(step);
+                });
+            }
+
+            function animateCount2(startValue, endValue, elementId, decimalPlaces = 2) {
+                console.log('Animate count 2 started');
+                const animationDuration = 3000;
+                const targetElement = document.getElementById(elementId);
+                const animationStartTime = performance.now();
+
+                function updateFrame(currentTime) {
+                    const timeElapsed = currentTime - animationStartTime;
+                    const progressRatio = Math.min(timeElapsed / animationDuration, 1);
+                    const interpolatedValue = startValue + (endValue - startValue) * progressRatio;
+                    targetElement.innerHTML = parseFloat(interpolatedValue).toFixed(decimalPlaces);
+
+                    if (progressRatio < 1) {
+                        requestAnimationFrame(updateFrame);
+                    }
+                }
+
+                requestAnimationFrame(updateFrame);
+            }
+
+
 
             async function run() {
                 console.log("Start");
-                document.getElementById('display_accumulated_freespin_amount').innerHTML = accumulatedAmountDuringFreespin.toFixed(2);
+
                 if (currrentBonusMultiplier == 3) {
                     document.getElementById('img_top').src = 'multipliers/part3/3x.gif';
                 } else if (currrentBonusMultiplier == 6) {
@@ -5939,7 +5980,16 @@ function handleSpinCompletion(apiResult) {
                 document.getElementById('credits_overlay').style.display = 'block';
                 new CoinAnimation();
                 setTimeout(showWinContainer, 1000);
-                await sleep(9000); // Sleep for 2000 milliseconds (2 seconds)
+                document.getElementById('display_accumulated_freespin_amount').innerHTML = (parseFloat(document.getElementById('update_winnings').innerHTML) * 0.9).toFixed(2);
+                await sleep(2500); 
+                let lesserAmount = parseFloat((parseFloat(document.getElementById('update_winnings').innerHTML) * 0.9).toFixed(2));
+                let largerAmount =  parseFloat(parseFloat(document.getElementById('update_winnings').innerHTML).toFixed(2));
+                console.log(lesserAmount)
+                console.log(largerAmount);
+                console.log('Before------------------------')
+                animateCount2(lesserAmount, largerAmount, 'display_accumulated_freespin_amount', 2);
+                console.log('After------------------------------');
+                await sleep(6000); // Sleep for 2000 milliseconds (2 seconds)
                 document.getElementById('img_top').src = 'bg-top6.gif'
                 console.log('Free spins ended, redrawing pre-free spin symbols...')
                 // Redraw the symbols from before free spins started
@@ -5947,11 +5997,15 @@ function handleSpinCompletion(apiResult) {
                     console.log('Successfully restored pre-free spin symbols');
                     specialScatterAnimation = true;
                     highlightWinningSymbols(reels, extractScatterPositions(stoppedReelsPreFreeSpin.reels || reels));
+                    document.getElementById('display_win_amount').style.display = 'block';
+                    document.getElementById('win-amount2').innerHTML = document.getElementById('update_winnings').innerHTML;
                 } else {
                     console.log('Failed to restore pre-free spin symbols, using current reels');
                 }
                 document.getElementById('credits_overlay').style.display = 'none';
-                await sleep(3000)
+                await sleep(1200)
+                let freespinWinnings = parseFloat(document.getElementById('update_winnings').innerHTML)
+                animateCount(0, freespinWinnings, 'update_winnings');
             }
             run();
 
@@ -5994,7 +6048,7 @@ function handleSpinCompletion(apiResult) {
                 if (!spinning) {
                     spin();
                 }
-            }, 1500);
+            }, apiResult.win > 0 ? 4000 : 2000);
         }
     }
 
@@ -6014,7 +6068,7 @@ function handleSpinCompletion(apiResult) {
             } else {
                 remainingAutoSpins.innerHTML = `${autoSpins}`;
                 if (autoSpins > 0 && balance >= stake) {
-                    setTimeout(() => spin(), 1400);
+                    setTimeout(() => spin(), apiResult.win > 0 ? 3300 : 1800);
                 }
             }
         }
@@ -6054,6 +6108,39 @@ function handleSpinCompletion(apiResult) {
 
    
 }
+
+
+function showWinContainer() {
+    const el = document.getElementById('win-container');
+    el.style.display = 'block'; // Immediately show the element
+    // Trigger reflow to ensure transition is applied
+    void el.offsetWidth;
+    el.classList.add('show');
+}
+
+// showWinContainer()
+
+// function animateCount2(startValue, endValue, elementId, decimalPlaces = 2) {
+//     console.log('Animate count 2 started');
+//     const animationDuration = 3000;
+//     const targetElement = document.getElementById(elementId);
+//     const animationStartTime = performance.now();
+
+//     function updateFrame(currentTime) {
+//         const timeElapsed = currentTime - animationStartTime;
+//         const progressRatio = Math.min(timeElapsed / animationDuration, 1);
+//         const interpolatedValue = startValue + (endValue - startValue) * progressRatio;
+//         targetElement.innerHTML = parseFloat(interpolatedValue).toFixed(decimalPlaces);
+
+//         if (progressRatio < 1) {
+//             requestAnimationFrame(updateFrame);
+//         }
+//     }
+
+//     requestAnimationFrame(updateFrame);
+// }
+
+// animateCount2(200, 300, 'display_accumulated_freespin_amount', 2);
 
 // Modify the spinAnimation function to handle waiting for server results
 async function spin() {
