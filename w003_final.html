@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Jockey+One&family=Russo+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="service.js"></script>
-    <script src="translation.js"></script>
     
 
     <style>
@@ -1141,31 +1140,25 @@
 <body class="w-100">
 <div style="background-image: url('page_bcg.png'); background-size: cover; height: 100vh; padding: 0 !important;">
     <div style="z-index: 3; position: absolute;" class="mt-2">
-        <button id="featuresButton" class="btn btn-warning mt-5 mb-2 mx-3" data-translate="feature">
+        <button id="featuresButton" class="btn btn-warning mt-5 mb-2 mx-3">
             Feature
         </button>
-
-        <select id="lang-select">
-            <option value="english">English</option>
-            <option value="chinese">Chinese</option>
-            <option value="portuguese">Portuguese</option>
-        </select>
     </div>
     <div id="featuresOverlay">
        <div style="height: 100%; width: 100%; font-weight: bold;" class="d-flex justify-content-center align-items-center">
             <div class="mx-auto">
                 <div class="mx-auto">
-                    <button onclick="setDemoFeature('big spin')" class="btn btn-warning btn-lg my-2 mb-2 mx-3" data-translate="feature1">
+                    <button onclick="setDemoFeature('big spin')" class="btn btn-warning btn-lg my-2 mb-2 mx-3">
                         Feature 1
                     </button>
                 </div>
                 <div class="mx-auto">
-                    <button onclick="setDemoFeature('big win')" class="btn btn-warning btn-lg my-2 mx-3" data-translate="feature2">
+                    <button onclick="setDemoFeature('big win')" class="btn btn-warning btn-lg my-2 mx-3">
                         Feature 2
                     </button>
                 </div>
                 <div class="mx-auto">
-                    <button onclick="setDemoFeature('free spins')" class="btn btn-warning btn-lg my-2 mb-2 mx-3" data-translate="feature3">
+                    <button onclick="setDemoFeature('free spins')" class="btn btn-warning btn-lg my-2 mb-2 mx-3">
                         Feature 3
                     </button>
                 </div>
@@ -1178,7 +1171,7 @@
         <div id="gameinfo_overlay" class="overlay" style="max-height: 100vh !important;overflow-y: scroll;overflow-x: hidden;">
             <div class="divider-container">
                 <div class="divider-wrapper">
-                    <div class="divider-text h3" data-translate="game_rule">GAME RULE</div>
+                    <div class="divider-text h3">GAME RULE</div>
                 </div>
             </div>
             <div class="d-flex justify-content-center align-items-center">
@@ -1187,23 +1180,23 @@
             <div class="" style="color: white;">
                 <div style="border: 1px;border-color: #e4d594;font-size: 1.0rem;border-style: solid;" class="py-4 mx-3 d-flex justify-content-center align-items-around my-3">
                     <div class="px-2">
-                        <span style="color: #e4d594;" data-translate="denomination"> Denomination:</span> 0.01
+                        <span style="color: #e4d594;"> Denomination:</span> 0.01
                     </div>
                     <div class="px-2">
-                        <span style="color: #e4d594;" data-translate="bet_multiplier">Bet Multiplier:</span> 1
+                        <span style="color: #e4d594;">Bet Multiplier:</span> 1
                     </div>
                 </div>
                 <div class="row px-3">
                     <div class="col-lg-3 col-md-12 col-sm-12 text-center px-4" style="font-weight: bold;">
                         <img src="wild.png"style="max-width: 130px;" alt="">
-                        <div class="h3"  data-translate="wild">WILD</div>
+                        <div class="h3">WILD</div>
                     </div>
                     <div class="col-lg-9 col-md-12 col-lg-12" style="font-weight: bold;">
-                        <span data-translate="wild_appearance">ONLY APPEARS ON REELS 2,3,4 AND 5.</span>
+                        ONLY APPEARS ON REELS 2,3,4 AND 5.
                         <br>
                         <br>
                         <div class="d-flex justify-content-start align-items-center">
-                            <span data-translate="wild_substitutes">SUBSTITUTES FOR ALL SYMBOLS EXCEPT</span> <img style="width: 40px;height: auto;" src="scatter.png" alt="">
+                            SUBSTITUTES FOR ALL SYMBOLS EXCEPT <img style="width: 40px;height: auto;" src="scatter.png" alt="">
                         </div>
                     </div>
                 </div>
@@ -1211,35 +1204,33 @@
                 <div class="row px-3 my-3">
                     <div class="col-lg-3 col-md-12 col-sm-12 text-center px-4 mb-3">
                         <img src="scatter.png"style="max-width: 130px;" alt="">
-                        <div class="h3" data-translate="free_spin_bonus">FREE SPIN BONUS</div>
+                        <div class="h3">FREE SPIN BONUS</div>
                     </div>
                     <div class="col-lg-9 col-md-12 col-lg-12" style="font-weight: bold;">
-                        <span data-translate="appears_on_all_reels">APPEARS ON ALL REELS</span>
+                        APPEARS ON ALL REELS
                         <br>
                         <div class="">
-                            <span data-translate="if_atleast_one">IF ATLEAST ONE </span> <img style="width: 40px;height: auto;" src="scatter.png" alt=""> 
-                            <span data-translate="free_spin_trigger">APPEARS ON EACH REEL, FREE SPIN BONUS WITH 13 FREE SPINS AND A BONUS MULTIPLIER WILL BE TRIGGERED </span>
-                            
+                            IF ATLEAST ONE <img style="width: 40px;height: auto;" src="scatter.png" alt=""> APPEARS ON EACH REEL, FREE SPIN BONUS WITH 13 FREE SPINS AND A BONUS MULTIPLIER WILL BE TRIGGERED 
                         </div>
     
                         <div class="mt-4">
                             <div class="my-1">
-                                5 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> <span data-translate="awards_3x">AWARDS 3X BONUS MULTIPLIER</span>
+                                5 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 3X BONUS MULTIPLIER
                             </div>
                             <div class="my-1">
-                                6 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> <span data-translate="awards_6x">AWARDS 6X BONUS MULTIPLIER</span>
+                                6 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 6X BONUS MULTIPLIER
                             </div>
                             <div class="my-1">
-                                7 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> <span data-translate="awards_9x">AWARDS 9X BONUS MULTIPLIER</span>
+                                7 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 9X BONUS MULTIPLIER
                             </div>
                             <div class="my-1">
-                                8 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> <span data-translate="awards_18x">AWARDS 18X BONUS MULTIPLIER</span>
+                                8 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 18X BONUS MULTIPLIER
                             </div>
                             <div class="my-1">
-                                9 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> <span data-translate="awards_36x">AWARDS 36X BONUS MULTIPLIER</span>
+                                9 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 36X BONUS MULTIPLIER
                             </div>
                             <div class="my-1">
-                                10 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> <span data-translate="awards_72x">AWARDS 72X BONUS MULTIPLIER</span>
+                                10 <img style="width: 40px;height: auto;" class="px-1" src="scatter.png" alt=""> AWARDS 72X BONUS MULTIPLIER
                             </div>
                         </div>
                     </div>
@@ -1247,7 +1238,7 @@
     
                 <div class="divider-container">
                     <div class="divider-wrapper">
-                        <div class="divider-text h2" style="font-weight: bold;" data-translate="paytable">PAYTABLE</div>
+                        <div class="divider-text h2" style="font-weight: bold;" >PAYTABLE</div>
                     </div>
                 </div>
     
@@ -1379,16 +1370,19 @@
     
                 <div style="font-size: 1.0rem;" class="text-center">
                     <div class="my-1">
-                        <span data-translate="wins_pay_leftmost" >ALL WINS PAY LEFTMOST TO RIGHT, EXCEPT</span> <img src="scatter.png" style="max-width: 40px;" alt="">
+                        ALL WINS PAY LEFTMOST TO RIGHT, EXCEPT <img src="scatter.png" style="max-width: 40px;" alt="">
                     </div>
                     <div class="my-1">
-                        <span data-translate="paytable_wins_bet" >PAYTABLE WINS ARE SHOWN FOR BET MULTIPLIER X1.PAYTABLE WINS ARE SHOWN IN CREDITS</span>
+                        PAYTABLE WINS ARE SHOWN FOR BET MULTIPLIER X1.
+                    </div>
+                    <div class="my-1">
+                        PAYTABLE WINS ARE SHOWN IN CREDITS
                     </div>
                 </div>
     
                 <div class="divider-container mt-5">
                     <div class="divider-wrapper">
-                        <div class="divider-text h2" style="font-weight: bold;" data-translate="free_spin_bonus">FREE SPIN BONUS</div>
+                        <div class="divider-text h2" style="font-weight: bold;">FREE SPIN BONUS</div>
                     </div>
                 </div>
     
@@ -1400,29 +1394,29 @@
                 <div style="font-size: 1.0rem;border: 1px;border-style: solid;border-color: white;" class="px-4 my-3 mx-3 py-2">
                     IF AT LEAST ONE <img style="max-width: 40px;" src="scatter.png" alt=""> APPEARS ON ALL REELS, ADDITIONAL 13 FREE SPINS ARE AWARDED, TO A MAXIMUM OF 100 FREE SPINS IN A SINGLE BOUGHT GAME. RETRIGGER OF FREE SPIN BONUS WILL NOT CHANGE THE BONUS MULTIPLIER OF THE FREE SPIN BONUS. 
                     <br>
-                    <span data-translate="free_spin_wins">DURING FREE SPIN BONUS, THE WINS ARE MULTIPLIED BY THE BONUS MULTIPLIER AND ADDED TO THE WIN METER</span>
+                    DURING FREE SPIN BONUS, THE WINS ARE MULTIPLIED BY THE BONUS MULTIPLIER AND ADDED TO THE WIN METER
                 </div>
     
                 <div style="border: 1px;border-color: #e4d594;font-size: 1.0rem;border-style: solid;" class="py-4 mx-3 d-flex justify-content-center align-items-around my-3">
                     <div class="px-2">
-                        <span style="color: #e4d594;" data-translate="denomination"> Denomination:</span> 0.01
+                        <span style="color: #e4d594;"> Denomination:</span> 0.01
                     </div>
                     <div class="px-2">
-                        <span style="color: #e4d594;" data-translate="bet_multiplier">Bet Multiplier:</span> 1
+                        <span style="color: #e4d594;">Bet Multiplier:</span> 1
                     </div>
                 </div>
 
                 <div class="row px-3">
                     <div class="col-lg-3 col-md-12 col-sm-12 text-center px-4" style="font-weight: bold;">
                         <img src="wild.png"style="max-width: 130px;" alt="">
-                        <div class="h3" data-translate="wild">WILD</div>
+                        <div class="h3">WILD</div>
                     </div>
                     <div class="col-lg-9 col-md-12 col-lg-12" style="font-weight: bold;">
-                        <span data-translate="wild_appearance">ONLY APPEARS ON REELS 2,3,4 AND 5.</span>
+                        ONLY APPEARS ON REELS 2,3,4 AND 5.
                         <br>
                         <br>
                         <div class="d-flex justify-content-start align-items-center">
-                            <span data-translate="wild_substitutes">SUBSTITUTES FOR ALL SYMBOLS EXCEPT</span> <img style="width: 40px;height: auto;" src="scatter.png" alt="">
+                            SUBSTITUTES FOR ALL SYMBOLS EXCEPT <img style="width: 40px;height: auto;" src="scatter.png" alt="">
                         </div>
                     </div>
                 </div>
@@ -1430,9 +1424,9 @@
                 <div class="row px-3 my-3">
                     <div class="col-lg-3 col-md-12 col-sm-12 text-center px-4 mb-3">
                         <img src="scatter.png"style="max-width: 130px;" alt="">
-                        <div class="h3" data-translate="free_spin_bonus">FREE SPIN BONUS</div>
+                        <div class="h3">FREE SPIN BONUS</div>
                     </div>
-                    <div class="col-lg-9 col-md-12 col-lg-12" style="font-weight: bold;" data-translate="appears_on_all_reels">
+                    <div class="col-lg-9 col-md-12 col-lg-12" style="font-weight: bold;">
                         APPEARS ON ALL REELS
                     </div>
                 </div>
@@ -1562,9 +1556,9 @@
     
                 <div style="font-size: 1.0rem;" class="text-center">
                     <div class="my-1">
-                        <span data-translate="wins_pay_leftmost">ALL WINS PAY LEFTMOST TO RIGHT, EXCEPT</span> <img src="scatter.png" style="max-width: 40px;" alt="">
+                        ALL WINS PAY LEFTMOST TO RIGHT, EXCEPT <img src="scatter.png" style="max-width: 40px;" alt="">
                     </div>
-                    <div class="my-1" data-translate="paytable_wins_bet">
+                    <div class="my-1">
                         PAYTABLE WINS ARE SHOWN FOR BET MULTIPLIER X1.
                     </div>
                     <div class="my-1">
@@ -1574,7 +1568,7 @@
     
                 <div class="divider-container mt-5">
                     <div class="divider-wrapper">
-                        <div class="divider-text" style="font-weight: bold;" data-translate="243_ways">243 WAYS</div>
+                        <div class="divider-text" style="font-weight: bold;">243 WAYS</div>
                     </div>
                 </div>
     
@@ -1587,8 +1581,8 @@
                         <img src="tick.png" class="mx-5" style="max-width: 50%;" alt="">
                     </div>
                     <div class="col-lg-9 col-md-12 col-lg-12">
-                        <span data-translate="reels">REELS = 5</span>
-                        <div data-translate="play_5_reels" class="d-flex justify-content-start align-items-center">
+                        REELS = 5
+                        <div class="d-flex justify-content-start align-items-center">
                             PLAY 5 REELS WITH MINIMUM BET 30 MULTIPLIED BY DENOMINATION.
                         </div>
                     </div>
@@ -1596,9 +1590,9 @@
                 <div>
                     <div style="width: 90%;margin-bottom: 140px;" class="mx-auto mt-3 pb-3">
                         <div>
-                            <span data-translate="winning_combinations"></span> <img src="scatter.png" style="width: 40px;" alt="">
+                            ALL WINNING COMBINATIONS PAY FROM LEFT TO RIGHT ON ADJACENT REELS BEGINNING FROM LEFTMOST EXCEPT <img src="scatter.png" style="width: 40px;" alt="">
                         </div>
-                        <div data-translate="wins_multiplied">
+                        <div>
                             ALL WINS ARE MULTIPLIED BY THE BET MULTIPLIER. ONLY THE HIGHEST WINNING COMBINATION IS PAID ON EACH PAY WAY.
                         </div>
                     </div>
@@ -1606,7 +1600,7 @@
             </div>
     
             <div class="text-center py-3 w-100" style="position: fixed;bottom: 0;background-color: #191818;color: white;font-size: 1.0rem;z-index: 9999;margin: 0 !important;">
-                <div data-translate="malfunction">
+                <div>
                     MALFUNCTION VOIDS ALL PLAYS AND PAYS.
                 </div>
                 <div class="my-2 d-flex justify-content-center align-items-center">
@@ -1639,7 +1633,7 @@
             </div>
             <div class="win-content">
                 <!-- <h2 id="winText" class="win-text big-win"> -->
-                <img id="winImg" style="max-width: 200px;" src="assets/english/winlevels/bigwin.png" alt="">
+                <img id="winImg" style="max-width: 200px;" src="winlevels/bigwin.png" alt="">
                 </h2>
                 <div class="counter-text" id="winAmount">$0</div>
             </div>
@@ -1664,7 +1658,7 @@
     
         <div id="kong_overlay">
             <div class="d-flex justify-content-center">
-                <button class="glowing-button text-white" data-translate="start" onclick="hideKongOverlay()">START</button>
+                <button class="glowing-button text-white" onclick="hideKongOverlay()">START</button>
             </div>
         </div>
 
@@ -1682,13 +1676,13 @@
             </div> -->
             <div id="win-container" class="fade-from-top hidden-fade" style="margin-top: 70%;">
                 <div class="d-flex justify-content-center align-items-center my-2">
-                    <img style="max-width: 90%;" id="youve_won" src="youve_won.png" alt="">
+                    <img style="max-width: 90%;" src="youve_won.png" alt="">
                 </div>
                 <div id="display_accumulated_freespin_amount" class="russo-one-regular text-container gradient-text2 d-flex justify-content-center align-items-center" style="font-size: 2.5rem;">
                     <!-- 49.00 -->
                 </div>
                 <div class="d-flex justify-content-center align-items-center my-2">
-                    <img style="max-width: 70%;" id="credits_img" src="credits.png" alt="">
+                    <img style="max-width: 70%;" src="credits.png" alt="">
                 </div>
             </div>
 
@@ -1721,7 +1715,7 @@
                 <!-- Start Free Spins Overlay -->
                 <div id="startfreespinsoverlay" style="display: none; position: absolute; top: 0; left: 0; height: 100%; width: 100%; z-index: 999999;">
                     <div class="d-flex justify-content-center align-items-center" style="height: 100%; width: 100%;">
-                        <div data-translate="press_reel" id="startfreespinsbutton" onclick="startFreeSpins()" class="py-1 px-3 text-white" style="border-radius: 6px; border: 2px white solid; font-size: 0.75rem; background-color: rgba(0, 0, 0, 0.8);">
+                        <div id="startfreespinsbutton" onclick="startFreeSpins()" class="py-1 px-3 text-white" style="border-radius: 6px; border: 2px white solid; font-size: 0.75rem; background-color: rgba(0, 0, 0, 0.8);">
                             PRESS REEL TO START THE BONUS
                         </div>
                     </div>
@@ -1745,12 +1739,12 @@
                 <div class="game-canvas-container">
                     <!-- Free Spins Indicator -->
                     <div id="free-spins-indicator" class="free-spins-indicator">
-                        <span data-translate="free_spins">FREE SPINS:</span> <span id="free-spins-count">0</span> | <span data-translate="multiplier">MULTIPLIER:</span> <span id="bonus-multiplier">0</span>x
+                        FREE SPINS: <span id="free-spins-count">0</span> | MULTIPLIER: <span id="bonus-multiplier">0</span>x
                     </div>
 
                     <!-- Win Message -->
                     <div id="win-message" class="win-message">
-                        <div data-translate="big_win">BIG WIN!</div>
+                        <div>BIG WIN!</div>
                         <div id="win-amount">0.00</div>
                     </div>
                     
@@ -1764,13 +1758,13 @@
             <div class="game-controls p-2">
                 <div id="results_holder" class="w-100 text-center text-white d-flex justify-content-center align-items-center" style="margin-top: -22px;height: 25px; font-size: 1.2rem;">
                     <div style="margin: 5px 0px;">
-                        <span data-translate="win">WIN</span> <span class="px-1" id="update_winnings">0.00</span>
+                        WIN <span class="px-1" id="update_winnings">0.00</span>
                     </div>
                 </div>
                 <div id="freespins_display" style="display: none; justify-content: center; align-items: center; padding-top: 2px;max-width: 100%;height: 80px;">
-                    <img class="fs-text-image" id="freespin_part_a_img" src="freespin_part_a.png" alt="">
+                    <img class="fs-text-image"  src="freespin_part_a.png" alt="">
                     <span class="px-3" id="remaining_fs_holder" >0</span>
-                    <img class="fs-text-image" id="freespin_part_b_img" src="freespin_part_b.png"  alt="">
+                    <img class="fs-text-image" src="freespin_part_b.png"  alt="">
                     <span class="px-3" id="total_fs_holder">0</span>
                 </div>
                 <div id="normalspins_display" style="display: flex; justify-content: center; align-items: center; padding-top: 2px">
@@ -1789,7 +1783,7 @@
                     <div id="stakeButton" class="text-center d-flex justify-content-center align-items-center stake-button" style="background-image: url('totalbetbcg.png');background-size: cover;color: orange;font-size: 0.85rem;line-height: 1;font-weight: 900;border-radius: 50%;">
                         <div>
                             <div class="d-flex justify-content-center">
-                                <img id="totalbetinner-img" src="assets/english/totalbetinnerimg.png" class="totalbetinner-img"  alt="">
+                                <img src="totalbetinnerimg.png" class="totalbetinner-img"  alt="">
                             </div>
                             <div class="text-center">
                                 <span id="currentStake" class="current-stake">0.3</span>
@@ -1811,10 +1805,10 @@
                         <!-- Button at the center -->
                         <div style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;">
                             <span class="text-center">
-                                <span class="badge px-4 py-2 text-white" style="background-color: rgba(0,0,0,0.7);"><span data-translate="credit">CREDIT:</span> <span id="balanceText">...</span></span>
+                                <span class="badge px-4 py-2 text-white" style="background-color: rgba(0,0,0,0.7);">CREDIT: <span id="balanceText">...</span></span>
                                 <br>
                                 <span class="text-white text-center" style="font-size: 0.7rem;">
-                                    &lt; <span data-translate="demo_game">DEMO GAME</span> &gt;
+                                    &lt; <span>DEMO GAME</span> &gt;
                                 </span>
                             </span>
                         </div>
@@ -1828,12 +1822,12 @@
             <div class="divider-container">
                 <div class="divider-wrapper">
                     <div class="divider"></div>
-                    <div class="divider-text" data-translate="total_bet">TOTAL BET</div>
+                    <div class="divider-text">TOTAL BET</div>
                     <div class="divider"></div>
                 </div>
             </div>
             <div class="overlay-content-stake ">
-                <div class="overlay-header" data-translate="fun">FUN</div>
+                <div class="overlay-header">FUN</div>
                 <div class="options-grid mx-auto" id="stakeOptions">
                     <button class="option-button" data-value="3.0">3.0</button>
                     <button class="option-button" data-value="1.5">1.5</button>
@@ -1842,13 +1836,13 @@
                     <button class="option-button selected" data-value="0.3">0.3</button>
                 </div>
                 <div class="text-center text-white mt-5 pt-5" style="margin-bottom: 100px;">
-                    <span data-translate="reels_count">
+                    <span >
                         Reels: 5
                     </span>
                 </div>
                 <div class="overlay-footer w-100">
-                    <button style="display: none;" class="cancel-button px-4" id="cancelStake" data-translate="cancel">Cancel</button>
-                    <button class="confirm-button px-5" id="confirmStake" data-translate="ok">OK</button>
+                    <button style="display: none;" class="cancel-button px-4" id="cancelStake">Cancel</button>
+                    <button class="confirm-button px-5" id="confirmStake">OK</button>
                 </div>
             </div>
         </div>
@@ -1858,12 +1852,12 @@
             <div class="divider-container">
                 <div class="divider-wrapper">
                     <div class="divider"></div>
-                    <div class="divider-text" data-translate="autoplays">AUTOPLAYS</div>
+                    <div class="divider-text">AUTOPLAYS</div>
                     <div class="divider"></div>
                 </div>
             </div>
             <div class="overlay-content w-100" style="margin-top: 20px !important;">
-                <div class="mb-2 text-white" data-translate="number_of_spins">
+                <div class="mb-2 text-white">
                     NUMBER OF SPINS
                 </div>
                 <div class="options-grid" id="autoSpinOptions">
@@ -1874,7 +1868,7 @@
                     <button class="option-button" data-value="30">30</button>
                 </div>
                 
-<div class="mt-4 mb-2 text-white" data-translate="loss_limit">
+<div class="mt-4 mb-2 text-white">
     LOSS LIMIT
 </div>
 <div class="options-grid" id="lossLimitOptions">
@@ -1887,7 +1881,7 @@
                 <div class="divider-container my-3">
                     <div class="divider-wrapper">
                         <div style="height: 2px;background-color: #e4d594;width: 25vw;"></div>
-                        <div class="divider-text" data-translate="quick_spin" >QUICK SPIN</div>
+                        <div class="divider-text" >QUICK SPIN</div>
                         <div style="height: 2px;background-color: #e4d594;width: 25vw;"></div>
                     </div>
                 </div>
@@ -1896,8 +1890,8 @@
                     <img id="quickspin-toggle2" src="quickspin-b.png" style="height: 60px;width: 60px;display: none;" alt="">
                 </div>
                 <div class="overlay-footer" style="margin-top: 70px;">
-                    <button class="cancel-button" id="cancelAutoSpin" data-translate="cancel">Cancel</button>
-                    <button class="confirm-button px-4" id="confirmAutoSpin" data-translate="ok">Ok</button>
+                    <button class="cancel-button" id="cancelAutoSpin">Cancel</button>
+                    <button class="confirm-button px-4" id="confirmAutoSpin">Ok</button>
                 </div>
             </div>
         </div>
@@ -1945,10 +1939,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.4.0/pixi.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-
 <script>
-initTranslation();
-
 class CoinAnimation {
     constructor() {
         this.container = document.getElementById('fallingCoinsContainer');
@@ -2678,7 +2669,7 @@ window.addEventListener('resize', () => {
     // Win level configurations
       const winLevels = {
         big: {
-          imgSrc: `assets/${localStorage.getItem('lang') || 'english'}/winlevels/bigwin.png`,
+          imgSrc: 'winlevels/bigwin.png',
           text: 'BIG WIN',
           textClass: 'big-win',
           sunburstClass: 'big-win-color',
@@ -2686,7 +2677,7 @@ window.addEventListener('resize', () => {
           coinCount: 50
         },
         mega: {
-          imgSrc: `assets/${localStorage.getItem('lang') || 'english'}/winlevels/megawin.png`,
+          imgSrc: 'winlevels/megawin.png',
           text: 'MEGA WIN',
           textClass: 'mega-win',
           sunburstClass: 'mega-win-color',
@@ -2694,7 +2685,7 @@ window.addEventListener('resize', () => {
           coinCount: 80
         },
         ultra: {
-          imgSrc: `assets/${localStorage.getItem('lang') || 'english'}/winlevels/ultrawin.png`,
+          imgSrc: 'winlevels/ultrawin.png',
           text: 'ULTRA WIN',
           textClass: 'ultra-win',
           sunburstClass: 'ultra-win-color',
@@ -6176,7 +6167,7 @@ function getWinLevel(amount) {
         
         // Set initial win level
         let currentLevel = 'big';
-        document.getElemntById('winImg').src = `assets/${localStorage.getItem('lang') || 'english'}/winlevels/bigwin.png`;
+        document.getElementById('winImg').src = "winlevels/bigwin.png";
         updateWinLevel(currentLevel);
         
         // Show the overlay

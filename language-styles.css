@@ -1,0 +1,94 @@
+/* Additional CSS for language-specific styling */
+
+/* Language selector styles */
+.language-selector {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
+.language-selector .dropdown-toggle {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid #ffd700;
+  color: #ffd700;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  min-width: 80px;
+}
+
+.language-selector .dropdown-toggle:hover,
+.language-selector .dropdown-toggle:focus {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+  color: #ffd700;
+  box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25);
+}
+
+.language-selector .dropdown-menu {
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid #ffd700;
+  min-width: 120px;
+}
+
+.language-selector .dropdown-item {
+  color: #ffd700;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  transition: all 0.2s ease;
+}
+
+.language-selector .dropdown-item:hover {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+}
+
+.language-selector .dropdown-item:active {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+/* Font adjustments for different languages */
+[lang="zh"] {
+  font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+}
+
+[lang="pt"] {
+  font-family: "Roboto", "Arial", sans-serif;
+}
+
+/* Responsive adjustments for language selector */
+@media (max-width: 768px) {
+  .language-selector {
+    top: 5px;
+    right: 5px;
+  }
+
+  .language-selector .dropdown-toggle {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+    min-width: 60px;
+  }
+
+  .language-selector .dropdown-item {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+}
+
+/* Text overflow handling for longer translations */
+.text-overflow-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Adjustments for Chinese text */
+.chinese-text {
+  line-height: 1.6;
+  letter-spacing: 0.05em;
+}
+
+/* Adjustments for Portuguese text */
+.portuguese-text {
+  line-height: 1.5;
+}
